@@ -126,3 +126,28 @@ textarea {
 .ThemeSwitcher.dark svg {
   color: var(--button-hover-bg-color);
 }
+
+.RightSidebar {
+  position: relative;
+  transition: width 0.3s ease;
+}
+
+.RightSidebar.closed {
+  width: 50px; /* Reduced width when closed */
+}
+
+.SidebarToggle {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  z-index: 10;
+}
+
+.RightSidebar.closed .RightSidebarHeader,
+.RightSidebar.closed .RightSidebarContent {
+  display: none;
+}
