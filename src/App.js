@@ -8,15 +8,19 @@ function App() {
 
   return (
     <div className="App">
+      {/* Left Sidebar */}
       <Sidebar />
+
+      {/* Main Editor */}
       <div className="Editor">
-        {/* Markdown input area */}
         <textarea
           value={markdown}
           onChange={(e) => setMarkdown(e.target.value)}
           placeholder="Type your markdown here..."
         />
       </div>
+
+      {/* Right Sidebar */}
       <RightSidebar />
     </div>
   );
