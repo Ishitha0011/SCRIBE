@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Input } from "../components/ui/input"; // Adjusted path
-import { Button } from "../components/ui/button"; // Adjusted path
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
 import { Sparkles } from "lucide-react";
 
 const AIPage = () => {
@@ -45,7 +45,7 @@ const AIPage = () => {
           placeholder="Ask AI..."
           value={aiInput}
           onChange={handleAiInputChange}
-          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
           className="flex-grow"
         />
         <Button onClick={handleSendMessage}>

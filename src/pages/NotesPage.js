@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Reorder } from 'framer-motion';
-import { Input } from "../components/ui/input"; // Adjusted path
-import { Button } from "../components/ui/button"; // Adjusted path
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
 import { X, Plus } from "lucide-react";
 
 const NotesPage = () => {
@@ -53,7 +53,7 @@ const NotesPage = () => {
           placeholder="Add a new note..."
           value={newNote}
           onChange={(e) => setNewNote(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && addNote()}
+          onKeyDown={(e) => e.key === 'Enter' && addNote()}
           className="flex-grow"
         />
         <Button onClick={addNote}>

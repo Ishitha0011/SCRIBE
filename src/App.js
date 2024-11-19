@@ -11,6 +11,10 @@ import NotesPage from './pages/NotesPage';
 import AiPage from './pages/AiPage';
 import LabsPage from './pages/LabsPage';
 
+// Import UI components
+import Input from './components/ui/input';
+import Button from './components/ui/button';
+
 function App() {
   const { theme, toggleTheme } = useTheme();
 

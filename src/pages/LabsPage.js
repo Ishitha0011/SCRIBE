@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Input } from "../components/ui/input"; // Adjusted path
-import { Button } from "../components/ui/button"; // Adjusted path
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
 import { X } from "lucide-react";
 
 const LabsPage = () => {
@@ -44,7 +44,7 @@ const LabsPage = () => {
         <Input
           type="text"
           placeholder="Add prompt"
-          onKeyPress={(e) => {
+          onKeyDown={(e) => {
             if (e.key === 'Enter') {
               addTodoItem('prompts', e.target.value);
               e.target.value = '';
@@ -70,7 +70,7 @@ const LabsPage = () => {
         <Input
           type="text"
           placeholder="Add negative prompt"
-          onKeyPress={(e) => {
+          onKeyDown={(e) => {
             if (e.key === 'Enter') {
               addTodoItem('negativePrompts', e.target.value);
               e.target.value = '';

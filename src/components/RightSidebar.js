@@ -15,8 +15,8 @@ const RightSidebar = ({ selectedPage, setSelectedPage }) => {
 
   return (
     <div className={`RightSidebar ${isOpen ? 'open' : 'closed'}`}>
-      {isOpen ? (
-        <>
+      {isOpen && (
+        <div className="RightSidebarContent">
           <div className="RightSidebarHeader">
             <h1>SCRIBE*</h1>
             <select value={selectedPage} onChange={handleSelectChange}>
@@ -25,14 +25,14 @@ const RightSidebar = ({ selectedPage, setSelectedPage }) => {
               <option value="Labs">Labs</option>
             </select>
           </div>
-        </>
-      ) : null}
-
+        </div>
+      )}
+      
       <button 
         className="SidebarToggle" 
         onClick={toggleSidebar}
       >
-        <FontAwesomeIcon icon={isOpen ? faChevronRight : faChevronLeft} />
+        <FontAwesomeIcon icon={isOpen ? faChevronLeft : faChevronRight} />
       </button>
     </div>
   );
