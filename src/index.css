@@ -1,4 +1,5 @@
 html,body {
+  overflow-y: hidden; /* Disable vertical scroll */
   padding: 0;
   margin: 0;
   font-family: 'JetBrains Mono', monospace; 

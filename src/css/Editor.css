@@ -1,0 +1,120 @@
+/* Editor component styles */
+.Editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Ensures the editor takes full screen height */
+    background-color: #fff;
+    width: 100%; /* Ensures the editor takes full screen width */
+  }
+  
+  .Tabs {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Space out left and right sections */
+    background-color: #f4f4f4;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    flex-shrink: 0; /* Prevents the tabs area from shrinking */
+  }
+  
+  .TabsLeft {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Adds spacing between tabs */
+  }
+  
+  .TabsRight {
+    position: relative;
+    margin-left: auto; /* Pushes the switch to the far right */
+    display: flex;
+    align-items: center;
+    padding-right: 5px;
+  }
+
+  .ciMWJP .st-sunMoonThemeToggleBtn .themeToggleInput {
+    width: 15px !important;
+
+   }
+
+
+  .Tab {
+    background-color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 80px; /* Ensures tab has a minimum width */
+  }
+  
+  .Tab.active {
+    background-color: #ffffff;
+    color: #000;
+    border : 0.1px solid #ddd;
+  }
+  
+  .CloseTab {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+    color: #555;
+    font-size: 12px; /* Adjust close button size */
+  }
+  
+  .AddTab {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: #555;
+    /* align-items: center; */
+    margin-top: 5px;
+  }
+  
+  /* Text area (editor canvas) */
+  .TextEditorCanvas {
+    flex-grow: 1; /* Takes the remaining space available */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Aligns the text editor at the top */
+    background-color: #fafafa;
+    overflow: auto; /* Allows scrolling if content overflows */
+  }
+  
+  .TextArea {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    height: 81vh;
+    padding: 20px;
+    border: 1px solid #ddd;
+    /* border-radius: 8px; */
+    font-size: 16px;
+    background-color: #fff;
+    resize: none;
+    outline: none;
+    color: #333;
+  }
+  
+  .TextArea:focus {
+    border-color: #d3d3ff;
+  }
+  
+  /* Footer area */
+  .Footer {
+    padding: 10px 20px;
+    background-color: #f4f4f4;
+    text-align: right;
+    border-top: 1px solid #ddd;
+    font-size: 14px;
+    color: #777;
+    flex-shrink: 0; /* Prevents the footer from shrinking */
+  }
+  

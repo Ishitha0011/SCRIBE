@@ -1,0 +1,103 @@
+/* RightSidebar container */
+.RightSidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: #ffffff;
+    border-left: 1px solid #ddd;
+    padding: 10px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  
+  /* Top section with logo and dropdown */
+  .TopSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  /* Logo style */
+  .Logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    letter-spacing: 0.5px;
+    font-family: 'Arial', sans-serif;
+    padding-right: 10px;
+  }
+  
+  /* Dropdown container for custom dropdown */
+  .DropdownContainer {
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+  
+  /* Custom dropdown styling */
+  .SelectDropdown {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f5f5f5; /* Light grey background */
+    border-radius: 12px; /* Rounded pill shape */
+    padding: 10px 10px;
+    font-size: 16px;
+    color: #333;
+    cursor: pointer;
+    width: 100px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .SelectDropdown:hover {
+    background-color: #e0e0e0; /* Slightly darker on hover */
+  }
+  
+  .SelectDropdown span {
+    font-weight: 600;
+  }
+  
+  /* Dropdown indicator icon */
+  .DropdownIcon {
+    color: #777;
+    transition: transform 0.3s ease; /* Smooth transition for rotation */
+  }
+  
+  /* Rotate dropdown icon when open */
+  .DropdownIcon.open {
+    transform: rotate(180deg); /* Rotate icon when dropdown is open */
+  }
+  
+  /* Dropdown options list */
+  .DropdownList {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+  }
+  
+  /* Individual dropdown options */
+  .Option {
+    padding: 12px 20px;
+    font-size: 16px;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .Option:hover {
+    background-color: #f4f4f4; /* Light grey background on hover */
+    color: #bb44f0; /* Change text color to blue on hover */
+  }
+  
+  .Option:focus {
+    outline: none;
+    background-color: #d3d3ff; 
+  }
+  
