@@ -1,17 +1,20 @@
-/* Layout */
+/* General Layout */
 .App {
   display: flex;
   height: 100vh;
   font-family: Arial, sans-serif;
+  transition: background-color 0.3s, color 0.3s; /* Smooth theme transition */
 }
 
 /* Sidebar */
 .Sidebar {
   width: 200px;
-  background-color: #f0f0f0;
+  background-color: var(--sidebar-bg-color);
   padding: 10px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between; /* Ensure elements are spaced properly */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .SidebarIcons {
@@ -22,33 +25,40 @@
 
 .SidebarContent {
   flex-grow: 1;
+  overflow-y: auto; /* Scrollable if content overflows */
 }
 
 /* Editor */
 .Editor {
   flex-grow: 1;
   padding: 20px;
-  background-color: #fff;
+  background-color: var(--editor-bg-color);
+  color: var(--editor-text-color);
 }
 
 textarea {
   width: 100%;
-  height: calc(100vh - 40px);
+  height: calc(100vh - 40px); /* Subtract Editor padding */
   border: none;
   padding: 10px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 14px;
   resize: none;
+  background-color: var(--textarea-bg-color);
+  color: var(--textarea-text-color);
+  border-radius: 5px;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s; /* Smooth transitions for theme */
 }
 
 /* Right Sidebar */
 .RightSidebar {
   width: 250px;
-  background-color: #f0f0f0;
+  background-color: var(--sidebar-bg-color);
   padding: 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .RightSidebarHeader {
@@ -66,19 +76,81 @@ textarea {
 .RightSidebarHeader select {
   font-size: 14px;
   padding: 5px;
+  border-radius: 4px;
+  background-color: var(--dropdown-bg-color);
+  color: var(--dropdown-text-color);
+  border: 1px solid var(--dropdown-border-color);
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
+/* Dropdown in the Right Sidebar */
+.RightSidebarHeader select:hover {
+  background-color: var(--dropdown-hover-bg-color);
+}
+
+/* Right Sidebar Buttons */
 .RightSidebarContent button {
   margin-bottom: 10px;
   padding: 10px;
   font-size: 14px;
   border: none;
-  background-color: #007bff;
-  color: white;
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .RightSidebarContent button:hover {
-  background-color: #0056b3;
+  background-color: var(--button-hover-bg-color);
+}
+
+/* ThemeSwitcher */
+.ThemeSwitcher {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.ThemeSwitcher:hover {
+  opacity: 0.8;
+}
+
+/* Color Variables for Themes */
+:root {
+  --sidebar-bg-color: #f0f0f0;
+  --editor-bg-color: #ffffff;
+  --editor-text-color: #000000;
+  --textarea-bg-color: #ffffff;
+  --textarea-text-color: #000000;
+  --dropdown-bg-color: #ffffff;
+  --dropdown-text-color: #000000;
+  --dropdown-border-color: #cccccc;
+  --dropdown-hover-bg-color: #e0e0e0;
+  --button-bg-color: #007bff;
+  --button-text-color: white;
+  --button-hover-bg-color: #0056b3;
+}
+
+.App.dark {
+  --sidebar-bg-color: #1a1a1a;
+  --editor-bg-color: #121212;
+  --editor-text-color: #ffffff;
+  --textarea-bg-color: #1e1e1e;
+  --textarea-text-color: #ffffff;
+  --dropdown-bg-color: #333333;
+  --dropdown-text-color: #ffffff;
+  --dropdown-border-color: #444444;
+  --dropdown-hover-bg-color: #444444;
+  --button-bg-color: #4caf50;
+  --button-text-color: white;
+  --button-hover-bg-color: #3a8e41;
 }
