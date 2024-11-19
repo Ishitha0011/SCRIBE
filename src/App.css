@@ -1,0 +1,30 @@
+/* scribe_reactapp/src/App.css */
+.App {
+  display: flex;
+}
+
+.Sidebar {
+  width: 200px;
+  background-color: #f0f0f0;
+  padding: 10px;
+}
+
+.Editor {
+  flex-grow: 1;
+  padding: 10px;
+}
+
+.RightSidebar {
+  width: 200px;
+  background-color: #f0f0f0;
+  padding: 10px;
+}
+
+/* Ensure the textarea uses JetBrains Mono */
+textarea {
+  width: 100%;
+  height: 100vh;
+  border: none;
+  padding: 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
