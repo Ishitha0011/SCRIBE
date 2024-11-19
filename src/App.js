@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import RightSidebar from './components/RightSidebar';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMoon } from '@fortawesome/free-solid-svg-icons';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
 function App() {
-  const [theme, setTheme] = useState('light'); // Default theme is light
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className={`App ${theme}`}>
@@ -17,8 +16,8 @@ function App() {
         <textarea placeholder="Type your markdown here..." />
       </div>
       <RightSidebar />
-      <button className="ThemeSwitcher" onClick={toggleTheme}>
-        Switch to {theme === 'light' ? 'Dark' : 'Light'} Theme
+      <button className={`ThemeSwitcher ${theme === 'dark' ? 'dark' : ''}`} onClick={toggleTheme}>
+        <FontAwesomeIcon icon={faMoon} />
       </button>
     </div>
   );
