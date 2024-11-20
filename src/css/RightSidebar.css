@@ -1,15 +1,20 @@
 /* RightSidebar container */
 .RightSidebar {
-    width: 250px;
-    height: 100vh;
-    background-color: #ffffff;
-    border-left: 1px solid #ddd;
-    padding: 10px 20px 20px 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-  }
-  
+  width: 250px;
+  height: 100vh;
+  background-color: #f9f9f9;
+  border-left: 1px solid #ddd;
+  padding: 10px 20px;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+}
+
+.RightSidebar.collapsed {
+  width: 30px; /* Reduced width when collapsed */
+  padding: 5px 5px;
+}
+
   /* Top section with logo and dropdown */
   .TopSection {
     display: flex;
@@ -17,15 +22,26 @@
     align-items: center;
     margin-bottom: 20px;
   }
+
+  .DynamicContent {
+    flex-grow: 1; /* Push content to take up remaining space */
+    display: flex;
+    flex-direction: column;
+  }
+
   
-  /* Logo style */
   .Logo {
     font-size: 24px;
     font-weight: bold;
     color: #333;
     letter-spacing: 0.5px;
     font-family: 'Arial', sans-serif;
-    padding-right: 10px;
+    transition: opacity 0.3s ease;
+  }
+  
+  .RightSidebar.collapsed .Logo {
+    opacity: 0; 
+    visibility: hidden;
   }
   
   /* Dropdown container for custom dropdown */
@@ -40,14 +56,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #f5f5f5; /* Light grey background */
-    border-radius: 12px; /* Rounded pill shape */
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #ddd;
     padding: 10px 10px;
     font-size: 16px;
     color: #333;
     cursor: pointer;
     width: 100px;
     transition: background-color 0.3s ease;
+  }
+
+  .RightSidebar.collapsed .SelectDropdown {
+    display: none; /* Hide dropdown when collapsed */
   }
   
   .SelectDropdown:hover {
@@ -92,12 +113,61 @@
   }
   
   .Option:hover {
-    background-color: #f4f4f4; /* Light grey background on hover */
-    color: #bb44f0; /* Change text color to blue on hover */
+    background-color: #f4f4f4; 
+    color: #bb44f0; 
   }
   
   .Option:focus {
     outline: none;
     background-color: #d3d3ff; 
   }
+
+  .CollapseIcon {
+    position: relative; 
+    bottom: 20px; 
+    left: 0px; 
+    width: 40px; 
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 50%; 
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
   
+  .CollapseIcon:hover {
+    background-color: #e0e0e0;
+  }
+  
+  /* Ask AI input container */
+  .AskAIContainer {
+    margin-top: auto; 
+    display: flex;
+    flex-direction: column;
+    gap: 10px; 
+    width: 90%; 
+    padding-bottom: 1.4rem;
+  }
+
+.AskAIInput {
+  width: 100%; 
+  padding: 12px 16px; 
+  border: 1px solid #ddd; 
+  border-radius: 8px; 
+  font-size: 14px; 
+  background-color: #ffffff; 
+  color: #333; 
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  outline: none; 
+}
+
+.AskAIInput:focus {
+  border-color: #bb44f0; /* Highlight border on focus */
+  box-shadow: 0px 0px 4px rgba(187, 68, 240, 0.5); /* Glow effect on focus */
+}
+
+.AskAIInput::placeholder {
+  color: #aaa; /* Subtle placeholder color */
+  font-style: italic; /* Differentiates placeholder text */
+}

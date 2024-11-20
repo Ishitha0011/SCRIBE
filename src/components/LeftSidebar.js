@@ -8,7 +8,9 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-} from 'lucide-react';
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'; // Import Chevron icons for collapsing
 import '../css/LeftSidebar.css';
 
 const LeftSidebar = () => {
@@ -25,6 +27,7 @@ const LeftSidebar = () => {
   ]);
   const [activeItem, setActiveItem] = useState(null);
   const [menuVisible, setMenuVisible] = useState(null);
+  const [isCollapsed, setIsCollapsed] = useState(false); // New state for collapse
 
   // Add a new file or folder
   const handleAdd = (type) => {
@@ -110,7 +113,7 @@ const LeftSidebar = () => {
     ));
 
   return (
-    <div className="LeftSidebar">
+    <div className={`LeftSidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="TopButtons">
         <button className="IconButton" title="Search">
           <Search size={18} />
@@ -126,7 +129,14 @@ const LeftSidebar = () => {
           <Plus size={18} />
         </button>
       </div>
-      <div className="FileTree">{renderTree(structure)}</div>
+      {!isCollapsed && <div className="FileTree">{renderTree(structure)}</div>}
+      <button
+        className="CollapseButton"
+        title="Collapse Sidebar"
+        onClick={() => setIsCollapsed((prev) => !prev)}
+      >
+        {isCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
+      </button>
     </div>
   );
 };
