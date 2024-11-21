@@ -209,3 +209,25 @@
   right: 0; /* Centered when sidebar is collapsed */
   transform: translateX(-50%); /* Center the button */
 }
+
+/* Position the Plus button at the top-right corner */
+.PlusButton {
+  position: absolute;
+  top: 10px; /* Adjust based on spacing */
+  right: 10px; /* Move it to the right corner */
+  background-color: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--icon-color, #555);
+  transition: opacity 0.3s ease;
+  z-index: 1; /* Ensure the button is on top */
+}
+
+.LeftSidebar.dark .PlusButton {
+  color: var(--dark-icon-color, #bbb);
+}
+
+.PlusButton:hover {
+  opacity: 0.7;
+}

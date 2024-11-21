@@ -153,15 +153,20 @@ const LeftSidebar = () => {
         <button className="IconButton" title="Settings">
           <Settings size={18} />
         </button>
-        <button
-          className="IconButton"
-          title="Add"
-          onClick={() => handleAdd('folder')}
-        >
-          <Plus size={18} />
-        </button>
       </div>
+      
+      {/* Plus Button */}
+      <button
+        className="IconButton PlusButton"
+        title="Add"
+        onClick={() => handleAdd('folder')}
+      >
+        <Plus size={18} />
+      </button>
+
+      {/* File Tree */}
       {!isCollapsed && <div className="FileTree">{renderTree(structure)}</div>}
+
       <button
         className="CollapseButton"
         title="Collapse Sidebar"
