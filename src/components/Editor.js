@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X, Moon, Sun, BookOpen, Book } from 'lucide-react'; // Import Book and BookOpen icons
+import { Plus, X, Moon, Sun, Book, Pencil } from 'lucide-react'; // Import Book and Pencil icons
 import { marked } from 'marked';
 import { useTheme } from '../ThemeContext'; // Import the useTheme hook
 import '../css/Editor.css';
@@ -90,7 +90,7 @@ const Editor = () => {
         </div>
         <div className="TabsRight">
           <button className="MarkdownButton" onClick={toggleViewMarkdown}>
-            {viewMarkdown ? <Book size={18} /> : <BookOpen size={18} />}
+            {viewMarkdown ? <Pencil size={18} /> : <Book size={18} />}
           </button>
           {/* Replace darkMode toggle with theme toggle */}
           <button className="ThemeToggle" onClick={toggleTheme}>
