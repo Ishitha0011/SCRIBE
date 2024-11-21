@@ -2,19 +2,21 @@
 .Editor {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh; /* Make sure the editor takes the full height of the viewport */
   background-color: #fff;
   width: 100%;
-  transition: all 0.3s ease; /* Smooth transition for all changes */
+  transition: all 0.3s ease;
   color: #000; /* Default text color for light theme */
+  overflow: hidden; /* Prevent overflow from causing issues */
 }
 
 /* Dark theme styles */
 .Editor.dark {
-  background-color: #000; /* Pure black for dark theme */
-  color: #fff; /* Text color for dark theme */
+  background-color: #000;
+  color: #fff;
 }
 
+/* Tabs Container */
 .Tabs {
   display: flex;
   align-items: center;
@@ -26,7 +28,7 @@
 }
 
 .Editor.dark .Tabs {
-  background-color: #111; /* Darker shade for dark theme tabs */
+  background-color: #111;
   border-bottom: 1px solid #222;
 }
 
@@ -37,7 +39,6 @@
 }
 
 .TabsRight {
-  position: relative;
   margin-left: auto;
   display: flex;
   align-items: center;
@@ -56,12 +57,12 @@
   align-items: center;
   min-width: 80px;
   transition: background-color 0.3s ease;
-  color: #000; /* Text color for light theme */
+  color: #000;
 }
 
 .Editor.dark .Tab {
-  background-color: #222; /* Darker shade for dark theme */
-  color: #fff; /* Text color for dark theme */
+  background-color: #222;
+  color: #fff;
 }
 
 .Tab.active {
@@ -96,38 +97,45 @@
 
 /* Text editor canvas */
 .TextEditorCanvas {
-  flex-grow: 1;
+  flex-grow: 1; /* Ensure the editor canvas takes up all available space */
   display: flex;
   justify-content: center;
   align-items: flex-start;
   background-color: #fafafa;
-  overflow: auto;
+  width: 100%;
+  height: 100%; /* Ensure full height */
+  overflow: hidden; /* Prevent scrolling issues */
 }
 
 .Editor.dark .TextEditorCanvas {
-  background-color: #000; /* Pure black for dark theme */
+  background-color: #000;
+}
+
+/* Text area and markdown view to ensure same sizing */
+.TextArea,
+.MarkdownView {
+  width: 100%; /* Take full width */
+  height: 100%; /* Take full height */
+  padding: 20px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  box-sizing: border-box; /* Include padding and border in width/height */
+  resize: none;
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+  overflow-y: auto;
+  background-color: #fff;
 }
 
 .TextArea {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  height: 81vh;
-  padding: 20px;
-  border: 1px solid #ddd;
-  font-size: 16px;
   background-color: #fff;
-  resize: none;
-  outline: none;
-  color: #000; /* Text color for light theme */
-  font-family: 'JetBrains Mono', monospace;
+  color: #000;
 }
 
 .Editor.dark .TextArea {
-  background-color: #000; /* Pure black for dark theme */
-  color: #fff; /* Text color for dark theme */
+  background-color: #000;
+  color: #fff;
   border-color: #333;
-  font-family: 'JetBrains Mono', monospace;
 }
 
 .TextArea:focus {
@@ -135,7 +143,22 @@
 }
 
 .Editor.dark .TextArea:focus {
-  border-color: #555; /* Slightly lighter border on focus in dark mode */
+  border-color: #555;
+}
+
+/* Markdown View */
+.MarkdownView {
+  background-color: #fff;
+  color: #000;
+  font-size: 16px;
+  word-wrap: break-word;
+  font-family: 'Georgia', serif;
+}
+
+.Editor.dark .MarkdownView {
+  background-color: #000;
+  color: #fff;
+  font-family: 'Georgia', serif;
 }
 
 .Footer {
@@ -149,7 +172,7 @@
 }
 
 .Editor.dark .Footer {
-  background-color: #111; /* Darker footer in dark theme */
+  background-color: #111;
   color: #aaa;
 }
 
@@ -164,7 +187,7 @@
 }
 
 .Editor.dark .Sidebar {
-  background-color: #000; /* Pure black for sidebar in dark theme */
+  background-color: #000;
   color: #fff;
 }
 
@@ -179,16 +202,16 @@
 /* Styles for sidebar items, links, and buttons */
 .SidebarItem {
   padding: 10px;
-  color: #000; /* Text color for light theme */
+  color: #000;
   transition: background-color 0.3s ease;
 }
 
 .Editor.dark .SidebarItem {
-  color: #fff; /* Text color for dark theme */
+  color: #fff;
 }
 
 .Editor.dark .SidebarItem:hover {
-  background-color: #222; /* Slight hover effect for dark theme */
+  background-color: #222;
 }
 
 /* Moon/Sun Toggle Button Style */
@@ -216,33 +239,15 @@
   color: #fff;
 }
 
-/* Styles for Markdown View */
-.MarkdownView {
-  width: 100%;
-  padding: 20px;
-  background-color: #fff;
-  color: #000; /* Text color for light theme */
-  font-size: 16px;
-  overflow-y: auto;
-  word-wrap: break-word;
-  font-family: 'Georgia', serif;
-}
-
-.Editor.dark .MarkdownView {
-  background-color: #000; /* Pure black for dark theme */
-  color: #fff; /* Text color for dark theme */
-  font-family: 'Georgia', serif;
-}
-
 /* General Markdown Styling */
 .markdown-content {
   font-family: 'Courier New', monospace;
   line-height: 1.5;
-  color: inherit; /* Inherit color for markdown content */
+  color: inherit;
 }
 
 /* Specific adjustments to Markdown elements in dark mode */
 .Editor.dark .markdown-content pre,
 .Editor.dark .markdown-content code {
-  background-color: #222; /* Darker background for code blocks in dark theme */
+  background-color: #222;
 }
