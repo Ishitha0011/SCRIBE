@@ -1,120 +1,403 @@
 /* Editor component styles */
 .Editor {
-    display: flex;
-    flex-direction: column;
-    height: 100%; /* Ensures the editor takes full screen height */
-    background-color: #fff;
-    width: 100%; /* Ensures the editor takes full screen width */
-  }
-  
-  .Tabs {
-    display: flex;
-    align-items: center;
-    justify-content: space-between; /* Space out left and right sections */
-    background-color: #f4f4f4;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-    flex-shrink: 0; /* Prevents the tabs area from shrinking */
-  }
-  
-  .TabsLeft {
-    display: flex;
-    align-items: center;
-    gap: 10px; /* Adds spacing between tabs */
-  }
-  
-  .TabsRight {
-    position: relative;
-    margin-left: auto; /* Pushes the switch to the far right */
-    display: flex;
-    align-items: center;
-    padding-right: 5px;
-  }
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #fff;
+  width: 100%;
+  transition: all 0.3s ease; /* Smooth transition for all changes */
+  color: #000; /* Default text color for light theme */
+}
 
-  .ciMWJP .st-sunMoonThemeToggleBtn .themeToggleInput {
-    width: 15px !important;
+/* Dark theme styles */
+.Editor.dark {
+  background-color: #2e2e2e;
+  color: #fff; /* Text color for dark theme */
+}
 
-   }
+.Tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+}
 
+.Editor.dark .Tabs {
+  background-color: #333;
+  border-bottom: 1px solid #444;
+}
 
-  .Tab {
-    background-color: #fff;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-right: 10px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    min-width: 80px; /* Ensures tab has a minimum width */
-  }
-  
-  .Tab.active {
-    background-color: #ffffff;
-    color: #000;
-    border : 0.1px solid #ddd;
-  }
-  
-  .CloseTab {
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    position: absolute;
-    top: 50%;
-    right: 5px;
-    transform: translateY(-50%);
-    color: #555;
-    font-size: 12px; /* Adjust close button size */
-  }
-  
-  .AddTab {
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 18px;
-    color: #555;
-    /* align-items: center; */
-    margin-top: 5px;
-  }
-  
-  /* Text area (editor canvas) */
-  .TextEditorCanvas {
-    flex-grow: 1; /* Takes the remaining space available */
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* Aligns the text editor at the top */
-    background-color: #fafafa;
-    overflow: auto; /* Allows scrolling if content overflows */
-  }
-  
-  .TextArea {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    height: 81vh;
-    padding: 20px;
-    border: 1px solid #ddd;
-    /* border-radius: 8px; */
-    font-size: 16px;
-    background-color: #fff;
-    resize: none;
-    outline: none;
-    color: #333;
-  }
-  
-  .TextArea:focus {
-    border-color: #d3d3ff;
-  }
-  
-  /* Footer area */
-  .Footer {
-    padding: 10px 20px;
-    background-color: #f4f4f4;
-    text-align: right;
-    border-top: 1px solid #ddd;
-    font-size: 14px;
-    color: #777;
-    flex-shrink: 0; /* Prevents the footer from shrinking */
-  }
-  
+.TabsLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.TabsRight {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.Tab {
+  background-color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-right: 10px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 80px;
+  transition: background-color 0.3s ease;
+  color: #000; /* Text color for light theme */
+}
+
+.Editor.dark .Tab {
+  background-color: #444;
+  color: #fff; /* Text color for dark theme */
+}
+
+.Tab.active {
+  background-color: #ffffff;
+  color: #000;
+}
+
+.Editor.dark .Tab.active {
+  background-color: #666;
+  color: #fff;
+}
+
+.CloseTab {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  color: #555;
+  font-size: 12px;
+}
+
+.AddTab {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #555;
+}
+
+/* Text editor canvas */
+.TextEditorCanvas {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background-color: #fafafa;
+  overflow: auto;
+}
+
+.Editor.dark .TextEditorCanvas {
+  background-color: #333;
+}
+
+.TextArea {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  height: 81vh;
+  padding: 20px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  background-color: #fff;
+  resize: none;
+  outline: none;
+  color: #000; /* Text color for light theme */
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.Editor.dark .TextArea {
+  background-color: #444;
+  color: #fff; /* Text color for dark theme */
+  border-color: #666;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.TextArea:focus {
+  border-color: #d3d3ff;
+}
+
+.Editor.dark .TextArea:focus {
+  border-color: #888;
+}
+
+.Footer {
+  padding: 10px 20px;
+  background-color: #f4f4f4;
+  text-align: right;
+  border-top: 1px solid #ddd;
+  font-size: 14px;
+  color: #777;
+  flex-shrink: 0;
+}
+
+.Editor.dark .Footer {
+  background-color: #444;
+  color: #aaa;
+}
+
+/* Sidebar styles (Left and Right Sidebar) */
+.Sidebar {
+  width: 250px; /* Adjust according to your sidebar width */
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  transition: background-color 0.3s ease;
+  z-index: 10;
+}
+
+.Editor.dark .Sidebar {
+  background-color: #333; /* Dark background for sidebar */
+  color: #fff;
+}
+
+.SidebarLeft {
+  left: 0;
+}
+
+.SidebarRight {
+  right: 0;
+}
+
+/* Styles for sidebar items, links, and buttons */
+.SidebarItem {
+  padding: 10px;
+  color: #000; /* Text color for light theme */
+  transition: background-color 0.3s ease;
+}
+
+.Editor.dark .SidebarItem {
+  color: #fff; /* Text color for dark theme */
+}
+
+.Editor.dark .SidebarItem:hover {
+  background-color: #444; /* Hover effect in dark theme */
+}
+
+/* Moon/Sun Toggle Button Style */
+.ThemeToggle {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 18px;
+}
+
+.Editor.dark .ThemeToggle {
+  color: #fff;
+}
+
+.MarkdownButton {
+  background-color: transparent;
+  border: none;
+  color: #555;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.Editor.dark .MarkdownButton {
+  color: #fff;
+}
+
+/* Styles for Markdown View */
+.MarkdownView {
+  width: 100%;
+  padding: 20px;
+  background-color: #fff;
+  color: #000; /* Text color for light theme */
+  font-size: 16px;
+  overflow-y: auto;
+  word-wrap: break-word;
+  font-family: 'Georgia', serif;
+}
+
+.Editor.dark .MarkdownView {
+  background-color: #333;
+  color: #fff; /* Text color for dark theme */
+  font-family: 'Georgia', serif;
+}
+
+.MarkdownView h1,
+.MarkdownView h2,
+.MarkdownView h3,
+.MarkdownView h4,
+.MarkdownView h5,
+.MarkdownView h6 {
+  color: inherit; /* inherit color for headings (black in light, white in dark) */
+  font-weight: bold;
+}
+
+.MarkdownView p {
+  margin-bottom: 10px;
+}
+
+.MarkdownView a {
+  color: inherit; /* Links inherit the text color */
+  text-decoration: none;
+}
+
+.MarkdownView a:hover {
+  text-decoration: underline;
+}
+
+.MarkdownView pre,
+.MarkdownView code {
+  background-color: #f4f4f4;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.Editor.dark .MarkdownView pre,
+.Editor.dark .MarkdownView code {
+  background-color: #333;
+}
+
+/* General Markdown Styling */
+.markdown-content {
+  font-family: 'Courier New', monospace;
+  line-height: 1.5;
+  color: inherit; /* Inherit color for markdown content */
+}
+
+/* Headings */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  font-family: 'Arial', sans-serif;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: inherit; /* Headings inherit the text color */
+}
+
+/* Specific Heading Sizes */
+.markdown-content h1 {
+  font-size: 2rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.75rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.5rem;
+}
+
+.markdown-content h4 {
+  font-size: 1.25rem;
+}
+
+.markdown-content h5 {
+  font-size: 1rem;
+}
+
+.markdown-content h6 {
+  font-size: 0.875rem;
+}
+
+/* Paragraphs */
+.markdown-content p {
+  margin-bottom: 15px;
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin-left: 20px;
+  padding-left: 10px;
+}
+
+.markdown-content ul li,
+.markdown-content ol li {
+  margin-bottom: 10px;
+}
+
+/* Links */
+.markdown-content a {
+  color: inherit; /* Links inherit the text color */
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+/* Code blocks */
+.markdown-content pre {
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+
+.markdown-content code {
+  background-color: #f4f4f4;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  border-left: 4px solid #ddd;
+  padding-left: 15px;
+  color: inherit; /* Text color for blockquote */
+  font-style: italic;
+  margin: 10px 0;
+}
+
+/* Horizontal Rule */
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid #ddd;
+  margin: 20px 0;
+}
+
+/* Images */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+.markdown-content table,
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid #ddd;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 10px;
+  text-align: left;
+}
+
+.markdown-content th {
+  background-color: #f4f4f4;
+}

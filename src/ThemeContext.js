@@ -4,31 +4,30 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'light';
+    return localStorage.getItem('theme') || 'light'; // Default theme is light
   });
 
   useEffect(() => {
-    localStorage.setItem('theme', theme);
+    localStorage.setItem('theme', theme);  // Save theme to localStorage
+
     // Apply theme-specific CSS variables
     if (theme === 'dark') {
-      document.documentElement.style.setProperty('--sidebar-bg-color', '#333');
-      document.documentElement.style.setProperty('--editor-bg-color', '#222');
-      document.documentElement.style.setProperty('--editor-text-color', '#fff');
-      document.documentElement.style.setProperty('--textarea-bg-color', '#444');
-      document.documentElement.style.setProperty('--textarea-text-color', '#fff');
-      // Add more variables for dark theme
+      document.documentElement.style.setProperty('--sidebar-bg-color', '#333');  // Dark sidebar background
+      document.documentElement.style.setProperty('--editor-bg-color', '#222');  // Dark editor background
+      document.documentElement.style.setProperty('--editor-text-color', '#fff');  // White text for dark theme
+      document.documentElement.style.setProperty('--textarea-bg-color', '#444');  // Dark textarea background
+      document.documentElement.style.setProperty('--textarea-text-color', '#fff');  // White text for textarea in dark theme
     } else {
-      document.documentElement.style.setProperty('--sidebar-bg-color', '#f0f0f0');
-      document.documentElement.style.setProperty('--editor-bg-color', '#fff');
-      document.documentElement.style.setProperty('--editor-text-color', '#000');
-      document.documentElement.style.setProperty('--textarea-bg-color', '#fff');
-      document.documentElement.style.setProperty('--textarea-text-color', '#000');
-      // Reset other variables for light theme
+      document.documentElement.style.setProperty('--sidebar-bg-color', '#f9f9f9');  // Light sidebar background
+      document.documentElement.style.setProperty('--editor-bg-color', '#fff');  // Light editor background
+      document.documentElement.style.setProperty('--editor-text-color', '#000');  // Black text for light theme
+      document.documentElement.style.setProperty('--textarea-bg-color', '#fff');  // Light textarea background
+      document.documentElement.style.setProperty('--textarea-text-color', '#000');  // Black text for textarea in light theme
     }
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));  // Toggle theme
   };
 
   return (

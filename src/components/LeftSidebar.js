@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   Settings,
@@ -28,6 +28,26 @@ const LeftSidebar = () => {
   const [activeItem, setActiveItem] = useState(null);
   const [menuVisible, setMenuVisible] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false); // New state for collapse
+  const [editMode, setEditMode] = useState(null);  // Manage which item is being edited
+  const [newName, setNewName] = useState('');  // Store the new name for editing
+
+  // Reference for the menu container
+  const menuRef = useRef(null);
+
+  // Close menu if click happens outside the menu
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuVisible(null); // Close menu if click is outside
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside); // Cleanup on component unmount
+    };
+  }, []);
 
   // Add a new file or folder
   const handleAdd = (type) => {
@@ -62,6 +82,8 @@ const LeftSidebar = () => {
       });
 
     setStructure(editItem(structure));
+    setEditMode(null); // Exit edit mode
+    setNewName(''); // Reset the newName state
   };
 
   // Render the folder and file structure
@@ -73,7 +95,21 @@ const LeftSidebar = () => {
           onClick={() => setActiveItem(item.id)}
         >
           {item.type === 'folder' ? <Folder size={16} /> : <FileText size={16} />}
-          <span>{item.name}</span>
+          
+          {/* Editable span */}
+          {editMode === item.id ? (
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onBlur={() => handleEdit(item.id, newName)}  // Save when the input loses focus
+              autoFocus
+              className="editable-name"
+            />
+          ) : (
+            <span>{item.name}</span>
+          )}
+
           <div className="TreeNodeActions">
             <button
               className="IconButton"
@@ -85,13 +121,12 @@ const LeftSidebar = () => {
               <MoreVertical size={16} />
             </button>
             {menuVisible === item.id && (
-              <div className="DropdownMenu">
+              <div ref={menuRef} className="DropdownMenu">
                 <button
                   className="DropdownItem"
                   onClick={() => {
-                    const newName = prompt('Rename to:', item.name);
-                    if (newName) handleEdit(item.id, newName);
-                    setMenuVisible(null); // Close menu
+                    setEditMode(item.id);  // Enter edit mode
+                    setNewName(item.name);  // Pre-fill the input with the current name
                   }}
                 >
                   <Edit size={14} /> Rename

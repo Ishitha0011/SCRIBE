@@ -3,20 +3,33 @@
   overflow: hidden;
   display: flex;
   min-height: 100vh;
-  background-color: #f9f9f9;
+  background-color: var(--editor-bg-color);  /* Use the CSS variable for background */
+  color: var(--editor-text-color);  /* Use the CSS variable for text color */
 }
 
 /* Flexbox layout for sidebars and the main editor */
 .LeftSidebar {
   width: 250px;
+  background-color: var(--sidebar-bg-color);  /* Sidebar background color */
+  transition: background-color 0.3s ease;
 }
 
 .RightSidebar {
   width: 250px;
+  background-color: var(--sidebar-bg-color);  /* Sidebar background color */
+  transition: background-color 0.3s ease;
 }
 
 .Editor {
   flex: 1;
   display: flex;
   flex-direction: column;
+  background-color: var(--editor-bg-color);  /* Main editor background color */
+  color: var(--editor-text-color);  /* Text color for the editor */
+}
+
+/* Optional: Specific styles for textarea */
+.textarea {
+  background-color: var(--textarea-bg-color);  /* Textarea background color */
+  color: var(--textarea-text-color);  /* Text color for textarea */
 }

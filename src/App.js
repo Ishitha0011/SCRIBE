@@ -3,14 +3,17 @@ import './App.css';
 import LeftSidebar from './components/LeftSidebar';
 import Editor from './components/Editor'; 
 import RightSidebar from './components/RightSidebar';
+import { ThemeProvider } from './ThemeContext'; // Import ThemeProvider
 
 function App() {
   return (
-    <div className="App">
-      <LeftSidebar />
-      <Editor />
-      <RightSidebar />
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        <LeftSidebar />
+        <Editor />
+        <RightSidebar />
+      </div>
+    </ThemeProvider>
   );
 }
 

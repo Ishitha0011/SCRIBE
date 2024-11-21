@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
-import Switch from './ui/Switch'; // Import the Switch component
+import { Plus, X, Moon, Sun } from 'lucide-react'; // Importing original icons (Moon, Sun)
+import { marked } from 'marked'; // Corrected import for marked
 import '../css/Editor.css';
 
 const Editor = () => {
@@ -9,6 +9,8 @@ const Editor = () => {
   ]);
   const [activeTab, setActiveTab] = useState(1);
   const [charCount, setCharCount] = useState(0);
+  const [viewMarkdown, setViewMarkdown] = useState(false); // State for markdown view toggle
+  const [darkMode, setDarkMode] = useState(false); // State for dark mode toggle
 
   // Create a new untitled file
   const handleNewFile = () => {
@@ -48,8 +50,19 @@ const Editor = () => {
   // Get the active tab's content
   const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content || '';
 
+  // Toggle dark mode
+  const toggleDarkMode = () => setDarkMode((prevMode) => !prevMode);
+
+  // Toggle view markdown
+  const toggleViewMarkdown = () => setViewMarkdown((prevView) => !prevView);
+
+  // Render Markdown using the marked library
+  const renderMarkdown = marked(activeTabContent, {
+    breaks: true,  // Allows line breaks for markdown
+  });
+
   return (
-    <div className="Editor">
+    <div className={`Editor ${darkMode ? 'dark' : ''}`}>
       {/* Tabs */}
       <div className="Tabs">
         <div className="TabsLeft">
@@ -76,19 +89,38 @@ const Editor = () => {
           </button>
         </div>
         <div className="TabsRight">
-          {/* Switch Component */}
-          <Switch />
+          {/* Swap positions of buttons */}
+          <button className="MarkdownButton" onClick={toggleViewMarkdown}>
+            {viewMarkdown ? 'Edit Markdown' : 'View Markdown'}
+          </button>
+          {/* Moon/Sun icon for theme toggle */}
+          {darkMode ? (
+            <button className="ThemeToggle" onClick={toggleDarkMode}>
+              <Sun size={18} />
+            </button>
+          ) : (
+            <button className="ThemeToggle" onClick={toggleDarkMode}>
+              <Moon size={18} />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Text Editor Canvas */}
       <div className="TextEditorCanvas">
-        <textarea
-          value={activeTabContent}
-          onChange={handleContentChange}
-          placeholder="Start typing..."
-          className="TextArea"
-        />
+        {viewMarkdown ? (
+          <div
+            className="MarkdownView"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown }}
+          />
+        ) : (
+          <textarea
+            value={activeTabContent}
+            onChange={handleContentChange}
+            placeholder="Start typing..."
+            className="TextArea"
+          />
+        )}
       </div>
 
       {/* Footer with character count */}
