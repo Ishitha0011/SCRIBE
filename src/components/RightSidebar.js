@@ -1,24 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'; // Icons
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import '../css/RightSidebar.css';
+import { useTheme } from '../ThemeContext';
 
 const RightSidebar = () => {
   const [selectedOption, setSelectedOption] = useState('AI');
   const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false); // Manage collapsed state
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Use theme from context
+  const { theme } = useTheme();
 
   const dropdownRef = useRef(null);
 
-  // Toggle dropdown open/close
   const toggleDropdown = () => setIsOpen((prev) => !prev);
 
-  // Handle selecting an option
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
     setIsOpen(false);
   };
 
-  // Close dropdown if clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -32,11 +33,10 @@ const RightSidebar = () => {
     };
   }, []);
 
-  // Toggle sidebar collapse
   const toggleCollapse = () => setIsCollapsed((prev) => !prev);
 
   return (
-    <div className={`RightSidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <div className={`RightSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="TopSection">
         <div className="Logo">{!isCollapsed && 'Scribe*'}</div>
         <div className="DropdownContainer" ref={dropdownRef}>
@@ -73,7 +73,6 @@ const RightSidebar = () => {
             />
           </div> 
         )}
-        {/* Add other options' content as needed */}
       </div>
 
       {/* Collapsible icon at the bottom */}

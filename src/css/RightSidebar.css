@@ -2,12 +2,13 @@
 .RightSidebar {
   width: 250px;
   height: 100vh;
-  background-color: #f9f9f9;
+  background-color: var(--sidebar-bg-color);
+  color: var(--editor-text-color);
   border-left: 1px solid #ddd;
   padding: 10px 20px;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 .RightSidebar.collapsed {
@@ -15,159 +16,208 @@
   padding: 5px 5px;
 }
 
-  /* Top section with logo and dropdown */
-  .TopSection {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
+.RightSidebar.dark {
+  background-color: var(--sidebar-bg-color);
+  color: var(--editor-text-color);
+}
 
-  .DynamicContent {
-    flex-grow: 1; /* Push content to take up remaining space */
-    display: flex;
-    flex-direction: column;
-  }
+/* Top section with logo and dropdown */
+.TopSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
 
-  
-  .Logo {
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-    letter-spacing: 0.5px;
-    font-family: 'Arial', sans-serif;
-    transition: opacity 0.3s ease;
-  }
-  
-  .RightSidebar.collapsed .Logo {
-    opacity: 0; 
-    visibility: hidden;
-  }
-  
-  /* Dropdown container for custom dropdown */
-  .DropdownContainer {
-    display: flex;
-    align-items: center;
-    position: relative;
-  }
-  
-  /* Custom dropdown styling */
-  .SelectDropdown {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    padding: 10px 10px;
-    font-size: 16px;
-    color: #333;
-    cursor: pointer;
-    width: 100px;
-    transition: background-color 0.3s ease;
-  }
+.DynamicContent {
+  flex-grow: 1; /* Push content to take up remaining space */
+  display: flex;
+  flex-direction: column;
+}
 
-  .RightSidebar.collapsed .SelectDropdown {
-    display: none; /* Hide dropdown when collapsed */
-  }
-  
-  .SelectDropdown:hover {
-    background-color: #e0e0e0; /* Slightly darker on hover */
-  }
-  
-  .SelectDropdown span {
-    font-weight: 600;
-  }
-  
-  /* Dropdown indicator icon */
-  .DropdownIcon {
-    color: #777;
-    transition: transform 0.3s ease; /* Smooth transition for rotation */
-  }
-  
-  /* Rotate dropdown icon when open */
-  .DropdownIcon.open {
-    transform: rotate(180deg); /* Rotate icon when dropdown is open */
-  }
-  
-  /* Dropdown options list */
-  .DropdownList {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-  }
-  
-  /* Individual dropdown options */
-  .Option {
-    padding: 12px 20px;
-    font-size: 16px;
-    color: #333;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .Option:hover {
-    background-color: #f4f4f4; 
-    color: #bb44f0; 
-  }
-  
-  .Option:focus {
-    outline: none;
-    background-color: #d3d3ff; 
-  }
+/* Logo */
+.Logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--editor-text-color);
+  letter-spacing: 0.5px;
+  font-family: 'Arial', sans-serif;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
 
-  .CollapseIcon {
-    position: relative; 
-    bottom: 20px; 
-    left: 0px; 
-    width: 40px; 
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    border-radius: 50%; 
-    transition: background-color 0.3s ease, transform 0.3s ease;
-  }
-  
-  .CollapseIcon:hover {
-    background-color: #e0e0e0;
-  }
-  
-  /* Ask AI input container */
-  .AskAIContainer {
-    margin-top: auto; 
-    display: flex;
-    flex-direction: column;
-    gap: 10px; 
-    width: 90%; 
-    padding-bottom: 1.4rem;
-  }
+.RightSidebar.collapsed .Logo {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Dropdown container */
+.DropdownContainer {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* Custom dropdown */
+.SelectDropdown {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--textarea-bg-color);
+  color: var(--textarea-text-color);
+  border-radius: 12px;
+  border: 1px solid var(--editor-text-color);
+  padding: 10px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.RightSidebar.collapsed .SelectDropdown {
+  display: none;
+}
+
+.SelectDropdown:hover {
+  background-color: rgba(0, 0, 0, 0.05); /* Subtle hover effect */
+}
+
+/* Dropdown indicator */
+.DropdownIcon {
+  color: #777;
+  transition: transform 0.3s ease;
+}
+
+.DropdownIcon.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown options */
+.DropdownList {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: var(--textarea-bg-color);
+  color: var(--textarea-text-color);
+  border: 1px solid var(--editor-text-color);
+  border-radius: 6px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.Option {
+  padding: 12px 20px;
+  font-size: 16px;
+  color: var(--textarea-text-color);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.Option:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.RightSidebar.dark .Option:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.Option:focus {
+  outline: none;
+  background-color: #d3d3ff;
+}
+
+/* Collapse button */
+.CollapseIcon {
+  position: relative;
+  bottom: 20px;
+  left: 0px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.CollapseIcon:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Ask AI input container */
+.AskAIContainer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 90%;
+  padding-bottom: 1.4rem;
+}
 
 .AskAIInput {
-  width: 100%; 
-  padding: 12px 16px; 
-  border: 1px solid #ddd; 
-  border-radius: 8px; 
-  font-size: 14px; 
-  background-color: #ffffff; 
-  color: #333; 
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--editor-text-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: var(--textarea-bg-color);
+  color: var(--textarea-text-color);
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  outline: none; 
+  outline: none;
 }
 
 .AskAIInput:focus {
-  border-color: #bb44f0; /* Highlight border on focus */
-  box-shadow: 0px 0px 4px rgba(187, 68, 240, 0.5); /* Glow effect on focus */
+  border-color: #bb44f0;
+  box-shadow: 0px 0px 4px rgba(187, 68, 240, 0.5);
 }
 
 .AskAIInput::placeholder {
-  color: #aaa; /* Subtle placeholder color */
-  font-style: italic; /* Differentiates placeholder text */
+  color: #aaa;
+  font-style: italic;
+}
+
+/* Handle theme switching */
+.RightSidebar.dark {
+  background-color: var(--dark-sidebar-bg-color, #1a1a1a); /* Dark theme background */
+  color: var(--dark-sidebar-text-color, #fff); /* Dark theme text */
+  border-left: 1px solid var(--dark-border-color, #333); /* Dark theme border */
+}
+
+.RightSidebar.dark .Logo {
+  color: var(--dark-sidebar-text-color, #fff);
+}
+
+.RightSidebar.dark .SelectDropdown {
+  background-color: var(--dark-textarea-bg-color, #2a2a2a);
+  color: var(--dark-sidebar-text-color, #fff);
+  border-color: var(--dark-border-color, #333);
+}
+
+.RightSidebar.dark .DropdownIcon {
+  color: var(--dark-icon-color, #bbb);
+}
+
+.RightSidebar.dark .DropdownList {
+  background-color: var(--dark-textarea-bg-color, #2a2a2a);
+  color: var(--dark-sidebar-text-color, #fff);
+  border-color: var(--dark-border-color, #333);
+}
+
+.RightSidebar.dark .Option {
+  color: var(--dark-sidebar-text-color, #fff);
+}
+
+.RightSidebar.dark .AskAIInput {
+  background-color: var(--dark-textarea-bg-color, #2a2a2a);
+  color: var(--dark-sidebar-text-color, #fff);
+  border-color: var(--dark-border-color, #333);
+}
+
+.RightSidebar.dark .AskAIInput::placeholder {
+  color: var(--dark-placeholder-color, #888);
+}
+
+.RightSidebar.dark .CollapseIcon:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }

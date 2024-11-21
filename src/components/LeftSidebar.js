@@ -10,8 +10,9 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react'; // Import Chevron icons for collapsing
+} from 'lucide-react';
 import '../css/LeftSidebar.css';
+import { useTheme } from '../ThemeContext';
 
 const LeftSidebar = () => {
   const [structure, setStructure] = useState([
@@ -27,29 +28,29 @@ const LeftSidebar = () => {
   ]);
   const [activeItem, setActiveItem] = useState(null);
   const [menuVisible, setMenuVisible] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false); // New state for collapse
-  const [editMode, setEditMode] = useState(null);  // Manage which item is being edited
-  const [newName, setNewName] = useState('');  // Store the new name for editing
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [editMode, setEditMode] = useState(null);
+  const [newName, setNewName] = useState('');
 
-  // Reference for the menu container
+  // Use theme from context
+  const { theme } = useTheme();
+
   const menuRef = useRef(null);
 
-  // Close menu if click happens outside the menu
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuVisible(null); // Close menu if click is outside
+        setMenuVisible(null);
       }
     };
 
     document.addEventListener('click', handleClickOutside);
 
     return () => {
-      document.removeEventListener('click', handleClickOutside); // Cleanup on component unmount
+      document.removeEventListener('click', handleClickOutside);
     };
   }, []);
 
-  // Add a new file or folder
   const handleAdd = (type) => {
     const newItem = {
       id: Date.now(),
@@ -60,7 +61,6 @@ const LeftSidebar = () => {
     setStructure([...structure, newItem]);
   };
 
-  // Delete an item
   const handleDelete = (id) => {
     const deleteItem = (items) =>
       items.filter((item) => {
@@ -69,10 +69,9 @@ const LeftSidebar = () => {
       });
 
     setStructure(deleteItem(structure));
-    setMenuVisible(null); // Close menu after deletion
+    setMenuVisible(null);
   };
 
-  // Edit an item
   const handleEdit = (id, newName) => {
     const editItem = (items) =>
       items.map((item) => {
@@ -82,11 +81,10 @@ const LeftSidebar = () => {
       });
 
     setStructure(editItem(structure));
-    setEditMode(null); // Exit edit mode
-    setNewName(''); // Reset the newName state
+    setEditMode(null);
+    setNewName('');
   };
 
-  // Render the folder and file structure
   const renderTree = (items) =>
     items.map((item) => (
       <div key={item.id} className="TreeNode">
@@ -96,13 +94,12 @@ const LeftSidebar = () => {
         >
           {item.type === 'folder' ? <Folder size={16} /> : <FileText size={16} />}
           
-          {/* Editable span */}
           {editMode === item.id ? (
             <input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              onBlur={() => handleEdit(item.id, newName)}  // Save when the input loses focus
+              onBlur={() => handleEdit(item.id, newName)}
               autoFocus
               className="editable-name"
             />
@@ -125,8 +122,8 @@ const LeftSidebar = () => {
                 <button
                   className="DropdownItem"
                   onClick={() => {
-                    setEditMode(item.id);  // Enter edit mode
-                    setNewName(item.name);  // Pre-fill the input with the current name
+                    setEditMode(item.id);
+                    setNewName(item.name);
                   }}
                 >
                   <Edit size={14} /> Rename
@@ -148,7 +145,7 @@ const LeftSidebar = () => {
     ));
 
   return (
-    <div className={`LeftSidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <div className={`LeftSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="TopButtons">
         <button className="IconButton" title="Search">
           <Search size={18} />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, X, Moon, Sun } from 'lucide-react'; // Importing original icons (Moon, Sun)
-import { marked } from 'marked'; // Corrected import for marked
+import { Plus, X, Moon, Sun } from 'lucide-react';
+import { marked } from 'marked';
+import { useTheme } from '../ThemeContext'; // Import the useTheme hook
 import '../css/Editor.css';
 
 const Editor = () => {
@@ -9,8 +10,10 @@ const Editor = () => {
   ]);
   const [activeTab, setActiveTab] = useState(1);
   const [charCount, setCharCount] = useState(0);
-  const [viewMarkdown, setViewMarkdown] = useState(false); // State for markdown view toggle
-  const [darkMode, setDarkMode] = useState(false); // State for dark mode toggle
+  const [viewMarkdown, setViewMarkdown] = useState(false);
+  
+  // Replace darkMode state with theme from ThemeContext
+  const { theme, toggleTheme } = useTheme();
 
   // Create a new untitled file
   const handleNewFile = () => {
@@ -35,7 +38,7 @@ const Editor = () => {
       tab.id === activeTab ? { ...tab, content: e.target.value } : tab
     );
     setTabs(updatedTabs);
-    setCharCount(e.target.value.length); // Update character count
+    setCharCount(e.target.value.length);
   };
 
   // Close a tab
@@ -50,19 +53,16 @@ const Editor = () => {
   // Get the active tab's content
   const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content || '';
 
-  // Toggle dark mode
-  const toggleDarkMode = () => setDarkMode((prevMode) => !prevMode);
-
   // Toggle view markdown
   const toggleViewMarkdown = () => setViewMarkdown((prevView) => !prevView);
 
   // Render Markdown using the marked library
   const renderMarkdown = marked(activeTabContent, {
-    breaks: true,  // Allows line breaks for markdown
+    breaks: true,
   });
 
   return (
-    <div className={`Editor ${darkMode ? 'dark' : ''}`}>
+    <div className={`Editor ${theme === 'dark' ? 'dark' : ''}`}>
       {/* Tabs */}
       <div className="Tabs">
         <div className="TabsLeft">
@@ -89,20 +89,13 @@ const Editor = () => {
           </button>
         </div>
         <div className="TabsRight">
-          {/* Swap positions of buttons */}
           <button className="MarkdownButton" onClick={toggleViewMarkdown}>
             {viewMarkdown ? 'Edit Markdown' : 'View Markdown'}
           </button>
-          {/* Moon/Sun icon for theme toggle */}
-          {darkMode ? (
-            <button className="ThemeToggle" onClick={toggleDarkMode}>
-              <Sun size={18} />
-            </button>
-          ) : (
-            <button className="ThemeToggle" onClick={toggleDarkMode}>
-              <Moon size={18} />
-            </button>
-          )}
+          {/* Replace darkMode toggle with theme toggle */}
+          <button className="ThemeToggle" onClick={toggleTheme}>
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
         </div>
       </div>
 

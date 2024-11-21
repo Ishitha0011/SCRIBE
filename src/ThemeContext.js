@@ -10,6 +10,10 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('theme', theme);  // Save theme to localStorage
 
+    // Add theme class to the root HTML element for global styling
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+
     // Apply theme-specific CSS variables
     if (theme === 'dark') {
       document.documentElement.style.setProperty('--sidebar-bg-color', '#333');  // Dark sidebar background
