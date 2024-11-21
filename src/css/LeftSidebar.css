@@ -8,6 +8,7 @@
   padding: 10px;
   position: relative;
   transition: width 0.3s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .LeftSidebar.collapsed {
@@ -108,16 +109,31 @@
 /* Dropdown menu */
 .DropdownMenu {
   position: absolute;
-  top: 0;
-  left: calc(100% + 5px);
+  top: 100%; /* Display below the button */
+  left: 0;
   background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 5px;
   z-index: 10;
+  white-space: nowrap;
+  min-width: 120px; /* Ensure a minimum width for the dropdown */
+  transform: translateX(0%); /* Adjust to ensure it remains visible */
 }
 
+/* Adjust positioning if there's not enough space */
+.TreeNodeActions {
+  position: relative;
+}
+
+.TreeNodeActions .DropdownMenu {
+  right: 0;
+  left: auto; /* Ensure it aligns to the left edge if needed */
+  min-width: 120px; /* Set a minimum width for visibility */
+}
+
+/* Styles for dropdown items */
 .DropdownItem {
   display: flex;
   align-items: center;
