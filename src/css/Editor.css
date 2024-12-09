@@ -46,22 +46,22 @@
 }
 
 .Tab {
-  background-color: #fff;
+  background-color: #ffffff00;
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 16px;
-  margin-right: 10px;
+  padding-right: 25px;
   position: relative;
   display: flex;
   align-items: center;
   min-width: 80px;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
   color: #000;
 }
 
 .Editor.dark .Tab {
-  background-color: #222;
+  background-color: #22222200;
   color: #fff;
 }
 
@@ -81,18 +81,26 @@
   cursor: pointer;
   position: absolute;
   top: 50%;
-  right: 5px;
+  right: 2px; /* Adjust spacing to prevent overlap */
   transform: translateY(-50%);
-  color: #555;
-  font-size: 12px;
+  color: #ffffff;
+  font-size: 18px;
 }
 
+.CloseTab:hover{
+  color:rgb(255, 72, 72);
+}
+
+
 .AddTab {
+  position: relative;
+  top: .2rem;
   background-color: transparent;
   border: none;
   cursor: pointer;
   font-size: 18px;
   color: #555;
+  transition: color 0.3s ease;
 }
 
 /* Text editor canvas */

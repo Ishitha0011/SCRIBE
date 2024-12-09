@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Plus, X, Moon, Sun, Book, Pencil } from 'lucide-react'; // Import Book and Pencil icons
+import React, { useState, useEffect } from 'react';
+import { Plus, X, Moon, Sun, Book, Pencil } from 'lucide-react';
 import { marked } from 'marked';
-import { useTheme } from '../ThemeContext'; // Import the useTheme hook
+import { useTheme } from '../ThemeContext';
 import Switch from './ui/Switch';
 import '../css/Editor.css';
 
@@ -12,11 +12,15 @@ const Editor = () => {
   const [activeTab, setActiveTab] = useState(1);
   const [charCount, setCharCount] = useState(0);
   const [viewMarkdown, setViewMarkdown] = useState(false);
-  
-  // Replace darkMode state with theme from ThemeContext
+
   const { theme, toggleTheme } = useTheme();
 
-  // Create a new untitled file
+  useEffect(() => {
+    // Update character count when the active tab content changes
+    const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content || '';
+    setCharCount(activeTabContent.length);
+  }, [tabs, activeTab]);
+
   const handleNewFile = () => {
     const newTab = {
       id: Date.now(),
@@ -28,21 +32,17 @@ const Editor = () => {
     setActiveTab(newTab.id);
   };
 
-  // Switch to a tab
   const handleTabClick = (id) => {
     setActiveTab(id);
   };
 
-  // Handle content change
   const handleContentChange = (e) => {
     const updatedTabs = tabs.map((tab) =>
       tab.id === activeTab ? { ...tab, content: e.target.value } : tab
     );
     setTabs(updatedTabs);
-    setCharCount(e.target.value.length);
   };
 
-  // Close a tab
   const handleTabClose = (id) => {
     const remainingTabs = tabs.filter((tab) => tab.id !== id);
     setTabs(remainingTabs);
@@ -51,16 +51,11 @@ const Editor = () => {
     }
   };
 
-  // Get the active tab's content
-  const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content || '';
-
-  // Toggle view markdown
   const toggleViewMarkdown = () => setViewMarkdown((prevView) => !prevView);
 
-  // Render Markdown using the marked library
-  const renderMarkdown = marked(activeTabContent, {
-    breaks: true,
-  });
+  const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content || '';
+
+  const renderMarkdown = marked(activeTabContent, { breaks: true });
 
   return (
     <div className={`Editor ${theme === 'dark' ? 'dark' : ''}`}>
@@ -85,7 +80,11 @@ const Editor = () => {
               </button>
             </div>
           ))}
-          <button className="AddTab" onClick={handleNewFile}>
+          <button
+            className="AddTab"
+            onClick={handleNewFile}
+            style={{ color: theme === 'dark' ? '#fff' : '#555' }}
+          >
             <Plus size={18} />
           </button>
         </div>
@@ -93,11 +92,7 @@ const Editor = () => {
           <button className="MarkdownButton" onClick={toggleViewMarkdown}>
             {viewMarkdown ? <Pencil size={18} /> : <Book size={18} />}
           </button>
-          {/* Replace darkMode toggle with theme toggle */}
           <Switch />
-          {/* <button className="ThemeToggle" onClick={toggleTheme}>
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button> */}
         </div>
       </div>
 
@@ -120,7 +115,7 @@ const Editor = () => {
 
       {/* Footer with character count */}
       <div className="Footer">
-        <span>{charCount} Characters</span>
+        <span>{activeTabContent.length} Characters</span>
       </div>
     </div>
   );
