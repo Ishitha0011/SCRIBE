@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, X, Moon, Sun, Book, Pencil } from 'lucide-react'; // Import Book and Pencil icons
 import { marked } from 'marked';
 import { useTheme } from '../ThemeContext'; // Import the useTheme hook
+import Switch from './ui/Switch';
 import '../css/Editor.css';
 
 const Editor = () => {
@@ -93,9 +94,10 @@ const Editor = () => {
             {viewMarkdown ? <Pencil size={18} /> : <Book size={18} />}
           </button>
           {/* Replace darkMode toggle with theme toggle */}
-          <button className="ThemeToggle" onClick={toggleTheme}>
+          <Switch />
+          {/* <button className="ThemeToggle" onClick={toggleTheme}>
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
+          </button> */}
         </div>
       </div>
 

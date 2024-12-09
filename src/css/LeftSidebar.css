@@ -210,17 +210,23 @@
   transform: translateX(-50%); /* Center the button */
 }
 
+.LeftSidebar.collapsed .PlusButton {
+  top: 6rem; /* Position below the Settings icon when collapsed */
+  right: 50%; /* Center align horizontally */
+  transform: translateX(50%); /* Ensure proper alignment */
+}
+
 /* Position the Plus button at the top-right corner */
 .PlusButton {
   position: absolute;
-  top: 10px; /* Adjust based on spacing */
-  right: 10px; /* Move it to the right corner */
+  top: 10px; /* Default position when expanded */
+  right: 10px; /* Adjust based on spacing */
   background-color: transparent;
   border: none;
   padding: 8px;
   cursor: pointer;
   color: var(--icon-color, #555);
-  transition: opacity 0.3s ease;
+  transition: top 0.3s ease, opacity 0.3s ease;
   z-index: 1; /* Ensure the button is on top */
 }
 
@@ -231,3 +237,5 @@
 .PlusButton:hover {
   opacity: 0.7;
 }
+
+

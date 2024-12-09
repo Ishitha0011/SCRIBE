@@ -1,13 +1,20 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useTheme } from '../ThemeContext';
+import { useTheme } from '../../ThemeContext';
 
 const Switch = () => {
+  const { theme, toggleTheme } = useTheme();
+
   return (
-    <StyledWrapper>
-      <label htmlFor="themeToggle" className="themeToggle st-sunMoonThemeToggleBtn" type="checkbox">
-        <input type="checkbox" id="themeToggle" className="themeToggleInput" />
-        <svg width={18} height={18} viewBox="0 0 20 20" fill="currentColor" stroke="none">
+    <StyledWrapper theme={theme}>
+      <label className="themeToggle st-sunMoonThemeToggleBtn">
+        <input
+          type="checkbox"
+          className="themeToggleInput"
+          checked={theme === 'dark'}
+          onChange={toggleTheme} // Toggle theme on change
+        />
+        <svg width={18} height={18} viewBox="0 0 20 20" stroke="none">
           <mask id="moon-mask">
             <rect x={0} y={0} width={20} height={20} fill="white" />
             <circle cx={11} cy={3} r={8} fill="black" />
@@ -25,16 +32,12 @@ const Switch = () => {
       </label>
     </StyledWrapper>
   );
-}
+};
 
 const StyledWrapper = styled.div`
-  /* a clone from joshwcomeau.com 
-   * but this version runs on pure CSS
-   */
-
   .themeToggle {
     color: #000000;
-    width: 3em;
+    width: 3rem;
   }
 
   .st-sunMoonThemeToggleBtn {
@@ -51,10 +54,12 @@ const StyledWrapper = styled.div`
   .st-sunMoonThemeToggleBtn svg {
     position: absolute;
     left: 0;
+    top: -0.4rem;
     width: 100%;
     height: 100%;
-    transition: transform 0.4s ease;
+    transition: transform 0.4s ease, fill 0.2s ease; /* Add fill transition */
     transform: rotate(40deg);
+    fill: ${({ theme }) => (theme === 'dark' ? '#ffffff' : '#000000')}; /* Dynamic fill */
   }
 
   .st-sunMoonThemeToggleBtn svg .sunMoon {
@@ -109,6 +114,7 @@ const StyledWrapper = styled.div`
     100% {
       transform: scale(1);
     }
-  }`;
+  }
+`;
 
 export default Switch;
