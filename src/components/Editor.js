@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Moon, Sun, Book, Pencil } from 'lucide-react';
+import { Plus, X, Book, Pencil } from 'lucide-react';
 import { marked } from 'marked';
 import { useTheme } from '../ThemeContext';
 import Switch from './ui/Switch';
@@ -13,7 +13,7 @@ const Editor = () => {
   const [charCount, setCharCount] = useState(0);
   const [viewMarkdown, setViewMarkdown] = useState(false);
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Update character count when the active tab content changes

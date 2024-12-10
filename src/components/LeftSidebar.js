@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import '../css/LeftSidebar.css';
 import { useTheme } from '../ThemeContext';
+import CreateItemDialog from './CreateItemDialog';
 
 const LeftSidebar = () => {
   const [structure, setStructure] = useState([
@@ -26,6 +27,7 @@ const LeftSidebar = () => {
       ],
     },
   ]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
   const [menuVisible, setMenuVisible] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -51,15 +53,15 @@ const LeftSidebar = () => {
     };
   }, []);
 
-  const handleAdd = (type) => {
-    const newItem = {
-      id: Date.now(),
-      name: type === 'folder' ? 'New Folder' : 'New File',
-      type,
-      children: type === 'folder' ? [] : undefined,
-    };
-    setStructure([...structure, newItem]);
-  };
+  // const handleAdd = (type) => {
+  //   const newItem = {
+  //     id: Date.now(),
+  //     name: type === 'folder' ? 'New Folder' : 'New File',
+  //     type,
+  //     children: type === 'folder' ? [] : undefined,
+  //   };
+  //   setStructure([...structure, newItem]);
+  // };
 
   const handleDelete = (id) => {
     const deleteItem = (items) =>
@@ -83,6 +85,16 @@ const LeftSidebar = () => {
     setStructure(editItem(structure));
     setEditMode(null);
     setNewName('');
+  };
+  
+  const handleAddItem = (type, name) => {
+    const newItem = {
+      id: Date.now(),
+      name,
+      type,
+      children: type === 'folder' ? [] : undefined,
+    };
+    setStructure([...structure, newItem]);
   };
 
   const renderTree = (items) =>
@@ -159,7 +171,7 @@ const LeftSidebar = () => {
       <button
         className="IconButton PlusButton"
         title="Add"
-        onClick={() => handleAdd('folder')}
+        onClick={() => setIsDialogOpen(true)}
       >
         <Plus size={18} />
       </button>
@@ -174,6 +186,13 @@ const LeftSidebar = () => {
       >
         {isCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
       </button>
+
+      {isDialogOpen && (
+        <CreateItemDialog
+          onClose={() => setIsDialogOpen(false)}
+          onCreate={handleAddItem}
+        />
+      )}
     </div>
   );
 };
