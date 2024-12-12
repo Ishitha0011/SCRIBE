@@ -81,15 +81,20 @@
   cursor: pointer;
   position: absolute;
   top: 50%;
-  right: 2px; /* Adjust spacing to prevent overlap */
+  right: 2px; 
   transform: translateY(-50%);
-  color: #ffffff;
+  color: #555; 
   font-size: 18px;
 }
 
-.CloseTab:hover{
-  color:rgb(255, 72, 72);
+.CloseTab:hover {
+  color: rgb(255, 72, 72);
 }
+
+.Editor.dark .CloseTab {
+  color: #ffffff; 
+}
+
 
 
 .AddTab {
