@@ -7,18 +7,18 @@ const RightSidebar = () => {
   const [selectedOption, setSelectedOption] = useState('AI');
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [userInput, setUserInput] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
 
-  // Use theme from context
   const { theme } = useTheme();
-
   const dropdownRef = useRef(null);
 
   const toggleDropdown = () => setIsOpen((prev) => !prev);
-
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
     setIsOpen(false);
   };
+  const toggleCollapse = () => setIsCollapsed((prev) => !prev);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -26,14 +26,23 @@ const RightSidebar = () => {
         setIsOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleCollapse = () => setIsCollapsed((prev) => !prev);
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: userInput }),
+      });
+      const data = await response.json();
+      setAiResponse(data.response);
+    } catch (error) {
+      console.error('Error fetching AI response:', error);
+    }
+  };
 
   return (
     <div className={`RightSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}>
@@ -48,15 +57,9 @@ const RightSidebar = () => {
           )}
           {isOpen && !isCollapsed && (
             <div className="DropdownList">
-              <div className="Option" onClick={() => handleOptionSelect('AI')}>
-                AI
-              </div>
-              <div className="Option" onClick={() => handleOptionSelect('Notes')}>
-                Notes
-              </div>
-              <div className="Option" onClick={() => handleOptionSelect('Labs')}>
-                Labs
-              </div>
+              <div className="Option" onClick={() => handleOptionSelect('AI')}>AI</div>
+              <div className="Option" onClick={() => handleOptionSelect('Notes')}>Notes</div>
+              <div className="Option" onClick={() => handleOptionSelect('Labs')}>Labs</div>
             </div>
           )}
         </div>
@@ -70,8 +73,14 @@ const RightSidebar = () => {
               type="text"
               placeholder="Ask Scribe..."
               className="AskAIInput"
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
             />
-          </div> 
+            <button onClick={handleSubmit} className="SubmitButton">
+              Submit
+            </button>
+            {aiResponse && <p className="AIResponse">{aiResponse}</p>}
+          </div>
         )}
       </div>
 
