@@ -210,6 +210,16 @@
   transform: translateX(-50%); /* Center the button */
 }
 
+/* Add this for light theme visibility */
+.LeftSidebar .CollapseButton {
+  color: #555; /* Darker color for light theme */
+}
+
+/* Ensure it remains white in dark theme */
+.LeftSidebar.dark .CollapseButton {
+  color: white;
+}
+
 .LeftSidebar.collapsed .PlusButton {
   top: 6rem; /* Position below the Settings icon when collapsed */
   right: 50%; /* Center align horizontally */
