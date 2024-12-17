@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import AskAI from './AskAI';
 import '../css/RightSidebar.css';
 import { useTheme } from '../ThemeContext';
 
@@ -7,8 +8,6 @@ const RightSidebar = () => {
   const [selectedOption, setSelectedOption] = useState('AI');
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [userInput, setUserInput] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
 
   const { theme } = useTheme();
   const dropdownRef = useRef(null);
@@ -29,20 +28,6 @@ const RightSidebar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleSubmit = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/ask-ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: userInput }),
-      });
-      const data = await response.json();
-      setAiResponse(data.response);
-    } catch (error) {
-      console.error('Error fetching AI response:', error);
-    }
-  };
 
   return (
     <div className={`RightSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}>
@@ -67,21 +52,7 @@ const RightSidebar = () => {
 
       {/* Dynamic Content Based on Selected Option */}
       <div className="DynamicContent">
-        {selectedOption === 'AI' && !isCollapsed && (
-          <div className="AskAIContainer">
-            <input
-              type="text"
-              placeholder="Ask Scribe..."
-              className="AskAIInput"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-            />
-            <button onClick={handleSubmit} className="SubmitButton">
-              Submit
-            </button>
-            {aiResponse && <p className="AIResponse">{aiResponse}</p>}
-          </div>
-        )}
+        {selectedOption === 'AI' && !isCollapsed && <AskAI />}
       </div>
 
       {/* Collapsible icon at the bottom */}
