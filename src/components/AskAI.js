@@ -12,7 +12,7 @@ const AskAI = () => {
     // Add user message to chat
     setMessages((prevMessages) => [
       ...prevMessages,
-      { text: userInput, sender: 'user' },
+      { text: userInput, sender: 'user', name: 'Username' },
     ]);
 
     try {
@@ -26,8 +26,7 @@ const AskAI = () => {
       // Add AI response to chat
       setMessages((prevMessages) => [
         ...prevMessages,
-        { text: userInput, sender: 'user' },
-        { text: data.response, sender: 'ai' },
+        { text: data.response, sender: 'ai', name: 'Scribe AI' },
       ]);
       setUserInput('');
     } catch (error) {
@@ -41,6 +40,7 @@ const AskAI = () => {
       <div className="ChatDisplayContainer">
         {messages.map((message, index) => (
           <div key={index} className={`Message ${message.sender}`}>
+            <div className="Sender">{message.name}</div>
             <p>{message.text}</p>
           </div>
         ))}

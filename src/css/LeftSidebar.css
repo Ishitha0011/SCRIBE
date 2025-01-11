@@ -308,7 +308,7 @@
 /* Resizer Styles */
 .Resizer {
   width: 5px;
-  background-color: #ddd;
+  background-color: #dddddd00;
   cursor: ew-resize;
   position: absolute;
   top: 0;

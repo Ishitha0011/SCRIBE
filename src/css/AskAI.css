@@ -13,19 +13,28 @@
 
 .Message {
   margin: 10px 0;
-  padding: 8px;
-  border-radius: 5px;
-  max-width: 80%;
+  padding: 0;
+  max-width: 100%;
+  font-size: 14px;
+  text-align: left;
 }
 
-.Message.user {
-  background-color: #f1f1f1;
-  align-self: flex-end;
+.Message .Sender {
+  font-weight: bold;
+  margin-bottom: 2px;
 }
 
-.Message.ai {
-  background-color: #e0e0e0;
-  align-self: flex-start;
+.Message.user .Sender {
+  color: var(--user-text-color, #000);
+}
+
+.Message.ai .Sender {
+  color: var(--ai-text-color, #555);
+}
+
+.Message.user p,
+.Message.ai p {
+  margin: 0;
 }
 
 .ChatInputContainer {
@@ -36,8 +45,8 @@
 
 .AskAIInput {
   width: 100%;
-  height: 100px; /* Increased height */
-  padding: 12px 40px 12px 12px; /* Added more padding on the right to make space for the button */
+  height: 60px; /* Adjusted height */
+  padding: 12px 50px 12px 12px; /* Adjusted padding for better button placement */
   font-size: 14px;
   border-radius: 12px;
   background-color: var(--textarea-bg-color);
@@ -50,15 +59,21 @@
 
 .SubmitButton {
   position: absolute;
-  right: 10px;
-  top: 70%;
+  right: 15px;
+  top: 50%;
   transform: translateY(-50%);
+  background-color: #007bff; /* Button background color */
+  border: none;
+  border-radius: 50%;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .SubmitButton svg {
-  
   height: 18px;
-  width: 22px;
-  color: #000000;
-  font-size: 10px;
+  width: 18px;
+  color: #ffffff; /* Icon color */
 }
