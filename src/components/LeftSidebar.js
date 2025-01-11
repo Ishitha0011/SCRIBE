@@ -78,10 +78,11 @@ const LeftSidebar = () => {
       document.body.style.userSelect = 'none'; // Disable text selection
     };
 
-    resizerRef.current.addEventListener('mousedown', handleMouseDown);
+    const resizer = resizerRef.current;
+    resizer.addEventListener('mousedown', handleMouseDown);
 
     return () => {
-      resizerRef.current.removeEventListener('mousedown', handleMouseDown);
+      resizer.removeEventListener('mousedown', handleMouseDown);
     };
   }, [isResizing]);
 
