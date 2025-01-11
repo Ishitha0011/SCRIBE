@@ -3,13 +3,12 @@ import {
   Search,
   Settings,
   Plus,
-  Folder,
-  FileText,
   MoreVertical,
   Edit,
   Trash2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import '../css/LeftSidebar.css';
 import { useTheme } from '../ThemeContext';
@@ -24,11 +23,16 @@ const LeftSidebar = () => {
   const [editMode, setEditMode] = useState(null);
   const [newName, setNewName] = useState('');
   const [directoryChosen, setDirectoryChosen] = useState(false);
+  const [collapsedFolders, setCollapsedFolders] = useState({});
+  const [sidebarWidth, setSidebarWidth] = useState(250);
+  const [isResizing, setIsResizing] = useState(false);
 
   // Use theme from context
   const { theme } = useTheme();
 
   const menuRef = useRef(null);
+  const sidebarRef = useRef(null);
+  const resizerRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -43,6 +47,43 @@ const LeftSidebar = () => {
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isResizing) {
+        const newWidth = e.clientX - sidebarRef.current.getBoundingClientRect().left;
+        if (newWidth > 50 && newWidth < 500) {
+          setSidebarWidth(newWidth);
+          if (newWidth <= 100) {
+            setIsCollapsed(true);
+          } else {
+            setIsCollapsed(false);
+          }
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = ''; // Re-enable text selection
+    };
+
+    const handleMouseDown = (e) => {
+      e.preventDefault(); // Prevent text selection
+      setIsResizing(true);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = 'none'; // Disable text selection
+    };
+
+    resizerRef.current.addEventListener('mousedown', handleMouseDown);
+
+    return () => {
+      resizerRef.current.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, [isResizing]);
 
   const openDirectory = async () => {
     try {
@@ -110,6 +151,13 @@ const LeftSidebar = () => {
     setStructure([...structure, newItem]);
   };
 
+  const toggleFolder = (id) => {
+    setCollapsedFolders((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   const renderTree = (items) =>
     items.map((item) => (
       <div key={item.id} className="TreeNode">
@@ -117,8 +165,20 @@ const LeftSidebar = () => {
           className={`TreeNodeItem ${activeItem === item.id ? 'active' : ''}`}
           onClick={() => setActiveItem(item.id)}
         >
-          {item.type === 'folder' ? <Folder size={16} /> : <FileText size={16} />}
-          
+          {item.type === 'folder' ? (
+            <>
+              <button
+                className="IconButton"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFolder(item.id);
+                }}
+              >
+                {collapsedFolders[item.id] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </>
+          ) : null}
+
           {editMode === item.id ? (
             <input
               type="text"
@@ -129,7 +189,7 @@ const LeftSidebar = () => {
               className="editable-name"
             />
           ) : (
-            <span>{item.name}</span>
+            <span className="TreeNodeName">{item.name}</span>
           )}
 
           <div className="TreeNodeActions">
@@ -163,14 +223,18 @@ const LeftSidebar = () => {
             )}
           </div>
         </div>
-        {item.type === 'folder' && item.children && (
+        {item.type === 'folder' && item.children && !collapsedFolders[item.id] && (
           <div className="TreeNodeChildren">{renderTree(item.children)}</div>
         )}
       </div>
     ));
 
   return (
-    <div className={`LeftSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}>
+    <div
+      className={`LeftSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}
+      style={{ width: isCollapsed ? '50px' : `${sidebarWidth}px` }}
+      ref={sidebarRef}
+    >
       <div className="TopButtons">
         <button className="IconButton" title="Search">
           <Search size={18} />
@@ -178,11 +242,8 @@ const LeftSidebar = () => {
         <button className="IconButton" title="Settings">
           <Settings size={18} />
         </button>
-        <button className="IconButton" title="Open Directory" onClick={openDirectory}>
-          <Folder size={18} />
-        </button>
       </div>
-      
+
       {/* Plus Button */}
       <button
         className="IconButton PlusButton"
@@ -193,13 +254,14 @@ const LeftSidebar = () => {
       </button>
 
       {/* File Tree */}
-      {!isCollapsed && directoryChosen && <div className="FileTree">{renderTree(structure)}</div>}
-      {!directoryChosen && (
-        <div className="NoDirectory">
-          <button className="OpenDirectoryButton" onClick={openDirectory}>
-            Open Directory
-          </button>
-        </div>
+      {!isCollapsed && directoryChosen && structure.length > 0 ? (
+        <div className="FileTree">{renderTree(structure)}</div>
+      ) : (
+        !isCollapsed && (
+          <div className="NoDirectory">
+            <p className="EmptyMessage">Wow, such empty. Start by selecting the files.</p>
+          </div>
+        )
       )}
 
       <button
@@ -216,6 +278,18 @@ const LeftSidebar = () => {
           onCreate={handleAddItem}
         />
       )}
+
+      {/* Workspace Selection Section */}
+      {!isCollapsed && (
+        <div className="WorkspaceSelection">
+          <button className="OpenDirectoryButton" onClick={openDirectory}>
+            {directoryChosen ? 'Switch Workspaces' : 'Open Directory'}
+          </button>
+        </div>
+      )}
+
+      {/* Resizer */}
+      <div className={`Resizer ${isResizing ? 'active' : ''}`} ref={resizerRef} />
     </div>
   );
 };

@@ -5,29 +5,63 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
+    <meta name="description" content="Web site created using create-react-app" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
     <title>Scribe*</title>
+
+    <!-- Default Theme Variables -->
+    <style>
+      :root {
+        --scrollbar-track-color: #ffffff00;
+        --scrollbar-thumb-color: #aaa;
+        --scrollbar-thumb-hover-color: #8b5cf6;
+
+        --dark-scrollbar-track-color: #1a1a1a00;
+        --dark-scrollbar-thumb-color: #555;
+        --dark-scrollbar-thumb-hover-color: #8a5cf5;
+      }
+
+      *::-webkit-scrollbar {
+        width: 8px; /* Thin scrollbar width */
+        height: 8px; /* Horizontal scrollbar height */
+      }
+
+      *::-webkit-scrollbar-track {
+        background: var(--scrollbar-track-color); /* Track color */
+        border-radius: 8px; /* Fully rounded corners */
+      }
+
+      *::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb-color); /* Scrollbar color */
+        border-radius: 8px; /* Fully rounded corners */
+        transition: background-color 0.3s ease; /* Smooth hover effect */
+      }
+
+      *::-webkit-scrollbar-thumb:hover {
+        background-color: var(--scrollbar-thumb-hover-color); /* Purple hover color */
+      }
+
+      /* Dark Theme Support */
+      body.dark {
+        --scrollbar-track-color: var(--dark-scrollbar-track-color);
+        --scrollbar-thumb-color: var(--dark-scrollbar-thumb-color);
+        --scrollbar-thumb-hover-color: var(--dark-scrollbar-thumb-hover-color);
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+
+    <!-- JavaScript for Theme Toggle -->
+    <script>
+      // Theme toggle function
+      function toggleTheme() {
+        document.body.classList.toggle("dark");
+      }
+      // Example: Toggle theme after 3 seconds for demonstration
+      setTimeout(toggleTheme, 3000); 
+    </script>
   </body>
 </html>
