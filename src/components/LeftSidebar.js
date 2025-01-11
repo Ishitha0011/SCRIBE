@@ -16,23 +16,14 @@ import { useTheme } from '../ThemeContext';
 import CreateItemDialog from './CreateItemDialog';
 
 const LeftSidebar = () => {
-  const [structure, setStructure] = useState([
-    {
-      id: 1,
-      name: 'Project Notes',
-      type: 'folder',
-      children: [
-        { id: 2, name: 'README.md', type: 'file' },
-        { id: 3, name: 'Ideas.md', type: 'file' },
-      ],
-    },
-  ]);
+  const [structure, setStructure] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
   const [menuVisible, setMenuVisible] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [editMode, setEditMode] = useState(null);
   const [newName, setNewName] = useState('');
+  const [directoryChosen, setDirectoryChosen] = useState(false);
 
   // Use theme from context
   const { theme } = useTheme();
@@ -53,15 +44,37 @@ const LeftSidebar = () => {
     };
   }, []);
 
-  // const handleAdd = (type) => {
-  //   const newItem = {
-  //     id: Date.now(),
-  //     name: type === 'folder' ? 'New Folder' : 'New File',
-  //     type,
-  //     children: type === 'folder' ? [] : undefined,
-  //   };
-  //   setStructure([...structure, newItem]);
-  // };
+  const openDirectory = async () => {
+    try {
+      const directoryHandle = await window.showDirectoryPicker();
+      const directoryStructure = await readDirectory(directoryHandle);
+      setStructure(directoryStructure);
+      setDirectoryChosen(true);
+    } catch (error) {
+      console.error('Error opening directory:', error);
+    }
+  };
+
+  const readDirectory = async (directoryHandle) => {
+    const items = [];
+    for await (const entry of directoryHandle.values()) {
+      if (entry.kind === 'directory') {
+        items.push({
+          id: entry.name,
+          name: entry.name,
+          type: 'folder',
+          children: await readDirectory(entry),
+        });
+      } else {
+        items.push({
+          id: entry.name,
+          name: entry.name,
+          type: 'file',
+        });
+      }
+    }
+    return items;
+  };
 
   const handleDelete = (id) => {
     const deleteItem = (items) =>
@@ -86,7 +99,7 @@ const LeftSidebar = () => {
     setEditMode(null);
     setNewName('');
   };
-  
+
   const handleAddItem = (type, name) => {
     const newItem = {
       id: Date.now(),
@@ -165,6 +178,9 @@ const LeftSidebar = () => {
         <button className="IconButton" title="Settings">
           <Settings size={18} />
         </button>
+        <button className="IconButton" title="Open Directory" onClick={openDirectory}>
+          <Folder size={18} />
+        </button>
       </div>
       
       {/* Plus Button */}
@@ -177,7 +193,14 @@ const LeftSidebar = () => {
       </button>
 
       {/* File Tree */}
-      {!isCollapsed && <div className="FileTree">{renderTree(structure)}</div>}
+      {!isCollapsed && directoryChosen && <div className="FileTree">{renderTree(structure)}</div>}
+      {!directoryChosen && (
+        <div className="NoDirectory">
+          <button className="OpenDirectoryButton" onClick={openDirectory}>
+            Open Directory
+          </button>
+        </div>
+      )}
 
       <button
         className="CollapseButton"
