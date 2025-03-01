@@ -8,6 +8,7 @@ const RightSidebar = () => {
   const [selectedOption, setSelectedOption] = useState('AI');
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [messages, setMessages] = useState([]);
 
   const { theme } = useTheme();
   const dropdownRef = useRef(null);
@@ -52,7 +53,7 @@ const RightSidebar = () => {
 
       {/* Dynamic Content Based on Selected Option */}
       <div className="DynamicContent">
-        {selectedOption === 'AI' && !isCollapsed && <AskAI />}
+        {selectedOption === 'AI' && !isCollapsed && <AskAI messages={messages} setMessages={setMessages} />}
       </div>
 
       {/* Collapsible icon at the bottom */}
