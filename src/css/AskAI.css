@@ -4,14 +4,28 @@
   height: 100%;
   margin-bottom: 1.3rem;
   position: relative;
+  background-color: var(--editor-bg-color);
+  color: var(--editor-text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.ChatContainer.dark {
+  background-color: var(--dark-sidebar-bg-color, #1a1a1a);
+  color: var(--dark-sidebar-text-color, #fff);
+}
+
+.ChatContainer.light {
+  background-color: var(--sidebar-bg-color, #f9f9f9);
+  color: var(--editor-text-color);
 }
 
 .ChatDisplayContainer {
   flex-grow: 1;
   overflow-y: auto;
   padding: 10px;
-  max-height: calc(100vh - 220px);
+  max-height: calc(90vh - 180px);
   overflow-x: hidden;
+  background-color: inherit;
 }
 
 .Message {
@@ -27,15 +41,35 @@
 }
 
 .Message.user {
-  background-color: #2b2b2b;
+  background-color: var(--input-bg-color, #2b2b2b);
   margin-left: auto;
 }
 
 .Message.ai {
-  background-color: #1e1e1e;
-  border: 1px solid #333;
+  background-color: var(--editor-bg-color, #1e1e1e);
+  border: 1px solid var(--border-color, #333);
   margin-right: auto;
   position: relative;
+}
+
+/* Dark theme specific message styling */
+.ChatContainer.dark .Message.user {
+  background-color: #2b2b2b;
+}
+
+.ChatContainer.dark .Message.ai {
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+}
+
+/* Light theme specific message styling */
+.ChatContainer.light .Message.user {
+  background-color: #f0f0f0;
+}
+
+.ChatContainer.light .Message.ai {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
 }
 
 .Message .Sender {
@@ -62,6 +96,7 @@
   width: 100%;
   padding: 10px;
   padding-right: 20px;
+  background-color: inherit;
 }
 
 .ChatControlContainer {
@@ -69,16 +104,25 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 0px 2px 5px;
   position: relative;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color, #333);
   z-index: 100;
+  background-color: inherit;
+}
+
+.ChatContainer.dark .ChatControlContainer {
+  border-bottom: 1px solid var(--dark-border-color, #333);
+}
+
+.ChatContainer.light .ChatControlContainer {
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
 .ChatTitle {
   font-size: 16px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--editor-text-color);
   flex-grow: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -99,7 +143,7 @@
   cursor: pointer;
   padding: 6px;
   font-size: 20px;
-  color: #808080;
+  color: var(--muted-text-color, #808080);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -107,10 +151,14 @@
   border-radius: 4px;
 }
 
+.ChatContainer.light .NewChatButton {
+  color: var(--editor-text-color, #000);
+}
+
 .NewChatButton:hover,
 .PreviousChatButton:hover {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--editor-text-color);
+  background-color: rgba(var(--editor-text-color-rgb, 255, 255, 255), 0.1);
 }
 
 /* Tooltip styles */
@@ -136,8 +184,8 @@
 
 .tooltip .tooltiptext {
   visibility: hidden;
-  background-color: #333;
-  color: #fff;
+  background-color: var(--bg-color, #333);
+  color: var(--editor-text-color, #fff);
   text-align: center;
   border-radius: 6px;
   padding: 5px 8px;
@@ -172,6 +220,18 @@
   box-sizing: border-box;
 }
 
+.ChatContainer.dark .AskAIInput {
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #444;
+}
+
+.ChatContainer.light .AskAIInput {
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #ddd;
+}
+
 .SubmitButton {
   position: absolute;
   right: 15px;
@@ -186,6 +246,14 @@
   align-items: center;
   justify-content: center;
   margin-right: 10px;
+}
+
+.ChatContainer.dark .SubmitButton {
+  background-color: #7289da;
+}
+
+.ChatContainer.light .SubmitButton {
+  background-color: #007bff;
 }
 
 .SubmitButton svg {
@@ -207,8 +275,8 @@
   position: absolute;
   top: 100%; /* Position right below the button */
   right: 0;
-  background-color: #1e1e1e;
-  border: 1px solid #333;
+  background-color: var(--editor-bg-color);
+  border: 1px solid var(--border-color, #333);
   border-radius: 8px;
   width: 300px;
   max-height: 400px;
@@ -219,6 +287,16 @@
   margin-top: 8px; /* Add some space between button and dropdown */
 }
 
+.ChatContainer.dark .SessionHistoryDropdown {
+  background-color: var(--dark-sidebar-bg-color, #1a1a1a);
+  border: 1px solid var(--dark-border-color, #333);
+}
+
+.ChatContainer.light .SessionHistoryDropdown {
+  background-color: var(--sidebar-bg-color, #f9f9f9);
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -226,44 +304,77 @@
 
 .SessionHistoryHeader {
   padding: 10px 16px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color, #333);
   position: sticky;
   top: 0;
-  background-color: #1e1e1e;
+  background-color: var(--editor-bg-color);
   z-index: 1;
+}
+
+.ChatContainer.dark .SessionHistoryHeader {
+  background-color: var(--dark-sidebar-bg-color, #1a1a1a);
+  border-bottom: 1px solid var(--dark-border-color, #333);
+}
+
+.ChatContainer.light .SessionHistoryHeader {
+  background-color: var(--sidebar-bg-color, #f9f9f9);
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
 .SessionHistoryHeader h3 {
   margin: 0;
   font-size: 16px;
-  color: #ffffff;
+  color: var(--editor-text-color);
   font-weight: 500;
 }
 
 .NoSessionsMessage {
   padding: 16px;
   text-align: center;
-  color: #808080;
+  color: var(--muted-text-color, #808080);
   font-style: italic;
 }
 
 .SessionItem {
   padding: 12px 16px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color, #333);
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  transition: all 0.2s ease;
 }
 
 .SessionItem:hover {
-  background-color: #2b2b2b;
+  background-color: var(--input-bg-color, #2b2b2b);
 }
 
 .SessionItem.active {
+  background-color: var(--primary-color-light, #2d3748);
+  border-left: 3px solid var(--primary-color, #007bff);
+}
+
+.ChatContainer.dark .SessionItem {
+  border-bottom: 1px solid var(--dark-border-color, #333);
+}
+
+.ChatContainer.dark .SessionItem:hover {
+  background-color: #2b2b2b;
+}
+
+.ChatContainer.dark .SessionItem.active {
   background-color: #2d3748;
-  border-left: 3px solid #007bff;
+  border-left: 3px solid var(--primary-color, #7289da);
+}
+
+.ChatContainer.light .SessionItem {
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.ChatContainer.light .SessionItem:hover {
+  background-color: #f0f0f0;
+}
+
+.ChatContainer.light .SessionItem.active {
+  background-color: rgba(0, 123, 255, 0.1);
+  border-left: 3px solid var(--primary-color, #007bff);
 }
 
 .SessionItem:last-child {
@@ -272,13 +383,16 @@
 
 .SessionTitle {
   font-size: 14px;
-  color: #ffffff;
+  color: var(--editor-text-color);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .SessionDate {
   font-size: 12px;
-  color: #808080;
+  color: var(--muted-text-color, #808080);
 }
 
 /* Loading States */
@@ -319,6 +433,14 @@
   cursor: not-allowed;
 }
 
+.ChatContainer.dark .SubmitButton:disabled {
+  background-color: #333;
+}
+
+.ChatContainer.light .SubmitButton:disabled {
+  background-color: #e0e0e0;
+}
+
 .AskAIInput:disabled {
   background-color: rgba(var(--textarea-bg-color), 0.8);
   cursor: not-allowed;
@@ -328,62 +450,141 @@
 .PreviousChatButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  color: #4a4a4a;
+  color: var(--muted-text-color, #4a4a4a);
+}
+
+/* Message Actions Container */
+.MessageActions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+  opacity: 1; /* Always visible */
 }
 
 /* Copy button styles */
 .CopyButton {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background-color: rgba(30, 30, 30, 0.9);
-  border: 1px solid #444;
+  background-color: rgba(var(--editor-bg-color-rgb, 30, 30, 30), 0.9);
+  border: 1px solid var(--border-color, #444);
   border-radius: 4px;
   padding: 4px 8px;
   cursor: pointer;
-  display: none;
-  color: #aaa;
+  color: var(--muted-text-color, #aaa);
   transition: all 0.2s ease;
-  z-index: 10;
   font-size: 12px;
+  display: flex; /* Always visible */
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.Message.ai:hover .CopyButton {
-  display: flex;
-}
-
 .CopyButton:hover {
-  color: #fff;
-  background-color: rgba(50, 50, 50, 0.95);
+  color: var(--editor-text-color, #fff);
+  background-color: rgba(var(--editor-bg-color-rgb, 50, 50, 50), 0.95);
 }
 
 .CopyButton:active {
   transform: scale(0.95);
-  background-color: rgba(70, 70, 70, 0.95);
+  background-color: rgba(var(--editor-bg-color-rgb, 70, 70, 70), 0.95);
 }
 
 .CopyButton.copied {
-  background-color: #2a6b2a;
-  color: #fff;
-  border-color: #3c8c3c;
+  background-color: var(--success-color, #2a6b2a);
+  color: var(--editor-text-color, #fff);
+  border-color: var(--success-border-color, #3c8c3c);
+  display: flex;
 }
 
+/* Delete Message Button */
+.DeleteMessageButton {
+  background-color: rgba(var(--editor-bg-color-rgb, 30, 30, 30), 0.9);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--muted-text-color, #aaa);
+  transition: all 0.2s ease;
+  font-size: 12px;
+  display: flex; /* Always visible */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.DeleteMessageButton:hover {
+  color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+.ChatContainer.dark .DeleteMessageButton:hover {
+  color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+.ChatContainer.light .DeleteMessageButton:hover {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Message content area */
 .MessageContent {
   width: 100%;
-  padding-right: 24px; /* Make space for the copy button */
+  padding-right: 24px; /* Make space for the action buttons */
 }
 
 /* For long messages, ensure the button stays visible */
 @media (max-height: 600px) {
-  .CopyButton {
+  .MessageActions {
     position: sticky;
     top: 0;
     float: right;
     margin-bottom: 8px;
   }
+}
+
+/* Expand button styles */
+.ExpandMessageButton {
+  background-color: rgba(var(--editor-bg-color-rgb, 30, 30, 30), 0.9);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--muted-text-color, #aaa);
+  transition: all 0.2s ease;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin-right: 6px;
+}
+
+.ExpandMessageButton:hover {
+  color: var(--editor-text-color, #fff);
+  background-color: rgba(var(--editor-bg-color-rgb, 50, 50, 50), 0.95);
+}
+
+.ExpandMessageButton:active {
+  transform: scale(0.95);
+}
+
+/* Remove these selectors as buttons are now always visible 
+.Message.ai:hover .ExpandMessageButton,
+.Message.user:hover .ExpandMessageButton {
+  display: flex;
+}
+*/
+
+.ChatContainer.dark .ExpandMessageButton:hover {
+  color: #8ebbff;
+  background-color: rgba(142, 187, 255, 0.1);
+}
+
+.ChatContainer.light .ExpandMessageButton:hover {
+  color: #0066cc;
+  background-color: rgba(0, 102, 204, 0.1);
 }
 
 /* Improved Session History Button */
@@ -392,9 +593,9 @@
 }
 
 .PreviousChatButton.active {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  color: var(--editor-text-color);
+  background-color: rgba(var(--editor-text-color-rgb, 255, 255, 255), 0.15);
+  box-shadow: 0 0 0 1px rgba(var(--editor-text-color-rgb, 255, 255, 255), 0.1);
 }
 
 /* Indicator for active session list */
@@ -417,4 +618,165 @@
 .history-container {
   position: relative;
   display: inline-block;
+}
+
+.SessionItemContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.SessionInfo {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  margin-right: 8px;
+}
+
+.DeleteSessionButton {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--muted-text-color, #808080);
+  opacity: 0;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  min-width: 28px;
+  height: 28px;
+}
+
+.SessionItem:hover .DeleteSessionButton {
+  opacity: 1;
+}
+
+.DeleteSessionButton:hover {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.ChatContainer.dark .DeleteSessionButton:hover {
+  color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+/* Typing effect styles */
+.typing-cursor {
+  display: inline-block;
+  color: #d8c6ff; /* Light lavender pastel color */
+  font-weight: bold;
+  animation: blink 1s infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Session item styles */
+.SessionItemContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.SessionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.DeleteSessionButton {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.5;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.DeleteSessionButton:hover {
+  opacity: 1;
+}
+
+.light .DeleteSessionButton:hover {
+  color: #ff4d4f;
+}
+
+.dark .DeleteSessionButton:hover {
+  color: #ff7875;
+}
+
+.SessionItem {
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.SessionTitle {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.SessionDate {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+/* Expand button styles */
+.ExpandMessageButton {
+  background-color: rgba(var(--editor-bg-color-rgb, 30, 30, 30), 0.9);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--muted-text-color, #aaa);
+  transition: all 0.2s ease;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin-right: 6px;
+}
+
+.ExpandMessageButton:hover {
+  color: var(--editor-text-color, #fff);
+  background-color: rgba(var(--editor-bg-color-rgb, 50, 50, 50), 0.95);
+}
+
+.ExpandMessageButton:active {
+  transform: scale(0.95);
+}
+
+/* Remove these selectors as buttons are now always visible 
+.Message.ai:hover .ExpandMessageButton,
+.Message.user:hover .ExpandMessageButton {
+  display: flex;
+}
+*/
+
+.ChatContainer.dark .ExpandMessageButton:hover {
+  color: #8ebbff;
+  background-color: rgba(142, 187, 255, 0.1);
+}
+
+.ChatContainer.light .ExpandMessageButton:hover {
+  color: #0066cc;
+  background-color: rgba(0, 102, 204, 0.1);
 }

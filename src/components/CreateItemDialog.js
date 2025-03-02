@@ -1,17 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Folder, FileText, File, FileCode, FileBox } from 'lucide-react';
 import '../css/CreateItemDialog.css';
 
-const CreateItemDialog = ({ onClose, onCreate, theme }) => {
-  const [newItemType, setNewItemType] = useState('folder');
+const CreateItemDialog = ({ onClose, onCreate, theme, parentFolderName = 'workspace' }) => {
+  const [newItemType, setNewItemType] = useState('file');
   const [newItemName, setNewItemName] = useState('');
+  const [fileExtension, setFileExtension] = useState('');
+  const [error, setError] = useState('');
+  const nameInputRef = useRef(null);
+
+  // Auto-focus the input field when dialog opens
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCreate = () => {
+    // Validate input
     if (newItemName.trim() === '') {
-      alert('Please enter a name.');
+      setError('Please enter a name');
       return;
     }
-    onCreate(newItemType, newItemName);
+
+    // For files, append the extension if provided
+    let finalName = newItemName;
+    if (newItemType === 'file' && fileExtension && !newItemName.includes('.')) {
+      finalName = `${newItemName}.${fileExtension}`;
+    }
+
+    // Call the onCreate function passed from parent
+    onCreate(newItemType, finalName);
     onClose();
+  };
+  
+  // Handle Enter key press
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCreate();
+    } else if (e.key === 'Escape') {
+      onClose();
+    }
+    // Clear error when user types
+    if (error) {
+      setError('');
+    }
+  };
+
+  const getFileIcon = () => {
+    switch(fileExtension) {
+      case 'js':
+      case 'jsx':
+      case 'ts':
+      case 'tsx':
+        return <FileCode size={18} />;
+      case 'md':
+      case 'txt':
+        return <FileBox size={18} />;
+      default:
+        return <FileText size={18} />;
+    }
   };
 
   return (
@@ -21,22 +74,63 @@ const CreateItemDialog = ({ onClose, onCreate, theme }) => {
           <h2>Create New</h2>
         </div>
         <div className="DialogBody">
-          <div className="HorizontalGroup">
-            <select
-              value={newItemType}
-              onChange={(e) => setNewItemType(e.target.value)}
-              className="Dropdown"
+          <div className="ParentFolderInfo">
+            Creating in <span className="ParentFolderName">{parentFolderName}</span>
+          </div>
+          <div className="ItemTypeSelection">
+            <button 
+              className={`TypeButton ${newItemType === 'file' ? 'active' : ''}`}
+              onClick={() => setNewItemType('file')}
             >
-              <option value="folder">Folder</option>
-              <option value="file">File</option>
-            </select>
+              {fileExtension ? getFileIcon() : <FileText size={18} />}
+              <span>File</span>
+            </button>
+            <button 
+              className={`TypeButton ${newItemType === 'folder' ? 'active' : ''}`}
+              onClick={() => setNewItemType('folder')}
+            >
+              <Folder size={18} />
+              <span>Folder</span>
+            </button>
+          </div>
+          
+          {newItemType === 'file' && (
+            <div className="InputGroup">
+              <label htmlFor="file-extension">File Type:</label>
+              <select 
+                id="file-extension" 
+                className="Input" 
+                value={fileExtension} 
+                onChange={(e) => setFileExtension(e.target.value)}
+              >
+                <option value="">No extension</option>
+                <option value="txt">Text (.txt)</option>
+                <option value="md">Markdown (.md)</option>
+                <option value="js">JavaScript (.js)</option>
+                <option value="jsx">React (.jsx)</option>
+                <option value="ts">TypeScript (.ts)</option>
+                <option value="tsx">React TS (.tsx)</option>
+                <option value="html">HTML (.html)</option>
+                <option value="css">CSS (.css)</option>
+                <option value="json">JSON (.json)</option>
+                <option value="py">Python (.py)</option>
+              </select>
+            </div>
+          )}
+          
+          <div className="InputGroup">
+            <label htmlFor="new-item-name">Name:</label>
             <input
+              id="new-item-name"
+              ref={nameInputRef}
               type="text"
-              placeholder="Enter name"
+              placeholder={`Enter ${newItemType} name...`}
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={handleKeyDown}
               className="Input"
             />
+            {error && <div className="InputError">{error}</div>}
           </div>
         </div>
         <div className="DialogFooter">

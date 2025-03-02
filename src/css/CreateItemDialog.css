@@ -11,131 +11,209 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    animation: fadeIn 0.3s ease;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
   }
   
   .DialogContent {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    border-radius: 16px;
-    padding: 24px;
-    width: 360px;
-    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.2);
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    animation: slideUp 0.3s ease;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 400px;
+    max-width: 90%;
+    padding: 20px;
   }
   
-  @keyframes slideUp {
-    from {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
+  .DialogContent.dark {
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #333;
+  }
+  
+  .DialogHeader {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+  }
+  
+  .DialogContent.dark .DialogHeader {
+    border-bottom-color: #444;
   }
   
   .DialogHeader h2 {
     margin: 0;
-    font-size: 1.6em;
+    font-size: 20px;
+    font-weight: 600;
   }
   
   .DialogBody {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    margin-bottom: 20px;
   }
   
-  .HorizontalGroup {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
+  .ParentFolderInfo {
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #666;
   }
   
-  .Dropdown {
-    flex: 0 0 120px; /* Fixed width for dropdown */
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background-color: var(--input-bg-color);
-    color: var(--text-color);
-    font-size: 1em;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  .DialogContent.dark .ParentFolderInfo {
+    color: #aaa;
+  }
+  
+  .ParentFolderName {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .DialogContent.dark .ParentFolderName {
+    color: #fff;
+  }
+  
+  .ItemTypeSelection {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .TypeButton {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .TypeButton span {
+    margin-top: 5px;
+    font-size: 14px;
+  }
+  
+  .TypeButton.active {
+    background-color: #e6f0ff;
+    border-color: #3399ff;
+    color: #0066cc;
+  }
+  
+  .DialogContent.dark .TypeButton {
+    background-color: #333;
+    border-color: #444;
+    color: #ddd;
+  }
+  
+  .DialogContent.dark .TypeButton.active {
+    background-color: #003366;
+    border-color: #0066cc;
+    color: #fff;
+  }
+  
+  .InputGroup {
+    margin-bottom: 15px;
+  }
+  
+  .InputGroup label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 14px;
   }
   
   .Input {
-    flex: 1; /* Expands to take the remaining space */
+    width: 100%;
     padding: 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background-color: var(--input-bg-color);
-    color: var(--text-color);
-    font-size: 1em;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    transition: border-color 0.2s ease;
   }
   
-  .Input:focus,
-  .Dropdown:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px var(--primary-color-light);
+  .Input:focus {
+    border-color: #3399ff;
+    outline: none;
+  }
+  
+  .DialogContent.dark .Input {
+    background-color: #333;
+    border-color: #444;
+    color: #fff;
+  }
+  
+  .DialogContent.dark .Input:focus {
+    border-color: #0066cc;
+  }
+  
+  .InputError {
+    color: #e53935;
+    font-size: 13px;
+    margin-top: 5px;
+  }
+  
+  .DialogContent.dark .InputError {
+    color: #ff6b6b;
   }
   
   .DialogFooter {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 10px;
   }
   
   .Button {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95em;
+    padding: 8px 16px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
-  }
-  
-  .Button:hover {
-    transform: scale(1.05);
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
   }
   
   .CancelButton {
-    background-color: var(--cancel-bg-color);
-    color: var(--cancel-text-color);
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    color: #333;
   }
   
   .CancelButton:hover {
-    background-color: var(--cancel-hover-bg-color);
+    background-color: #e5e5e5;
   }
   
   .CreateButton {
-    background-color: var(--primary-color);
+    background-color: #0066cc;
+    border: 1px solid #0055aa;
     color: white;
   }
   
   .CreateButton:hover {
-    background-color: var(--primary-hover-color);
+    background-color: #0055aa;
+  }
+  
+  .DialogContent.dark .CancelButton {
+    background-color: #333;
+    border-color: #444;
+    color: #ddd;
+  }
+  
+  .DialogContent.dark .CancelButton:hover {
+    background-color: #444;
+  }
+  
+  .DialogContent.dark .CreateButton {
+    background-color: #0066cc;
+    border-color: #0077e6;
+  }
+  
+  .DialogContent.dark .CreateButton:hover {
+    background-color: #0077e6;
   }
   
   /* Light Theme */

@@ -25,6 +25,7 @@
   padding: 10px;
   border-bottom: 1px solid #ddd;
   flex-shrink: 0;
+  min-height: 48px; /* Ensure consistent height */
 }
 
 .Editor.dark .Tabs {
@@ -33,9 +34,27 @@
 }
 
 .TabsLeft {
+  overflow-y: hidden;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px; /* Reduced gap for more compact tabs */
+  overflow-x: auto; /* Allow tabs to scroll horizontally */
+  max-width: 80%; /* Increased max width for tabs */
+  scrollbar-width: thin;
+  padding-bottom: 4px; /* Add space for scrollbar */
+}
+
+.TabsLeft::-webkit-scrollbar {
+  height: 4px;
+}
+
+.TabsLeft::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 4px;
+}
+
+.Editor.dark .TabsLeft::-webkit-scrollbar-thumb {
+  background-color: #555;
 }
 
 .TabsRight {
@@ -47,17 +66,26 @@
 
 .Tab {
   background-color: #ffffff00;
-  padding: 8px 16px;
+  padding: 8px 32px 8px 12px; /* Increased right padding for larger close button */
   border-radius: 6px;
   cursor: pointer;
-  font-size: 16px;
-  padding-right: 5px;
+  font-size: 14px; /* Slightly smaller font */
   position: relative;
   display: flex;
   align-items: center;
-  min-width: 80px;
+  min-width: 40px; /* Reduced minimum width */
+  max-width: 160px; /* Maximum width for tabs */
   transition: background-color 0.3s ease, color 0.3s ease;
   color: #000;
+  white-space: nowrap;
+  overflow: hidden; /* Hide overflow */
+}
+
+.Tab span {
+  overflow: hidden;
+  text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+  white-space: nowrap;
+  flex: 1;
 }
 
 .Editor.dark .Tab {
@@ -75,29 +103,70 @@
   color: #fff;
 }
 
+/* Style for tabs with unsaved changes */
+.Tab.unsaved {
+  font-style: italic;
+}
+
+/* Unsaved indicator dot */
+.UnsavedIndicator {
+  color: #ff5252;
+  margin-left: 5px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.Footer .UnsavedIndicator {
+  margin-left: 15px;
+  font-style: italic;
+  font-size: 14px;
+}
+
 .CloseTab {
   background-color: transparent;
   border: none;
   cursor: pointer;
   position: absolute;
   top: 50%;
-  right: 2px; 
+  right: 6px; 
   transform: translateY(-50%);
   color: #555; 
-  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  opacity: 0; /* Hide by default */
+  transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Always show close button on active tab */
+.Tab.active .CloseTab {
+  opacity: 1;
+}
+
+/* Show close button on hover */
+.Tab:hover .CloseTab {
+  opacity: 1;
 }
 
 .CloseTab:hover {
-  color: rgb(255, 72, 72);
+  color: #fff;
+  background-color: rgb(255, 72, 72);
 }
 
 .Editor.dark .CloseTab {
-  color: #ffffff; 
+  color: #aaa; 
 }
 
-
+.Editor.dark .CloseTab:hover {
+  color: #fff;
+  background-color: rgb(255, 72, 72);
+}
 
 .AddTab {
+  overflow: hidden;
   position: relative;
   top: .2rem;
   background-color: transparent;
@@ -105,7 +174,56 @@
   cursor: pointer;
   font-size: 18px;
   color: #555;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+.AddTab:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.Editor.dark .AddTab {
+  color: #aaa;
+}
+
+.Editor.dark .AddTab:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Save button */
+.SaveButton {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 16px;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.SaveButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.SaveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.Editor.dark .SaveButton {
+  color: #fff;
+}
+
+.Editor.dark .SaveButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Text editor canvas */
@@ -122,6 +240,49 @@
 
 .Editor.dark .TextEditorCanvas {
   background-color: #000;
+}
+
+/* Empty state for when no file is selected */
+.EmptyState {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  color: #999;
+  font-size: 18px;
+  text-align: center;
+  padding: 20px;
+}
+
+.Editor.dark .EmptyState {
+  color: #666;
+}
+
+.NewFileButton {
+  margin-top: 20px;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.NewFileButton:hover {
+  background-color: #0055aa;
+}
+
+.Editor.dark .NewFileButton {
+  background-color: #4d94ff;
+  color: #000;
+}
+
+.Editor.dark .NewFileButton:hover {
+  background-color: #66a3ff;
 }
 
 /* Text area and markdown view to ensure same sizing */
@@ -175,18 +336,147 @@
 }
 
 .Footer {
-  padding: 10px 20px;
-  background-color: #f4f4f4;
+  padding: 8px 15px;
+  background-color: #fafafa;
   text-align: right;
-  border-top: 1px solid #ddd;
-  font-size: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  font-size: 13px;
   color: #777;
   flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 32px;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .Editor.dark .Footer {
-  background-color: #111;
-  color: #aaa;
+  background-color: #0a0a0a;
+  color: #888;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.Footer .FooterLeft {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.Footer .FooterRight {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.Footer .Separator {
+  color: #ddd;
+  margin: 0 5px;
+}
+
+.Editor.dark .Footer .Separator {
+  color: #444;
+}
+
+.Footer .FooterItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.Footer .FooterItem svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Hide some footer items on small screens */
+@media (max-width: 768px) {
+  .Footer .FooterItem.optional {
+    display: none;
+  }
+}
+
+/* Additional markdown styles */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+.markdown-content p {
+  margin-bottom: 1em;
+  line-height: 1.6;
+}
+
+.markdown-content a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.Editor.dark .markdown-content a {
+  color: #5599ff;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 1em;
+  padding-left: 2em;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5em;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #ddd;
+  padding-left: 1em;
+  margin-left: 0;
+  color: #777;
+}
+
+.Editor.dark .markdown-content blockquote {
+  border-left-color: #555;
+  color: #999;
+}
+
+.markdown-content code {
+  background-color: #f4f4f4;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+}
+
+.Editor.dark .markdown-content code {
+  background-color: #333;
+}
+
+.markdown-content pre {
+  background-color: #f4f4f4;
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+.Editor.dark .markdown-content pre {
+  background-color: #333;
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  display: block;
 }
 
 /* Sidebar styles (Left and Right Sidebar) */
@@ -263,4 +553,59 @@
 .Editor.dark .markdown-content pre,
 .Editor.dark .markdown-content code {
   background-color: #222;
+}
+
+/* Better tab responsiveness and management */
+.TabsLeft:focus-within {
+  scrollbar-width: auto;
+}
+
+.TabsLeft:hover::-webkit-scrollbar-thumb {
+  background-color: #aaa;
+}
+
+.Editor.dark .TabsLeft:hover::-webkit-scrollbar-thumb {
+  background-color: #777;
+}
+
+/* Tab container shadows to indicate horizontal scroll */
+.TabsLeft::before,
+.TabsLeft::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 15px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.TabsLeft::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(244, 244, 244, 0.9), rgba(244, 244, 244, 0));
+}
+
+.TabsLeft::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(244, 244, 244, 0.9), rgba(244, 244, 244, 0));
+}
+
+.Editor.dark .TabsLeft::before {
+  background: linear-gradient(to right, rgba(17, 17, 17, 0.9), rgba(17, 17, 17, 0));
+}
+
+.Editor.dark .TabsLeft::after {
+  background: linear-gradient(to left, rgba(17, 17, 17, 0.9), rgba(17, 17, 17, 0));
+}
+
+.TabsLeft.can-scroll-left::before,
+.TabsLeft.can-scroll-right::after {
+  opacity: 1;
+}
+
+/* Add some more space between tabs for better clarity */
+.Tab + .Tab {
+  margin-left: 2px;
 }
