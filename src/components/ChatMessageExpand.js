@@ -6,7 +6,8 @@ const ChatMessageExpand = ({
   message, 
   allMessages, 
   onSendMessage,
-  onDeleteMessage 
+  onDeleteMessage,
+  chatTitle = "Conversation" // Default title
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
@@ -32,6 +33,7 @@ const ChatMessageExpand = ({
           focusedMessageId={message.id}
           onSendMessage={onSendMessage}
           onDeleteMessage={onDeleteMessage}
+          chatTitle={chatTitle}
         />
       )}
     </>

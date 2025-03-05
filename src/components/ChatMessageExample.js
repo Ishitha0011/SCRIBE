@@ -15,7 +15,6 @@ const ChatMessageExample = ({
           {message.sender === 'user' ? 'You' : 'AI Assistant'}
         </div>
         <div className="MessageActions">
-          {/* Add the expand button next to the delete button */}
           {message.sender === 'user' && (
             <>
               <ChatMessageExpand 

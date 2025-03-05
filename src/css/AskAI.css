@@ -92,23 +92,23 @@
 
 .ChatInputContainer {
   position: relative;
-  display: flex;
+  margin-top: 15px;
+  padding: 20px;
   width: 100%;
-  padding: 10px;
-  padding-right: 20px;
-  background-color: inherit;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .ChatControlContainer {
+  background: transparent;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  padding: 0px 2px 5px;
-  position: relative;
-  border-bottom: 1px solid var(--border-color, #333);
-  z-index: 100;
-  background-color: inherit;
+  padding: 0;
+  margin-bottom: 10px;
 }
 
 .ChatContainer.dark .ChatControlContainer {
@@ -208,44 +208,54 @@
 
 .AskAIInput {
   width: 100%;
-  height: 60px;
-  padding: 12px 50px 12px 12px;
+  height: auto;
+  padding: 16px;
+  padding-right: 120px;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
   font-size: 14px;
-  border-radius: 12px;
-  background-color: var(--textarea-bg-color);
-  color: var(--textarea-text-color);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  outline: none;
   resize: none;
-  box-sizing: border-box;
+  max-height: 150px;
+  overflow-y: auto;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  min-height: 56px;
 }
 
 .ChatContainer.dark .AskAIInput {
-  background-color: #333;
-  color: #fff;
-  border: 1px solid #444;
+  background-color: #2d2d2d;
+  border-color: #444;
+  color: #eee;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .ChatContainer.light .AskAIInput {
-  background-color: #fff;
-  color: #000;
-  border: 1px solid #ddd;
+  background-color: #ffffff;
+  color: #333;
 }
 
 .SubmitButton {
   position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #007bff;
+  right: 30px;
+  bottom: 30px;
+  background-color: #0f82e6;
+  color: white;
   border: none;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  padding: 10px;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.SubmitButton:hover {
+  background-color: #0a6ac2;
+  transform: scale(1.05);
 }
 
 .ChatContainer.dark .SubmitButton {
@@ -455,13 +465,45 @@
 
 /* Message Actions Container */
 .MessageActions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+  position: relative;
+  top: auto;
+  right: auto;
   display: flex;
   gap: 8px;
   z-index: 10;
-  opacity: 1; /* Always visible */
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.2s ease;
+}
+
+.Message:hover .MessageActions {
+  opacity: 1; /* Visible on hover */
+}
+
+/* Create better hover effect for message action buttons */
+.MessageActionButton, .CopyButton, .DeleteMessageButton, .ExpandMessageButton {
+  background-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: inherit;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.MessageActionButton:hover, .CopyButton:hover, .DeleteMessageButton:hover, .ExpandMessageButton:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+  opacity: 1;
+}
+
+.ChatContainer.dark .MessageActionButton:hover, 
+.ChatContainer.dark .CopyButton:hover, 
+.ChatContainer.dark .DeleteMessageButton:hover,
+.ChatContainer.dark .ExpandMessageButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Copy button styles */
@@ -779,4 +821,89 @@
 .ChatContainer.light .ExpandMessageButton:hover {
   color: #0066cc;
   background-color: rgba(0, 102, 204, 0.1);
+}
+
+/* Selected file tag styling */
+.SelectedFileTag {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e7f3ff;
+  color: #0a385c;
+  padding: 6px 10px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+.ChatContainer.dark .SelectedFileTag {
+  background-color: #1e4c73;
+  color: #e0f0ff;
+}
+
+.RemoveFileButton {
+  background: none;
+  border: none;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  border-radius: 50%;
+}
+
+.RemoveFileButton:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.ChatContainer.dark .RemoveFileButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* File button styling */
+.FileButton {
+  position: absolute;
+  right: 65px;
+  bottom: 30px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  color: #555;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.FileButton:hover {
+  background-color: #e6e6e6;
+  transform: scale(1.05);
+}
+
+.FileButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ChatContainer.dark .FileButton {
+  background-color: #333;
+  border-color: #444;
+  color: #ddd;
+}
+
+.ChatContainer.dark .FileButton:hover {
+  background-color: #444;
 }

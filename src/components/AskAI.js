@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Send, Plus, Clock, Copy, Trash2, Maximize2 } from 'lucide-react';
+import { Send, Plus, Clock, Copy, Trash2, Maximize2, X, Paperclip } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,6 +25,14 @@ const AskAI = ({ messages, setMessages }) => {
   // Add new state for popup chat
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [focusedMessageIndex, setFocusedMessageIndex] = useState(null);
+  const [isTitleGenerating, setIsTitleGenerating] = useState(false);
+  const [isTitleEditing, setIsTitleEditing] = useState(false);
+  const [editableTitle, setEditableTitle] = useState('');
+  const messagesEndRef = useRef(null);
+  const titleTimeoutRef = useRef(null);
+  const [expandedMessageIndex, setExpandedMessageIndex] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Cleanup function for chat sessions
   const cleanupSession = async (sessionId) => {
@@ -216,7 +224,7 @@ const AskAI = ({ messages, setMessages }) => {
   }, []);
 
   const handleSubmit = async () => {
-    if (!userInput.trim() || isSubmitting) return;
+    if ((!userInput.trim() && !selectedFile) || isSubmitting) return;
 
     setIsSubmitting(true);
     let newSessionId = null;  // Declare newSessionId at the start
@@ -233,8 +241,14 @@ const AskAI = ({ messages, setMessages }) => {
 
       const sessionId = currentSessionId || newSessionId;  // Use a consistent sessionId
 
+      let messageText = userInput;
+      if (selectedFile) {
+        // In a real implementation, you'd process the file content here
+        messageText = `[File: ${selectedFile.name}] ${userInput}`;
+      }
+
       const newMessage = {
-        text: userInput,
+        text: messageText,
         sender: 'user',
         session_id: sessionId,
         timestamp: new Date().toISOString()
@@ -265,7 +279,7 @@ const AskAI = ({ messages, setMessages }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          question: userInput,
+          question: messageText,
           session_id: sessionId,
           conversation_history: formattedMessages
         }),
@@ -296,6 +310,7 @@ const AskAI = ({ messages, setMessages }) => {
       await generateTitle(finalMessages);
       
       setUserInput('');
+      setSelectedFile(null);
     } catch (error) {
       console.error('Error in chat interaction:', error);
       setMessages((prevMessages) => [
@@ -572,6 +587,20 @@ const AskAI = ({ messages, setMessages }) => {
     sendNewMessage();
   };
 
+  const handleFileButtonClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+  };
+
   return (
     <div className={`ChatContainer ${theme}`}>
       {/* Chat Control Buttons and Title */}
@@ -703,23 +732,50 @@ const AskAI = ({ messages, setMessages }) => {
 
       {/* Chat input */}
       <div className="ChatInputContainer">
+        {selectedFile && (
+          <div className="SelectedFileTag">
+            {selectedFile.name}
+            <button 
+              type="button" 
+              onClick={removeSelectedFile}
+              className="RemoveFileButton"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
         <textarea
-          placeholder={isSubmitting ? "Please wait..." : "Ask Scribe..."}
           className="AskAIInput"
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
+          placeholder={isSubmitting ? "Thinking..." : "Type your message here..."}
           disabled={isSubmitting}
+          rows={1}
         />
         <button 
-          onClick={handleSubmit} 
-          className="SubmitButton"
+          className="FileButton"
+          onClick={handleFileButtonClick}
           disabled={isSubmitting}
+          title="Attach file"
+        >
+          <Paperclip size={16} />
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+        </button>
+        <button
+          className="SubmitButton"
+          onClick={handleSubmit}
+          disabled={(!userInput.trim() && !selectedFile) || isSubmitting}
         >
           {isSubmitting ? (
-            <div className="LoadingSpinner" />
+            <div className="LoadingSpinner"></div>
           ) : (
-            <Send />
+            <Send size={16} />
           )}
         </button>
       </div>
@@ -737,7 +793,8 @@ const AskAI = ({ messages, setMessages }) => {
           }))}
           focusedMessageId={focusedMessageIndex}
           onSendMessage={handlePopupSendMessage}
-          onDeleteMessage={(msgId) => handleDeleteMessage(msgId, new Event('click'))}
+          onDeleteMessage={(msgId) => handleDeleteMessage(msgId, { stopPropagation: () => {} })}
+          chatTitle={currentTitle}
         />
       )}
     </div>

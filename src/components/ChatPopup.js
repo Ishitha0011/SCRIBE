@@ -4,7 +4,9 @@ import {
   Send, 
   Copy, 
   Trash2, 
-  Check
+  Check,
+  ChevronDown,
+  Paperclip
 } from 'lucide-react';
 import '../css/ChatPopup.css';
 import { useTheme } from '../ThemeContext';
@@ -15,7 +17,8 @@ const ChatPopup = ({
   chatHistory, 
   focusedMessageId,
   onSendMessage,
-  onDeleteMessage
+  onDeleteMessage,
+  chatTitle = "Conversation" // Default title if none provided
 }) => {
   const [message, setMessage] = useState('');
   const messageContainerRef = useRef(null);
@@ -23,6 +26,9 @@ const ChatPopup = ({
   const focusedMessageRef = useRef(null);
   const [copySuccess, setCopySuccess] = useState(null);
   const { theme } = useTheme();
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Focus input when popup opens
   useEffect(() => {
@@ -53,16 +59,34 @@ const ChatPopup = ({
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (messageContainerRef.current) {
+    if (messageContainerRef.current && autoScroll) {
       messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
     }
-  }, [chatHistory]);
+  }, [chatHistory, autoScroll]);
+
+  // Handle scroll to detect if user has scrolled up
+  const handleScroll = () => {
+    if (messageContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messageContainerRef.current;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+      setAutoScroll(isAtBottom);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (message.trim()) {
-      onSendMessage(message);
+    if (message.trim() || selectedFile) {
+      let finalMessage = message;
+      
+      if (selectedFile) {
+        // In a real implementation, you'd process the file here
+        finalMessage = `[File: ${selectedFile.name}] ${message}`;
+      }
+      
+      onSendMessage(finalMessage);
       setMessage('');
+      setSelectedFile(null);
+      setAutoScroll(true);
     }
   };
 
@@ -85,6 +109,25 @@ const ChatPopup = ({
     );
   };
 
+  // Scroll to bottom button
+  const scrollToBottom = () => {
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+      setAutoScroll(true);
+    }
+  };
+
+  // File handling
+  const handleFileButtonClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -94,13 +137,17 @@ const ChatPopup = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`ChatPopupHeader ${theme}`}>
-          <h3>Conversation</h3>
+          <h3>{chatTitle}</h3>
           <button className="CloseButton" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
         
-        <div className="ChatPopupMessages" ref={messageContainerRef}>
+        <div 
+          className="ChatPopupMessages" 
+          ref={messageContainerRef}
+          onScroll={handleScroll}
+        >
           {chatHistory.map((msg) => (
             <div 
               key={msg.id} 
@@ -120,15 +167,13 @@ const ChatPopup = ({
                     {copySuccess === msg.content ? <Check size={16} /> : <Copy size={16} />}
                   </button>
                   
-                  {msg.sender === 'user' && (
-                    <button 
-                      className="MessageActionButton" 
-                      onClick={() => onDeleteMessage(msg.id)}
-                      title="Delete message"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
+                  <button 
+                    className="MessageActionButton" 
+                    onClick={() => onDeleteMessage(msg.id)}
+                    title="Delete message"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
               <div className="MessageContent">
@@ -138,19 +183,51 @@ const ChatPopup = ({
           ))}
         </div>
         
+        {!autoScroll && (
+          <button className="ScrollToBottomButton" onClick={scrollToBottom}>
+            <ChevronDown size={20} />
+          </button>
+        )}
+        
         <form className={`ChatPopupInput ${theme}`} onSubmit={handleSubmit}>
+          {selectedFile && (
+            <div className="SelectedFileTag">
+              {selectedFile.name}
+              <button 
+                type="button" 
+                onClick={() => setSelectedFile(null)}
+                className="RemoveFileButton"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
           <textarea
             ref={inputRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type your message..."
-            rows={3}
+            rows={1}
           />
+          <button 
+            type="button" 
+            className="FileButton"
+            onClick={handleFileButtonClick}
+            title="Attach file"
+          >
+            <Paperclip size={18} />
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+          </button>
           <button 
             type="submit" 
             className="SendButton"
-            disabled={!message.trim()}
+            disabled={!message.trim() && !selectedFile}
           >
             <Send size={20} />
           </button>
