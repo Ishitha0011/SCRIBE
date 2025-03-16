@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Send, Plus, Clock, Copy, Trash2, Maximize2, X, Paperclip } from 'lucide-react';
+import { Send, Plus, Clock, Copy, Trash2, Maximize2, X, Paperclip, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
@@ -31,8 +31,13 @@ const AskAI = ({ messages, setMessages }) => {
   const messagesEndRef = useRef(null);
   const titleTimeoutRef = useRef(null);
   const [expandedMessageIndex, setExpandedMessageIndex] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
+
+  // Add a new state to track if title has been generated
+  const [isTitleGenerated, setIsTitleGenerated] = useState(false);
+  // Add ref for the session history dropdown
+  const sessionHistoryRef = useRef(null);
 
   // Cleanup function for chat sessions
   const cleanupSession = async (sessionId) => {
@@ -45,9 +50,10 @@ const AskAI = ({ messages, setMessages }) => {
     }
   };
 
-  // Generate title after a few messages
+  // Generate title after a few messages, but only if not already generated
   const generateTitle = async (messages) => {
-    if (messages.length >= 2) { // Generate title after 2 messages
+    // Only generate title if it hasn't been generated yet and there are enough messages
+    if (!isTitleGenerated && messages.length >= 2) {
       try {
         console.log('Generating title for messages:', messages);
         
@@ -81,6 +87,8 @@ const AskAI = ({ messages, setMessages }) => {
         
         if (data.title && data.title !== 'New Chat') {
           setCurrentTitle(data.title);
+          // Mark title as generated so it won't be regenerated
+          setIsTitleGenerated(true);
           
           // Update session title in Supabase
           const { error } = await supabase
@@ -118,7 +126,15 @@ const AskAI = ({ messages, setMessages }) => {
       }
     };
 
+    // Add click outside handler to close session history dropdown
+    const handleClickOutside = (event) => {
+      if (sessionHistoryRef.current && !sessionHistoryRef.current.contains(event.target)) {
+        setShowSessionList(false);
+      }
+    };
+
     window.addEventListener('keydown', handleKeyboardShortcut);
+    document.addEventListener('mousedown', handleClickOutside);
 
     // Cleanup on unmount - only cleanup if there's an active session
     return () => {
@@ -130,6 +146,7 @@ const AskAI = ({ messages, setMessages }) => {
         }
       }
       window.removeEventListener('keydown', handleKeyboardShortcut);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [currentSessionId, messages, showSessionList]);
 
@@ -154,7 +171,7 @@ const AskAI = ({ messages, setMessages }) => {
     fetchMessages();
   }, [currentSessionId, setMessages]);
 
-  // Fetch all sessions
+  // Fetch all sessions, but filter out "New Chat" sessions for display
   const fetchSessions = async () => {
     const { data, error } = await supabase
       .from('chat_sessions')
@@ -164,6 +181,8 @@ const AskAI = ({ messages, setMessages }) => {
     if (error) {
       console.error('Error fetching sessions:', error);
     } else {
+      // Include all sessions in the list, including the current one with "New Chat" title
+      // This ensures the current session appears in history immediately
       setSessions(data || []);
     }
   };
@@ -223,8 +242,16 @@ const AskAI = ({ messages, setMessages }) => {
     };
   }, []);
 
+  // Add automatic scrolling to the latest message
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   const handleSubmit = async () => {
-    if ((!userInput.trim() && !selectedFile) || isSubmitting) return;
+    if ((!userInput.trim() && selectedFiles.length === 0) || isSubmitting) return;
 
     setIsSubmitting(true);
     let newSessionId = null;  // Declare newSessionId at the start
@@ -235,16 +262,18 @@ const AskAI = ({ messages, setMessages }) => {
         newSessionId = await createNewSession();
         setCurrentSessionId(newSessionId);
         
-        // Immediately fetch sessions to update the history dropdown
+        // Immediately fetch sessions to show the new session in history
         await fetchSessions();
       }
 
       const sessionId = currentSessionId || newSessionId;  // Use a consistent sessionId
 
-      let messageText = userInput;
-      if (selectedFile) {
-        // In a real implementation, you'd process the file content here
-        messageText = `[File: ${selectedFile.name}] ${userInput}`;
+      let messageText = userInput.trim();
+
+      // Update the file handling for multiple files
+      if (selectedFiles.length > 0) {
+        const fileNames = selectedFiles.map(file => file.name).join(', ');
+        messageText = `[Files: ${fileNames}] ${userInput}`;
       }
 
       const newMessage = {
@@ -309,8 +338,16 @@ const AskAI = ({ messages, setMessages }) => {
       // Generate title after adding new messages
       await generateTitle(finalMessages);
       
+      // Refresh sessions list after title generation to ensure it appears in history
+      await fetchSessions();
+      
       setUserInput('');
-      setSelectedFile(null);
+      setSelectedFiles([]);
+
+      // Make sure to scroll to the bottom to see the new message
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     } catch (error) {
       console.error('Error in chat interaction:', error);
       setMessages((prevMessages) => [
@@ -346,8 +383,11 @@ const AskAI = ({ messages, setMessages }) => {
     setMessages([]);
     setUserInput('');
     setCurrentTitle('New Chat');
+    // Reset title generated flag for new chat
+    setIsTitleGenerated(false);
     // Reset typing state when starting a new chat
     setTypingMessage({ index: null, text: '', fullText: '', isTyping: false });
+    setSelectedFiles([]);
     await fetchSessions();
   };
 
@@ -375,6 +415,8 @@ const AskAI = ({ messages, setMessages }) => {
       setCurrentSessionId(sessionId);
       setMessages(messagesData || []);
       setCurrentTitle(sessionData?.title || 'New Chat');
+      // Set title as generated if it's not "New Chat"
+      setIsTitleGenerated(sessionData?.title !== 'New Chat');
       setShowSessionList(false);
       
       // Reset typing state when loading a session
@@ -592,13 +634,15 @@ const AskAI = ({ messages, setMessages }) => {
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      // Convert FileList to Array and add to existing files
+      const newFiles = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...newFiles]);
     }
   };
 
-  const removeSelectedFile = () => {
-    setSelectedFile(null);
+  const removeSelectedFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -612,26 +656,25 @@ const AskAI = ({ messages, setMessages }) => {
               onClick={handleNewChat} 
               className="NewChatButton"
               disabled={isSubmitting}
+              aria-label="New Chat"
             >
-              <Plus size={18} />
+              <Plus size={16} />
               <span className="tooltiptext">New Chat</span>
             </button>
           </div>
-          <div className="history-container">
+          <div className="history-container" ref={sessionHistoryRef}>
             <div className="tooltip">
               <button 
                 onClick={async () => {
-                  // Refresh sessions list when opening the dropdown
-                  if (!showSessionList) {
-                    await fetchSessions();
-                  }
+                  // Always refresh sessions list when opening the dropdown
+                  await fetchSessions();
                   setShowSessionList(!showSessionList);
                 }} 
                 className={`PreviousChatButton ${showSessionList ? 'active' : ''}`}
                 disabled={isLoadingHistory || isSubmitting}
+                aria-label="Chat History"
               >
-                <Clock size={18} />
-                <div className="SessionListIndicator"></div>
+                <Clock size={16} />
                 <span className="tooltiptext">Chat History (Alt+H)</span>
               </button>
             </div>
@@ -663,7 +706,7 @@ const AskAI = ({ messages, setMessages }) => {
                           onClick={(e) => handleDeleteSession(session.session_id, e)}
                           aria-label="Delete session"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
@@ -695,30 +738,29 @@ const AskAI = ({ messages, setMessages }) => {
                       onClick={() => copyToClipboard(message.text, index)}
                       aria-label="Copy message"
                     >
-                      {copiedMessageId === index ? 'Copied!' : <Copy size={16} />}
+                      {copiedMessageId === index ? <Check size={14} /> : <Copy size={14} />}
                     </button>
                   )}
-                  {/* Always show the buttons instead of only when hovering */}
                   <button 
                     className="ExpandMessageButton"
                     onClick={() => handleExpandMessage(index)}
                     aria-label="Expand conversation"
                   >
-                    <Maximize2 size={16} />
+                    <Maximize2 size={14} />
                   </button>
                   <button 
                     className="DeleteMessageButton"
                     onClick={(e) => handleDeleteMessage(index, e)}
                     aria-label="Delete message"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
                 <div className="MessageContent">
                   {typingMessage.isTyping && typingMessage.index === index ? (
                     <>
                       <ReactMarkdown>{typingMessage.text}</ReactMarkdown>
-                      <span className="typing-cursor">*</span>
+                      <span className="typing-cursor"></span>
                     </>
                   ) : (
                     <ReactMarkdown>{message.text}</ReactMarkdown>
@@ -728,56 +770,72 @@ const AskAI = ({ messages, setMessages }) => {
             )}
           </div>
         ))}
+        {/* Add a div at the bottom for scrolling to the end */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Chat input */}
       <div className="ChatInputContainer">
-        {selectedFile && (
-          <div className="SelectedFileTag">
-            {selectedFile.name}
-            <button 
-              type="button" 
-              onClick={removeSelectedFile}
-              className="RemoveFileButton"
-            >
-              <X size={14} />
-            </button>
+        {selectedFiles.length > 0 && (
+          <div className="SelectedFilesContainer">
+            {selectedFiles.slice(0, 5).map((file, index) => (
+              <div key={index} className="SelectedFileTag">
+                <span className="FileTagName">{file.name}</span>
+                <button 
+                  type="button" 
+                  onClick={() => removeSelectedFile(index)}
+                  className="RemoveFileButton"
+                  aria-label={`Remove ${file.name}`}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+            {selectedFiles.length > 5 && (
+              <div className="MoreFilesIndicator">
+                +{selectedFiles.length - 5} more
+              </div>
+            )}
           </div>
         )}
-        <textarea
-          className="AskAIInput"
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder={isSubmitting ? "Thinking..." : "Type your message here..."}
-          disabled={isSubmitting}
-          rows={1}
-        />
-        <button 
-          className="FileButton"
-          onClick={handleFileButtonClick}
-          disabled={isSubmitting}
-          title="Attach file"
-        >
-          <Paperclip size={16} />
+        <div className="ChatInputWrapper">
+          <textarea
+            className="AskAIInput"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder={isSubmitting ? "Thinking..." : "Type your message here..."}
+            disabled={isSubmitting}
+            rows={1}
+          />
+          <button 
+            className="FileButton"
+            onClick={handleFileButtonClick}
+            disabled={isSubmitting}
+            title="Attach file"
+          >
+            <Paperclip size={16} />
+          </button>
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
             style={{ display: 'none' }}
+            multiple
           />
-        </button>
-        <button
-          className="SubmitButton"
-          onClick={handleSubmit}
-          disabled={(!userInput.trim() && !selectedFile) || isSubmitting}
-        >
-          {isSubmitting ? (
-            <div className="LoadingSpinner"></div>
-          ) : (
-            <Send size={16} />
-          )}
-        </button>
+          <button
+            className="SubmitButton"
+            onClick={handleSubmit}
+            disabled={(!userInput.trim() && selectedFiles.length === 0) || isSubmitting}
+            title="Send message"
+          >
+            {isSubmitting ? (
+              <div className="LoadingSpinner"></div>
+            ) : (
+              <Send size={16} />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Chat Popup */}

@@ -1,17 +1,18 @@
 .ChatContainer {
+  position: relative;
+  height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  margin-bottom: 1.3rem;
-  position: relative;
-  background-color: var(--editor-bg-color);
-  color: var(--editor-text-color);
+  background-color: var(--primary-bg-color, #fff);
+  color: var(--primary-text-color, #333);
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow: visible;
 }
 
 .ChatContainer.dark {
-  background-color: var(--dark-sidebar-bg-color, #1a1a1a);
-  color: var(--dark-sidebar-text-color, #fff);
+  background-color: var(--dark-bg-color, #1e1e1e);
+  color: var(--dark-text-color, #e0e0e0);
 }
 
 .ChatContainer.light {
@@ -20,185 +21,298 @@
 }
 
 .ChatDisplayContainer {
-  flex-grow: 1;
+  flex: 1;
   overflow-y: auto;
-  padding: 10px;
-  max-height: calc(90vh - 180px);
+  padding: 16px;
+  padding-bottom: 140px;
+  margin-bottom: 0;
   overflow-x: hidden;
-  background-color: inherit;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.ChatContainer.dark .ChatDisplayContainer {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.ChatDisplayContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ChatDisplayContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ChatDisplayContainer::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.ChatContainer.dark .ChatDisplayContainer::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .Message {
-  margin: 10px 0;
-  padding: 12px;
-  max-width: 85%;
-  font-size: 16px;
-  line-height: 1.5;
-  text-align: left;
-  word-wrap: break-word;
-  border-radius: 12px;
+  padding: 12px 0;
+  margin-bottom: 20px;
+  max-width: 95%;
   position: relative;
+  animation: fadeIn 0.3s ease;
+  line-height: 1.5;
+  font-size: 14px;
+  border-radius: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .Message.user {
-  background-color: var(--input-bg-color, #2b2b2b);
+  align-self: flex-end;
   margin-left: auto;
+  background-color: transparent;
+  color: var(--editor-text-color, #333);
+  padding-right: 8px;
 }
 
 .Message.ai {
-  background-color: var(--editor-bg-color, #1e1e1e);
-  border: 1px solid var(--border-color, #333);
-  margin-right: auto;
-  position: relative;
+  align-self: flex-start;
+  background-color: transparent;
+  color: var(--editor-text-color, #333);
+  padding-left: 8px;
 }
 
-/* Dark theme specific message styling */
 .ChatContainer.dark .Message.user {
-  background-color: #2b2b2b;
+  background-color: transparent;
+  color: var(--dark-text-color, #e0e0e0);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .ChatContainer.dark .Message.ai {
-  background-color: #1e1e1e;
-  border: 1px solid #333;
+  background-color: transparent;
+  color: var(--dark-text-color, #e0e0e0);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Light theme specific message styling */
-.ChatContainer.light .Message.user {
-  background-color: #f0f0f0;
+.Message::before {
+  content: 'You';
+  font-size: 12px;
+  font-weight: 600;
+  color: #0a84ff;
+  margin-bottom: 6px;
+  display: block;
 }
 
-.ChatContainer.light .Message.ai {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
+.Message.ai::before {
+  content: 'AI';
+  color: #777;
 }
 
-.Message .Sender {
-  font-weight: bold;
-  margin-bottom: 2px;
+.ChatContainer.dark .Message.ai::before {
+  color: #aaa;
 }
 
-.Message.user .Sender {
-  color: #000000; 
+.ChatContainer.dark .Message.user::before {
+  color: #4da3ff;
 }
 
-.Message.ai .Sender {
-  color: #d6c2e0; 
+.MessageContent {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
-.Message.user p,
-.Message.ai p {
-  margin: 0;
+.MessageContent p {
+  margin: 0 0 12px 0;
+}
+
+.MessageContent p:last-child {
+  margin-bottom: 0;
 }
 
 .ChatInputContainer {
-  position: relative;
-  margin-top: 15px;
-  padding: 20px;
-  width: 100%;
-  max-width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  padding-bottom: 4rem;
+  background-color: var(--primary-bg-color, #fff);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  transition: background-color 0.3s ease;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ChatContainer.dark .ChatInputContainer {
+  background-color: var(--dark-bg-color, #1e1e1e);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ChatInputWrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.AskAIInput {
+  width: 100%;
+  height: auto;
+  padding: 12px 16px;
+  padding-right: 90px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  font-size: 14px;
+  resize: none;
+  max-height: 120px;
+  overflow-y: auto;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  min-height: 48px;
+  background-color: #ffffff;
+  color: #333;
+  font-family: inherit;
+}
+
+.AskAIInput:focus {
+  border-color: #0a84ff;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.1);
+}
+
+.ChatContainer.dark .AskAIInput {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ChatContainer.dark .AskAIInput:focus {
+  border-color: #0a84ff;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
 }
 
 .ChatControlContainer {
-  background: transparent;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: var(--primary-bg-color, #fff);
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0;
-  margin-bottom: 10px;
+  padding: 16px;
+  margin-right: 0;
+  position: relative;
+  z-index: 99;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: background-color 0.3s ease;
 }
 
 .ChatContainer.dark .ChatControlContainer {
-  border-bottom: 1px solid var(--dark-border-color, #333);
-}
-
-.ChatContainer.light .ChatControlContainer {
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  background-color: var(--dark-bg-color, #1e1e1e);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .ChatTitle {
+  margin-left: 0;
   font-size: 16px;
-  font-weight: 500;
-  color: var(--editor-text-color);
-  flex-grow: 1;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-right: 16px;
+  max-width: 70%;
+}
+
+.ChatContainer.dark .ChatTitle {
+  color: var(--dark-text-color, #e0e0e0);
 }
 
 .ButtonGroup {
+  margin-right: 1rem;
   display: flex;
   gap: 8px;
-  position: relative;
 }
 
 .NewChatButton,
 .PreviousChatButton {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0.04);
   border: none;
-  cursor: pointer;
-  padding: 6px;
-  font-size: 20px;
-  color: var(--muted-text-color, #808080);
-  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s ease;
 }
 
-.ChatContainer.light .NewChatButton {
-  color: var(--editor-text-color, #000);
+.ChatContainer.dark .NewChatButton,
+.ChatContainer.dark .PreviousChatButton {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
 }
 
 .NewChatButton:hover,
 .PreviousChatButton:hover {
-  color: var(--editor-text-color);
-  background-color: rgba(var(--editor-text-color-rgb, 255, 255, 255), 0.1);
+  background-color: rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
-/* Tooltip styles */
+.ChatContainer.dark .NewChatButton:hover,
+.ChatContainer.dark .PreviousChatButton:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
 .tooltip {
   position: relative;
   display: inline-block;
 }
 
-/* Special styling for the history button tooltip */
-.tooltip:has(.PreviousChatButton) {
-  position: static; /* Allow dropdown to position relative to ButtonGroup */
-}
-
-/* Fallback for browsers that don't support :has() */
-.tooltip:last-child {
-  position: static;
-}
-
-/* Direct class for history tooltip */
-.history-tooltip {
-  position: static !important;
-}
-
 .tooltip .tooltiptext {
   visibility: hidden;
-  background-color: var(--bg-color, #333);
-  color: var(--editor-text-color, #fff);
+  width: auto;
+  min-width: 120px;
+  background-color: #333;
+  color: #fff;
   text-align: center;
   border-radius: 6px;
   padding: 5px 8px;
   position: absolute;
-  z-index: 1;
-  bottom: 100%;
+  z-index: 100;
+  top: 40px;
   left: 50%;
   transform: translateX(-50%);
-  margin-top: 5px;
-  font-size: 12px;
-  white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.3s;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent #333 transparent;
+}
+
+.tooltip:last-child .tooltiptext {
+  left: auto;
+  right: 0;
+  transform: translateX(0);
+}
+
+.tooltip:last-child .tooltiptext::after {
+  left: auto;
+  right: 10px;
+  margin-left: 0;
 }
 
 .tooltip:hover .tooltiptext {
@@ -206,296 +320,187 @@
   opacity: 1;
 }
 
-.AskAIInput {
-  width: 100%;
-  height: auto;
-  padding: 16px;
-  padding-right: 120px;
-  border: 1px solid #e0e0e0;
-  border-radius: 16px;
-  font-size: 14px;
-  resize: none;
-  max-height: 150px;
-  overflow-y: auto;
-  outline: none;
+.FileButton {
+  position: absolute;
+  right: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: transparent;
+  color: #777;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  min-height: 56px;
+  z-index: 15;
 }
 
-.ChatContainer.dark .AskAIInput {
-  background-color: #2d2d2d;
-  border-color: #444;
-  color: #eee;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.ChatContainer.light .AskAIInput {
-  background-color: #ffffff;
+.FileButton:hover {
   color: #333;
+}
+
+.ChatContainer.dark .FileButton {
+  color: #aaa;
+}
+
+.ChatContainer.dark .FileButton:hover {
+  color: #fff;
 }
 
 .SubmitButton {
   position: absolute;
-  right: 30px;
-  bottom: 30px;
-  background-color: #0f82e6;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #0a84ff;
   color: white;
   border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 15;
 }
 
 .SubmitButton:hover {
-  background-color: #0a6ac2;
-  transform: scale(1.05);
-}
-
-.ChatContainer.dark .SubmitButton {
-  background-color: #7289da;
-}
-
-.ChatContainer.light .SubmitButton {
-  background-color: #007bff;
-}
-
-.SubmitButton svg {
-  height: 18px;
-  width: 18px;
-  color: #ffffff;
-}
-
-.NewChatButton {
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-/* Session History Styles */
-.SessionHistoryDropdown {
-  position: absolute;
-  top: 100%; /* Position right below the button */
-  right: 0;
-  background-color: var(--editor-bg-color);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 8px;
-  width: 300px;
-  max-height: 400px;
-  overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1);
-  animation: fadeIn 0.2s ease-out;
-  margin-top: 8px; /* Add some space between button and dropdown */
-}
-
-.ChatContainer.dark .SessionHistoryDropdown {
-  background-color: var(--dark-sidebar-bg-color, #1a1a1a);
-  border: 1px solid var(--dark-border-color, #333);
-}
-
-.ChatContainer.light .SessionHistoryDropdown {
-  background-color: var(--sidebar-bg-color, #f9f9f9);
-  border: 1px solid var(--border-color, #e0e0e0);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.SessionHistoryHeader {
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border-color, #333);
-  position: sticky;
-  top: 0;
-  background-color: var(--editor-bg-color);
-  z-index: 1;
-}
-
-.ChatContainer.dark .SessionHistoryHeader {
-  background-color: var(--dark-sidebar-bg-color, #1a1a1a);
-  border-bottom: 1px solid var(--dark-border-color, #333);
-}
-
-.ChatContainer.light .SessionHistoryHeader {
-  background-color: var(--sidebar-bg-color, #f9f9f9);
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
-}
-
-.SessionHistoryHeader h3 {
-  margin: 0;
-  font-size: 16px;
-  color: var(--editor-text-color);
-  font-weight: 500;
-}
-
-.NoSessionsMessage {
-  padding: 16px;
-  text-align: center;
-  color: var(--muted-text-color, #808080);
-  font-style: italic;
-}
-
-.SessionItem {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color, #333);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.SessionItem:hover {
-  background-color: var(--input-bg-color, #2b2b2b);
-}
-
-.SessionItem.active {
-  background-color: var(--primary-color-light, #2d3748);
-  border-left: 3px solid var(--primary-color, #007bff);
-}
-
-.ChatContainer.dark .SessionItem {
-  border-bottom: 1px solid var(--dark-border-color, #333);
-}
-
-.ChatContainer.dark .SessionItem:hover {
-  background-color: #2b2b2b;
-}
-
-.ChatContainer.dark .SessionItem.active {
-  background-color: #2d3748;
-  border-left: 3px solid var(--primary-color, #7289da);
-}
-
-.ChatContainer.light .SessionItem {
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
-}
-
-.ChatContainer.light .SessionItem:hover {
-  background-color: #f0f0f0;
-}
-
-.ChatContainer.light .SessionItem.active {
-  background-color: rgba(0, 123, 255, 0.1);
-  border-left: 3px solid var(--primary-color, #007bff);
-}
-
-.SessionItem:last-child {
-  border-bottom: none;
-}
-
-.SessionTitle {
-  font-size: 14px;
-  color: var(--editor-text-color);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.SessionDate {
-  font-size: 12px;
-  color: var(--muted-text-color, #808080);
-}
-
-/* Loading States */
-.LoadingSpinner {
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #007bff;
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto;
-}
-
-.SubmitButton .LoadingSpinner {
-  width: 14px;
-  height: 14px;
-  border-width: 1.5px;
-  border-top-color: #ffffff;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Message Loading State */
-.Message.ai.loading {
-  opacity: 0.7;
-}
-
-.PreviousChatButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  background-color: #0070e0;
+  transform: translateY(-50%) scale(1.05);
 }
 
 .SubmitButton:disabled {
-  background-color: #2b2b2b;
+  background-color: #ccc;
   cursor: not-allowed;
+  transform: translateY(-50%);
 }
 
 .ChatContainer.dark .SubmitButton:disabled {
-  background-color: #333;
+  background-color: #555;
 }
 
-.ChatContainer.light .SubmitButton:disabled {
-  background-color: #e0e0e0;
-}
-
-.AskAIInput:disabled {
-  background-color: rgba(var(--textarea-bg-color), 0.8);
-  cursor: not-allowed;
-}
-
-.NewChatButton:disabled,
-.PreviousChatButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  color: var(--muted-text-color, #4a4a4a);
-}
-
-/* Message Actions Container */
-.MessageActions {
-  position: relative;
-  top: auto;
-  right: auto;
+.SelectedFilesContainer {
   display: flex;
-  gap: 8px;
-  z-index: 10;
-  opacity: 0; /* Hidden by default */
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: none;
+}
+
+.SelectedFilesContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.SelectedFileTag {
+  display: inline-flex;
+  align-items: center;
+  background-color: rgba(10, 132, 255, 0.1);
+  color: #0a84ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  max-width: 150px;
+  height: 22px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.FileTagName {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ChatContainer.dark .SelectedFileTag {
+  background-color: rgba(10, 132, 255, 0.2);
+  color: #4da3ff;
+}
+
+.MoreFilesIndicator {
+  display: inline-flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #777;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  height: 22px;
+}
+
+.ChatContainer.dark .MoreFilesIndicator {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #aaa;
+}
+
+.RemoveFileButton {
+  background: none;
+  border: none;
+  color: inherit;
+  margin-left: 4px;
+  padding: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-size: 14px;
+}
+
+.SelectedFileTag:hover .RemoveFileButton {
+  opacity: 0.7;
+}
+
+.RemoveFileButton:hover {
+  opacity: 1;
+}
+
+.MessageActions {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
   transition: opacity 0.2s ease;
 }
 
 .Message:hover .MessageActions {
-  opacity: 1; /* Visible on hover */
+  opacity: 1;
 }
 
-/* Create better hover effect for message action buttons */
-.MessageActionButton, .CopyButton, .DeleteMessageButton, .ExpandMessageButton {
-  background-color: rgba(0, 0, 0, 0.1);
+.MessageActionButton, 
+.CopyButton, 
+.DeleteMessageButton, 
+.ExpandMessageButton {
+  background: none;
   border: none;
-  padding: 5px;
+  padding: 4px;
   cursor: pointer;
   border-radius: 4px;
   color: inherit;
-  opacity: 0.8;
+  opacity: 0.6;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
 }
 
-.MessageActionButton:hover, .CopyButton:hover, .DeleteMessageButton:hover, .ExpandMessageButton:hover {
-  background-color: rgba(0, 0, 0, 0.2);
+.MessageActionButton:hover, 
+.CopyButton:hover, 
+.DeleteMessageButton:hover, 
+.ExpandMessageButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
   opacity: 1;
 }
 
@@ -503,218 +508,30 @@
 .ChatContainer.dark .CopyButton:hover, 
 .ChatContainer.dark .DeleteMessageButton:hover,
 .ChatContainer.dark .ExpandMessageButton:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Copy button styles */
-.CopyButton {
-  background-color: rgba(var(--editor-bg-color-rgb, 30, 30, 30), 0.9);
-  border: 1px solid var(--border-color, #444);
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
-  color: var(--muted-text-color, #aaa);
-  transition: all 0.2s ease;
-  font-size: 12px;
-  display: flex; /* Always visible */
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.CopyButton:hover {
-  color: var(--editor-text-color, #fff);
-  background-color: rgba(var(--editor-bg-color-rgb, 50, 50, 50), 0.95);
-}
-
-.CopyButton:active {
-  transform: scale(0.95);
-  background-color: rgba(var(--editor-bg-color-rgb, 70, 70, 70), 0.95);
-}
-
-.CopyButton.copied {
-  background-color: var(--success-color, #2a6b2a);
-  color: var(--editor-text-color, #fff);
-  border-color: var(--success-border-color, #3c8c3c);
-  display: flex;
-}
-
-/* Delete Message Button */
-.DeleteMessageButton {
-  background-color: rgba(var(--editor-bg-color-rgb, 30, 30, 30), 0.9);
-  border: 1px solid var(--border-color, #444);
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
-  color: var(--muted-text-color, #aaa);
-  transition: all 0.2s ease;
-  font-size: 12px;
-  display: flex; /* Always visible */
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.DeleteMessageButton:hover {
-  color: #ff6b6b;
-  background-color: rgba(255, 107, 107, 0.1);
-}
-
-.ChatContainer.dark .DeleteMessageButton:hover {
-  color: #ff6b6b;
-  background-color: rgba(255, 107, 107, 0.1);
-}
-
-.ChatContainer.light .DeleteMessageButton:hover {
-  color: #dc3545;
-  background-color: rgba(220, 53, 69, 0.1);
-}
-
-/* Message content area */
-.MessageContent {
-  width: 100%;
-  padding-right: 24px; /* Make space for the action buttons */
-}
-
-/* For long messages, ensure the button stays visible */
-@media (max-height: 600px) {
-  .MessageActions {
-    position: sticky;
-    top: 0;
-    float: right;
-    margin-bottom: 8px;
-  }
-}
-
-/* Expand button styles */
-.ExpandMessageButton {
-  background-color: rgba(var(--editor-bg-color-rgb, 30, 30, 30), 0.9);
-  border: 1px solid var(--border-color, #444);
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
-  color: var(--muted-text-color, #aaa);
-  transition: all 0.2s ease;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  margin-right: 6px;
-}
-
-.ExpandMessageButton:hover {
-  color: var(--editor-text-color, #fff);
-  background-color: rgba(var(--editor-bg-color-rgb, 50, 50, 50), 0.95);
-}
-
-.ExpandMessageButton:active {
-  transform: scale(0.95);
-}
-
-/* Remove these selectors as buttons are now always visible 
-.Message.ai:hover .ExpandMessageButton,
-.Message.user:hover .ExpandMessageButton {
-  display: flex;
-}
-*/
-
-.ChatContainer.dark .ExpandMessageButton:hover {
-  color: #8ebbff;
-  background-color: rgba(142, 187, 255, 0.1);
-}
-
-.ChatContainer.light .ExpandMessageButton:hover {
-  color: #0066cc;
-  background-color: rgba(0, 102, 204, 0.1);
-}
-
-/* Improved Session History Button */
-.PreviousChatButton {
-  position: relative;
-}
-
-.PreviousChatButton.active {
-  color: var(--editor-text-color);
-  background-color: rgba(var(--editor-text-color-rgb, 255, 255, 255), 0.15);
-  box-shadow: 0 0 0 1px rgba(var(--editor-text-color-rgb, 255, 255, 255), 0.1);
-}
-
-/* Indicator for active session list */
-.SessionListIndicator {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 8px;
-  height: 8px;
-  background-color: #007bff;
+.LoadingSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  display: none;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
 }
 
-.PreviousChatButton.active .SessionListIndicator {
-  display: block;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-/* History container for proper dropdown positioning */
-.history-container {
-  position: relative;
-  display: inline-block;
-}
-
-.SessionItemContent {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.SessionInfo {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow: hidden;
-  margin-right: 8px;
-}
-
-.DeleteSessionButton {
-  background: transparent;
-  border: none;
-  padding: 6px;
-  cursor: pointer;
-  color: var(--muted-text-color, #808080);
-  opacity: 0;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  min-width: 28px;
-  height: 28px;
-}
-
-.SessionItem:hover .DeleteSessionButton {
-  opacity: 1;
-}
-
-.DeleteSessionButton:hover {
-  color: #dc3545;
-  background-color: rgba(220, 53, 69, 0.1);
-}
-
-.ChatContainer.dark .DeleteSessionButton:hover {
-  color: #ff6b6b;
-  background-color: rgba(255, 107, 107, 0.1);
-}
-
-/* Typing effect styles */
 .typing-cursor {
   display: inline-block;
-  color: #d8c6ff; /* Light lavender pastel color */
-  font-weight: bold;
-  animation: blink 1s infinite;
+  width: 6px;
+  height: 16px;
+  background-color: currentColor;
   margin-left: 2px;
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
 }
 
 @keyframes blink {
@@ -722,188 +539,176 @@
   50% { opacity: 0; }
 }
 
-/* Session item styles */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.history-container {
+  position: relative;
+}
+
+.SessionHistoryDropdown {
+  position: absolute;
+  top: 40px;
+  right: auto;
+  left: auto;
+  transform: translateX(-80%);
+  width: 280px;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 480px) {
+  .SessionHistoryDropdown {
+    transform: translateX(-70%);
+    width: 250px;
+  }
+}
+
+@media (max-width: 320px) {
+  .SessionHistoryDropdown {
+    transform: translateX(-60%);
+    width: 220px;
+  }
+}
+
+.ChatContainer.dark .SessionHistoryDropdown {
+  background-color: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.SessionHistoryHeader {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 1;
+}
+
+.ChatContainer.dark .SessionHistoryHeader {
+  background-color: #2d2d2d;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.SessionHistoryHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.ChatContainer.dark .SessionHistoryHeader h3 {
+  color: #e0e0e0;
+}
+
+.NoSessionsMessage {
+  padding: 16px;
+  text-align: center;
+  color: #777;
+  font-size: 14px;
+}
+
+.ChatContainer.dark .NoSessionsMessage {
+  color: #aaa;
+}
+
+.SessionItem {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.SessionItem:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.SessionItem.active {
+  background-color: rgba(10, 132, 255, 0.08);
+}
+
+.ChatContainer.dark .SessionItem {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ChatContainer.dark .SessionItem:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ChatContainer.dark .SessionItem.active {
+  background-color: rgba(10, 132, 255, 0.15);
+}
+
 .SessionItemContent {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
 }
 
 .SessionInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   overflow: hidden;
-  flex: 1;
-}
-
-.DeleteSessionButton {
-  background: transparent;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  color: var(--text-color);
-  opacity: 0.5;
-  transition: opacity 0.2s, color 0.2s;
-}
-
-.DeleteSessionButton:hover {
-  opacity: 1;
-}
-
-.light .DeleteSessionButton:hover {
-  color: #ff4d4f;
-}
-
-.dark .DeleteSessionButton:hover {
-  color: #ff7875;
-}
-
-.SessionItem {
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
 }
 
 .SessionTitle {
+  font-size: 14px;
   font-weight: 500;
+  color: #333;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  margin-bottom: 4px;
+}
+
+.ChatContainer.dark .SessionTitle {
+  color: #e0e0e0;
 }
 
 .SessionDate {
-  font-size: 0.8rem;
-  opacity: 0.7;
-}
-
-/* Expand button styles */
-.ExpandMessageButton {
-  background-color: rgba(var(--editor-bg-color-rgb, 30, 30, 30), 0.9);
-  border: 1px solid var(--border-color, #444);
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
-  color: var(--muted-text-color, #aaa);
-  transition: all 0.2s ease;
   font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  margin-right: 6px;
+  color: #777;
 }
 
-.ExpandMessageButton:hover {
-  color: var(--editor-text-color, #fff);
-  background-color: rgba(var(--editor-bg-color-rgb, 50, 50, 50), 0.95);
+.ChatContainer.dark .SessionDate {
+  color: #aaa;
 }
 
-.ExpandMessageButton:active {
-  transform: scale(0.95);
-}
-
-/* Remove these selectors as buttons are now always visible 
-.Message.ai:hover .ExpandMessageButton,
-.Message.user:hover .ExpandMessageButton {
-  display: flex;
-}
-*/
-
-.ChatContainer.dark .ExpandMessageButton:hover {
-  color: #8ebbff;
-  background-color: rgba(142, 187, 255, 0.1);
-}
-
-.ChatContainer.light .ExpandMessageButton:hover {
-  color: #0066cc;
-  background-color: rgba(0, 102, 204, 0.1);
-}
-
-/* Selected file tag styling */
-.SelectedFileTag {
-  display: inline-flex;
-  align-items: center;
-  background-color: #e7f3ff;
-  color: #0a385c;
-  padding: 6px 10px;
-  border-radius: 12px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  align-self: flex-start;
-}
-
-.ChatContainer.dark .SelectedFileTag {
-  background-color: #1e4c73;
-  color: #e0f0ff;
-}
-
-.RemoveFileButton {
+.DeleteSessionButton {
   background: none;
   border: none;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 6px;
+  padding: 6px;
+  border-radius: 4px;
+  color: #777;
   cursor: pointer;
-  color: inherit;
-  opacity: 0.7;
-  border-radius: 50%;
-}
-
-.RemoveFileButton:hover {
-  opacity: 1;
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-.ChatContainer.dark .RemoveFileButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* File button styling */
-.FileButton {
-  position: absolute;
-  right: 65px;
-  bottom: 30px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: #f5f5f5;
-  color: #555;
-  border: 1px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  opacity: 0;
   transition: all 0.2s ease;
-  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.FileButton:hover {
-  background-color: #e6e6e6;
-  transform: scale(1.05);
+.SessionItem:hover .DeleteSessionButton {
+  opacity: 0.7;
 }
 
-.FileButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
+.DeleteSessionButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+  color: #ff3b30;
 }
 
-.ChatContainer.dark .FileButton {
-  background-color: #333;
-  border-color: #444;
-  color: #ddd;
-}
-
-.ChatContainer.dark .FileButton:hover {
-  background-color: #444;
+.ChatContainer.dark .DeleteSessionButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ff453a;
 }

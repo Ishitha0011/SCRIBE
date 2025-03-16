@@ -27,8 +27,17 @@ const ChatPopup = ({
   const [copySuccess, setCopySuccess] = useState(null);
   const { theme } = useTheme();
   const [autoScroll, setAutoScroll] = useState(true);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
+  // Add state to track current title for display
+  const [displayTitle, setDisplayTitle] = useState(chatTitle);
+  // Add a dedicated ref for scrolling to the end of messages
+  const messagesEndRef = useRef(null);
+
+  // Update display title when chatTitle prop changes
+  useEffect(() => {
+    setDisplayTitle(chatTitle);
+  }, [chatTitle]);
 
   // Focus input when popup opens
   useEffect(() => {
@@ -57,12 +66,14 @@ const ChatPopup = ({
     }
   }, [focusedMessageId, isOpen]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Improve the auto-scroll behavior to ensure it always scrolls to new messages
   useEffect(() => {
-    if (messageContainerRef.current && autoScroll) {
-      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+    // Always scroll to the latest message when new messages arrive
+    if (messageContainerRef.current && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      setAutoScroll(true); // Reset auto-scroll to true when new messages come in
     }
-  }, [chatHistory, autoScroll]);
+  }, [chatHistory]);
 
   // Handle scroll to detect if user has scrolled up
   const handleScroll = () => {
@@ -74,19 +85,31 @@ const ChatPopup = ({
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    if (message.trim() || selectedFile) {
+    if (e) e.preventDefault();
+    
+    if (message.trim() || selectedFiles.length > 0) {
       let finalMessage = message;
       
-      if (selectedFile) {
-        // In a real implementation, you'd process the file here
-        finalMessage = `[File: ${selectedFile.name}] ${message}`;
+      // Update for multiple files
+      if (selectedFiles.length > 0) {
+        const fileNames = selectedFiles.map(file => file.name).join(', ');
+        finalMessage = `[Files: ${fileNames}] ${message}`;
       }
       
       onSendMessage(finalMessage);
       setMessage('');
-      setSelectedFile(null);
-      setAutoScroll(true);
+      setSelectedFiles([]);
+      
+      // Ensure we scroll to the bottom after sending a message
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+      
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     }
   };
 
@@ -123,9 +146,15 @@ const ChatPopup = ({
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      // Add new files to existing files
+      const newFiles = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...newFiles]);
     }
+  };
+
+  const removeSelectedFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   if (!isOpen) return null;
@@ -137,7 +166,7 @@ const ChatPopup = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`ChatPopupHeader ${theme}`}>
-          <h3>{chatTitle}</h3>
+          <h3>{displayTitle}</h3>
           <button className="CloseButton" onClick={onClose}>
             <X size={20} />
           </button>
@@ -181,6 +210,8 @@ const ChatPopup = ({
               </div>
             </div>
           ))}
+          {/* Add div for automatic scrolling to latest message */}
+          <div ref={messagesEndRef} />
         </div>
         
         {!autoScroll && (
@@ -189,49 +220,61 @@ const ChatPopup = ({
           </button>
         )}
         
-        <form className={`ChatPopupInput ${theme}`} onSubmit={handleSubmit}>
-          {selectedFile && (
-            <div className="SelectedFileTag">
-              {selectedFile.name}
-              <button 
-                type="button" 
-                onClick={() => setSelectedFile(null)}
-                className="RemoveFileButton"
-              >
-                <X size={14} />
-              </button>
+        <div className="ChatPopupInput">
+          {/* Files display */}
+          {selectedFiles.length > 0 && (
+            <div className="SelectedFilesContainer">
+              {selectedFiles.slice(0, 5).map((file, index) => (
+                <div key={index} className="SelectedFileTag">
+                  <span className="FileTagName">{file.name}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => removeSelectedFile(index)}
+                    className="RemoveFileButton"
+                    aria-label={`Remove ${file.name}`}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+              {selectedFiles.length > 5 && (
+                <div className="MoreFilesIndicator">
+                  +{selectedFiles.length - 5} more
+                </div>
+              )}
             </div>
           )}
-          <textarea
-            ref={inputRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
-            rows={1}
-          />
-          <button 
-            type="button" 
-            className="FileButton"
-            onClick={handleFileButtonClick}
-            title="Attach file"
-          >
-            <Paperclip size={18} />
+          <div className="InputWrapper">
+            <button 
+              className="FileButton"
+              onClick={handleFileButtonClick}
+              title="Attach file"
+            >
+              <Paperclip size={16} />
+            </button>
+            <textarea
+              ref={inputRef}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+            />
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
               style={{ display: 'none' }}
+              multiple
             />
-          </button>
-          <button 
-            type="submit" 
-            className="SendButton"
-            disabled={!message.trim() && !selectedFile}
-          >
-            <Send size={20} />
-          </button>
-        </form>
+            <button
+              className="SendButton"
+              onClick={handleSubmit}
+              disabled={!message.trim() && selectedFiles.length === 0}
+            >
+              <Send size={16} />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

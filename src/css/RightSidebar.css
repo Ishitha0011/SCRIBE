@@ -1,24 +1,28 @@
 /* RightSidebar container */
 .RightSidebar {
-  width: 250px;
+  width: 320px;
   height: 100vh;
-  background-color: var(--sidebar-bg-color);
-  color: var(--editor-text-color);
-  border-left: 1px solid #ddd;
-  padding: 10px 20px;
+  background-color: var(--sidebar-bg-color, #f8f9fa);
+  color: var(--editor-text-color, #333);
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
 }
 
 .RightSidebar.collapsed {
-  width: 30px; /* Reduced width when collapsed */
-  padding: 5px 5px;
+  width: 48px;
+  padding: 0;
 }
 
 .RightSidebar.dark {
-  background-color: var(--sidebar-bg-color);
-  color: var(--editor-text-color);
+  background-color: var(--sidebar-bg-color, #2c2f33);
+  color: var(--editor-text-color, #e0e0e0);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
 }
 
 /* Top section with logo and dropdown */
@@ -26,28 +30,51 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  height: 60px;
+  background-color: var(--primary-bg-color, #fff);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: background-color 0.3s ease;
+}
+
+.RightSidebar.dark .TopSection {
+  background-color: var(--dark-bg-color, #1e1e1e);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.RightSidebar.collapsed .TopSection {
+  justify-content: center;
+  padding: 16px 0;
 }
 
 .DynamicContent {
-  flex-grow: 1; /* Push content to take up remaining space */
+  flex: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Logo */
 .Logo {
-  font-size: 24px;
-  font-weight: bold;
-  color: var(--editor-text-color);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--editor-text-color, #333);
   letter-spacing: 0.5px;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.RightSidebar.dark .Logo {
+  color: var(--editor-text-color, #e0e0e0);
 }
 
 .RightSidebar.collapsed .Logo {
   opacity: 0;
   visibility: hidden;
+  position: absolute;
 }
 
 /* Dropdown container */
@@ -57,28 +84,37 @@
   position: relative;
 }
 
+.RightSidebar.collapsed .DropdownContainer {
+  display: none;
+}
+
 /* Custom dropdown */
 .SelectDropdown {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--textarea-bg-color);
-  color: var(--textarea-text-color);
-  border-radius: 12px;
-  border: 1px solid var(--editor-text-color);
-  padding: 10px 10px;
-  font-size: 16px;
+  background-color: rgba(0, 0, 0, 0.04);
+  color: var(--textarea-text-color, #333);
+  border-radius: 8px;
+  border: none;
+  padding: 8px 12px;
+  font-size: 14px;
   cursor: pointer;
   width: 100px;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
-.RightSidebar.collapsed .SelectDropdown {
-  display: none;
+.RightSidebar.dark .SelectDropdown {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--textarea-text-color, #e0e0e0);
 }
 
 .SelectDropdown:hover {
-  background-color: rgba(0, 0, 0, 0.05); /* Subtle hover effect */
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.RightSidebar.dark .SelectDropdown:hover {
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 /* Dropdown indicator */
@@ -94,55 +130,99 @@
 /* Dropdown options */
 .DropdownList {
   position: absolute;
-  top: 100%;
+  top: 40px;
   left: 0;
   width: 100%;
-  background-color: var(--textarea-bg-color);
-  color: var(--textarea-text-color);
-  border: 1px solid var(--editor-text-color);
-  border-radius: 6px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  overflow: hidden;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.RightSidebar.dark .DropdownList {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .Option {
-  padding: 12px 20px;
-  font-size: 16px;
-  color: var(--textarea-text-color);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #333;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
+}
+
+.RightSidebar.dark .Option {
+  color: #e0e0e0;
 }
 
 .Option:hover {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .RightSidebar.dark .Option:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.Option:focus {
-  outline: none;
-  background-color: #d3d3ff;
-}
-
 /* Collapse button */
 .CollapseIcon {
-  position: relative;
+  position: absolute;
   bottom: 20px;
-  left: 0px;
-  width: 40px;
-  height: 40px;
+  left: 16px;
+  width: 36px;
+  height: 36px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   border-radius: 50%;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  background-color: #fff;
+  color: #555;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.RightSidebar.dark .CollapseIcon {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.RightSidebar.collapsed .CollapseIcon {
+  left: 6px;
+  width: 36px;
+  height: 36px;
 }
 
 .CollapseIcon:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  background-color: #f8f8f8;
+}
+
+.RightSidebar.dark .CollapseIcon:hover {
+  background-color: #333;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark theme adjustments */
+.RightSidebar.dark .AskAIInput {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.RightSidebar.dark .AskAIInput::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* Ask AI input container */
@@ -155,8 +235,6 @@
   padding-bottom: 1.4rem;
 }
 
-
-
 .AskAIInput:focus {
   border-color: #bb44f0;
   box-shadow: 0px 0px 4px rgba(187, 68, 240, 0.5);
@@ -167,49 +245,87 @@
   font-style: italic;
 }
 
-/* Handle theme switching */
-.RightSidebar.dark {
-  background-color: var(--dark-sidebar-bg-color, #1a1a1a); /* Dark theme background */
-  color: var(--dark-sidebar-text-color, #fff); /* Dark theme text */
-  border-left: 1px solid var(--dark-border-color, #333); /* Dark theme border */
+/* Add ComingSoonPlaceholder style */
+.ComingSoonPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #777;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
 }
 
-.RightSidebar.dark .Logo {
-  color: var(--dark-sidebar-text-color, #fff);
+.RightSidebar.dark .ComingSoonPlaceholder {
+  color: #aaa;
 }
 
-.RightSidebar.dark .SelectDropdown {
-  background-color: var(--dark-textarea-bg-color, #2a2a2a);
-  color: var(--dark-sidebar-text-color, #fff);
-  border-color: var(--dark-border-color, #333);
+/* Completely revamp tooltip styles for RightSidebar */
+.RightSidebar .tooltip {
+  position: relative;
+  display: inline-block;
 }
 
-.RightSidebar.dark .DropdownIcon {
-  color: var(--dark-icon-color, #bbb);
+.RightSidebar .tooltip .tooltiptext {
+  visibility: hidden;
+  width: auto;
+  min-width: 120px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 8px;
+  position: absolute;
+  z-index: 100;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
-.RightSidebar.dark .DropdownList {
-  background-color: var(--dark-textarea-bg-color, #2a2a2a);
-  color: var(--dark-sidebar-text-color, #fff);
-  border-color: var(--dark-border-color, #333);
+/* Add arrow to tooltip pointing up */
+.RightSidebar .tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent #333 transparent;
 }
 
-.RightSidebar.dark .Option {
-  color: var(--dark-sidebar-text-color, #fff);
+/* Special handling for collapsed sidebar */
+.RightSidebar.collapsed .tooltip .tooltiptext {
+  left: 40px;
+  top: 0;
+  transform: none;
 }
 
-.RightSidebar.dark .AskAIInput {
-  background-color: var(--dark-textarea-bg-color, #2a2a2a);
-  color: var(--dark-sidebar-text-color, #fff);
-  border-color: var(--dark-border-color, #333);
+.RightSidebar.collapsed .tooltip .tooltiptext::after {
+  bottom: auto;
+  top: 50%;
+  left: -10px;
+  margin-left: 0;
+  margin-top: -5px;
+  border-color: transparent #333 transparent transparent;
 }
 
-.RightSidebar.dark .AskAIInput::placeholder {
-  color: var(--dark-placeholder-color, #888);
+.RightSidebar .tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
 }
 
-.RightSidebar.dark .CollapseIcon:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+/* Adjust dropdown position when near the bottom of the screen */
+@media (max-height: 600px) {
+  .RightSidebar .DropdownList {
+    max-height: 200px;
+  }
 }
 
 

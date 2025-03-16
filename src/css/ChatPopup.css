@@ -5,56 +5,61 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.2s ease;
 }
 
 .ChatPopupOverlay.dark {
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 .ChatPopupContainer {
+  position: relative;
   width: 90%;
   max-width: 800px;
-  height: 85vh;
+  height: 80vh;
   background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  animation: slideUp 0.25s ease-out;
+  overflow: visible;
+  animation: slideUp 0.3s ease;
+  z-index: 1001;
 }
 
 .ChatPopupContainer.dark {
   background-color: #1e1e1e;
-  color: #eee;
-  border: 1px solid #333;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .ChatPopupHeader {
-  padding: 15px 20px;
-  border-bottom: 1px solid #eaeaea;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #f8f8f8;
+  background-color: #fff;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
 .ChatPopupHeader.dark {
-  background-color: #252525;
-  border-bottom: 1px solid #333;
+  background-color: #1e1e1e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .ChatPopupHeader h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   color: #333;
 }
 
@@ -65,17 +70,18 @@
 .CloseButton {
   background: none;
   border: none;
-  padding: 5px;
+  padding: 6px;
   cursor: pointer;
-  border-radius: 4px;
-  color: #666;
+  border-radius: 8px;
+  color: #777;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .CloseButton:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(0, 0, 0, 0.05);
   color: #333;
 }
 
@@ -84,7 +90,7 @@
 }
 
 .ChatPopupContainer.dark .CloseButton:hover {
-  background-color: #333;
+  background-color: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
@@ -94,41 +100,41 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
   /* Custom scrollbar */
   scrollbar-width: thin;
-  scrollbar-color: #ccc #f5f5f5;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
 .ChatPopupContainer.dark .ChatPopupMessages {
-  scrollbar-color: #555 #2d2d2d;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 .ChatPopupMessages::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .ChatPopupMessages::-webkit-scrollbar-track {
-  background: #f5f5f5;
+  background: transparent;
 }
 
 .ChatPopupMessages::-webkit-scrollbar-thumb {
-  background-color: #ccc;
-  border-radius: 10px;
-}
-
-.ChatPopupContainer.dark .ChatPopupMessages::-webkit-scrollbar-track {
-  background: #2d2d2d;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
 }
 
 .ChatPopupContainer.dark .ChatPopupMessages::-webkit-scrollbar-thumb {
-  background-color: #555;
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .ChatMessage {
-  padding: 15px;
-  border-radius: 8px;
+  padding: 16px;
+  border-radius: 12px;
   max-width: 85%;
+  position: relative;
+  animation: fadeIn 0.3s ease;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .UserMessage {
@@ -136,23 +142,27 @@
   background-color: #e7f3ff;
   color: #0a385c;
   margin-left: 15%;
+  padding-right: 8px;
 }
 
 .AIMessage {
   align-self: flex-start;
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: transparent;
+  color: var(--editor-text-color, #333);
   margin-right: 15%;
+  padding-left: 8px;
 }
 
 .ChatPopupContainer.dark .UserMessage {
-  background-color: #1e4c73;
-  color: #e0f0ff;
+  background-color: transparent;
+  color: #e0e0e0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .ChatPopupContainer.dark .AIMessage {
-  background-color: #2d2d2d;
-  color: #ddd;
+  background-color: transparent;
+  color: #e0e0e0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .MessageHeader {
@@ -165,15 +175,32 @@
 
 .MessageSender {
   font-weight: 500;
+  color: #0a84ff;
+}
+
+.AIMessage .MessageSender {
+  color: #777;
+}
+
+.ChatPopupContainer.dark .MessageSender {
+  color: #4da3ff;
+}
+
+.ChatPopupContainer.dark .AIMessage .MessageSender {
+  color: #aaa;
 }
 
 .MessageActions {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   opacity: 0;
   transition: opacity 0.2s ease;
-  position: relative;
+  position: absolute;
+  right: 4px;
+  top: 16px;
   z-index: 5;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 .ChatMessage:hover .MessageActions {
@@ -191,181 +218,224 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .MessageActionButton:hover {
-  background-color: rgba(0, 0, 0, 0.15);
+  background-color: rgba(0, 0, 0, 0.1);
   opacity: 1;
 }
 
 .ChatPopupContainer.dark .MessageActionButton:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .MessageContent {
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  font-size: 14px;
 }
 
 /* Update and modernize the ChatPopupInput */
 .ChatPopupInput {
-  position: relative;
-  padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  border-top: 1px solid #eaeaea;
+  padding: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   background-color: #fff;
+  position: relative;
+  border-radius: 0 0 16px 16px;
+  margin: 0 16px 16px;
+}
+
+.InputWrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
 }
 
 .ChatPopupContainer.dark .ChatPopupInput {
   background-color: #1e1e1e;
-  border-top: 1px solid #333;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .ChatPopupInput textarea {
-  flex: 1;
-  padding: 16px;
-  padding-right: 120px;
-  border: 1px solid #e0e0e0;
-  border-radius: 16px;
-  resize: none;
-  font-family: inherit;
+  width: 100%;
+  min-height: 48px;
+  max-height: 180px;
+  padding: 12px 16px;
+  padding-right: 90px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
   font-size: 14px;
-  background-color: #fff;
-  color: #333;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-  max-height: 150px;
+  resize: none;
+  outline: none;
   overflow-y: auto;
+  background-color: #fff;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  color: #333;
 }
 
 .ChatPopupInput textarea:focus {
-  outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 2px 12px rgba(74, 144, 226, 0.15);
+  border-color: #0a84ff;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.1);
 }
 
 .ChatPopupContainer.dark .ChatPopupInput textarea {
-  background-color: #2d2d2d;
-  border-color: #444;
-  color: #eee;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
 }
 
 .ChatPopupContainer.dark .ChatPopupInput textarea:focus {
-  border-color: #0f82e6;
-  box-shadow: 0 2px 12px rgba(15, 130, 230, 0.15);
+  border-color: #0a84ff;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
 }
 
 /* Add file upload button styles */
 .FileButton {
   position: absolute;
-  right: 75px;
-  bottom: 30px;
-  width: 36px;
-  height: 36px;
+  right: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background-color: #f5f5f5;
-  color: #555;
-  border: 1px solid #e0e0e0;
+  background-color: transparent;
+  color: #777;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  z-index: 2;
+  z-index: 15;
 }
 
 .FileButton:hover {
-  background-color: #e6e6e6;
-  transform: scale(1.05);
+  color: #333;
 }
 
 .ChatPopupContainer.dark .FileButton {
-  background-color: #333;
-  border-color: #444;
-  color: #ddd;
+  color: #aaa;
 }
 
 .ChatPopupContainer.dark .FileButton:hover {
-  background-color: #444;
+  color: #fff;
 }
 
 /* Selected file tag styling */
+.SelectedFilesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: none;
+}
+
+.SelectedFilesContainer::-webkit-scrollbar {
+  display: none;
+}
+
 .SelectedFileTag {
   display: inline-flex;
   align-items: center;
-  background-color: #e7f3ff;
-  color: #0a385c;
-  padding: 6px 10px;
-  border-radius: 12px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  max-width: 300px;
+  background-color: rgba(10, 132, 255, 0.1);
+  color: #0a84ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  max-width: 150px;
+  height: 22px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.FileTagName {
+  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .ChatPopupContainer.dark .SelectedFileTag {
-  background-color: #1e4c73;
-  color: #e0f0ff;
+  background-color: rgba(10, 132, 255, 0.2);
+  color: #4da3ff;
+}
+
+.MoreFilesIndicator {
+  display: inline-flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #777;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  height: 22px;
+}
+
+.ChatPopupContainer.dark .MoreFilesIndicator {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #aaa;
 }
 
 .RemoveFileButton {
   background: none;
   border: none;
-  padding: 2px;
+  color: inherit;
+  margin-left: 4px;
+  padding: 1px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 6px;
-  cursor: pointer;
-  color: inherit;
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-size: 12px;
+}
+
+.SelectedFileTag:hover .RemoveFileButton {
   opacity: 0.7;
-  border-radius: 50%;
 }
 
 .RemoveFileButton:hover {
   opacity: 1;
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-.ChatPopupContainer.dark .RemoveFileButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Ensure SendButton is properly positioned with new layout */
 .SendButton {
   position: absolute;
-  right: 30px;
-  bottom: 30px;
-  background-color: #0f82e6;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #0a84ff;
   color: white;
   border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 2;
+  z-index: 15;
 }
 
 .SendButton:hover {
-  background-color: #0a6ac2;
-  transform: scale(1.05);
+  background-color: #0070e0;
+  transform: translateY(-50%) scale(1.05);
 }
 
 .SendButton:disabled {
   background-color: #ccc;
   cursor: not-allowed;
-  transform: none;
+  transform: translateY(-50%);
 }
 
 .ChatPopupContainer.dark .SendButton:disabled {
@@ -374,8 +444,8 @@
 
 /* Highlight effect for focused message */
 @keyframes highlight {
-  0% { box-shadow: 0 0 0 2px rgba(15, 130, 230, 0.5); }
-  100% { box-shadow: 0 0 0 2px rgba(15, 130, 230, 0); }
+  0% { box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.5); }
+  100% { box-shadow: 0 0 0 2px rgba(10, 132, 255, 0); }
 }
 
 .highlight {
@@ -426,25 +496,34 @@
     border-radius: 0;
   }
   
+  .ChatPopupHeader {
+    border-radius: 0;
+  }
+  
   .ChatMessage {
     max-width: 95%;
   }
   
   .MessageActions {
     opacity: 1;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .ChatPopupContainer.dark .MessageActions {
+    background-color: rgba(0, 0, 0, 0.5);
   }
 }
 
 /* Add styles for scroll to bottom button */
 .ScrollToBottomButton {
   position: absolute;
-  bottom: 80px;
+  bottom: 100px;
   right: 20px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   background-color: #fff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
@@ -456,17 +535,75 @@
 }
 
 .ScrollToBottomButton:hover {
-  background-color: #f5f5f5;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .ChatPopupContainer.dark .ScrollToBottomButton {
   background-color: #2d2d2d;
-  border-color: #444;
-  color: #eee;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .ChatPopupContainer.dark .ScrollToBottomButton:hover {
   background-color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Completely revamp tooltip styles for ChatPopup */
+.ChatPopupContainer .tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.ChatPopupContainer .tooltip .tooltiptext {
+  visibility: hidden;
+  width: auto;
+  min-width: 120px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 8px;
+  position: absolute;
+  z-index: 100;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Add arrow to tooltip pointing up */
+.ChatPopupContainer .tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent #333 transparent;
+}
+
+/* Adjust for right-aligned tooltips */
+.ChatPopupContainer .tooltip:last-child .tooltiptext {
+  left: auto;
+  right: 0;
+  transform: translateX(0);
+}
+
+.ChatPopupContainer .tooltip:last-child .tooltiptext::after {
+  left: auto;
+  right: 10px;
+  margin-left: 0;
+}
+
+.ChatPopupContainer .tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
 } 

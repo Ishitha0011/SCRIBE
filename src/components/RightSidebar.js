@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, MessageSquare, BookOpen, FlaskConical } from 'lucide-react';
 import AskAI from './AskAI';
 import '../css/RightSidebar.css';
 import { useTheme } from '../ThemeContext';
@@ -12,14 +12,24 @@ const RightSidebar = () => {
 
   const { theme } = useTheme();
   const dropdownRef = useRef(null);
+  const sidebarRef = useRef(null);
 
   const toggleDropdown = () => setIsOpen((prev) => !prev);
+  
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
     setIsOpen(false);
   };
-  const toggleCollapse = () => setIsCollapsed((prev) => !prev);
+  
+  const toggleCollapse = () => {
+    setIsCollapsed((prev) => !prev);
+    // If opening from collapsed state, ensure dropdown is closed
+    if (isCollapsed) {
+      setIsOpen(false);
+    }
+  };
 
+  // Handle clicks outside the dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -30,22 +40,57 @@ const RightSidebar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Get icon based on selected option
+  const getOptionIcon = (option) => {
+    switch (option) {
+      case 'AI':
+        return <MessageSquare size={16} />;
+      case 'Notes':
+        return <BookOpen size={16} />;
+      case 'Labs':
+        return <FlaskConical size={16} />;
+      default:
+        return <MessageSquare size={16} />;
+    }
+  };
+
   return (
-    <div className={`RightSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}>
+    <div 
+      className={`RightSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}
+      ref={sidebarRef}
+    >
       <div className="TopSection">
-        <div className="Logo">{!isCollapsed && 'Scribe*'}</div>
+        <div className="Logo">{!isCollapsed && 'Scribe'}</div>
         <div className="DropdownContainer" ref={dropdownRef}>
           {!isCollapsed && (
             <div className="SelectDropdown" onClick={toggleDropdown}>
-              <span>{selectedOption}</span>
-              <ChevronDown size={18} className={`DropdownIcon ${isOpen ? 'open' : ''}`} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {getOptionIcon(selectedOption)}
+                <span>{selectedOption}</span>
+              </div>
+              <ChevronDown size={16} className={`DropdownIcon ${isOpen ? 'open' : ''}`} />
             </div>
           )}
           {isOpen && !isCollapsed && (
             <div className="DropdownList">
-              <div className="Option" onClick={() => handleOptionSelect('AI')}>AI</div>
-              <div className="Option" onClick={() => handleOptionSelect('Notes')}>Notes</div>
-              <div className="Option" onClick={() => handleOptionSelect('Labs')}>Labs</div>
+              <div className="Option" onClick={() => handleOptionSelect('AI')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <MessageSquare size={16} />
+                  <span>AI</span>
+                </div>
+              </div>
+              <div className="Option" onClick={() => handleOptionSelect('Notes')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <BookOpen size={16} />
+                  <span>Notes</span>
+                </div>
+              </div>
+              <div className="Option" onClick={() => handleOptionSelect('Labs')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FlaskConical size={16} />
+                  <span>Labs</span>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -54,11 +99,13 @@ const RightSidebar = () => {
       {/* Dynamic Content Based on Selected Option */}
       <div className="DynamicContent">
         {selectedOption === 'AI' && !isCollapsed && <AskAI messages={messages} setMessages={setMessages} />}
-      </div>
-
-      {/* Collapsible icon at the bottom */}
-      <div className="CollapseIcon" onClick={toggleCollapse}>
-        {isCollapsed ? <ChevronLeft size={24} /> : <ChevronRight size={24} />}
+        {selectedOption === 'Notes' && !isCollapsed && <div className="ComingSoonPlaceholder">Notes feature coming soon</div>}
+        {selectedOption === 'Labs' && !isCollapsed && <div className="ComingSoonPlaceholder">Labs feature coming soon</div>}
+        
+        {/* Collapsible icon */}
+        <div className="CollapseIcon" onClick={toggleCollapse} title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+          {isCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+        </div>
       </div>
     </div>
   );

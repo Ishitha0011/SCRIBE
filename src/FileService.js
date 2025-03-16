@@ -1,4 +1,4 @@
-// FileService.js - Service for handling file system operations via API
+/* eslint-disable */
 
 import API_BASE_URL from './config';
 
