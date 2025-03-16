@@ -171,7 +171,7 @@ const AskAI = ({ messages, setMessages }) => {
     fetchMessages();
   }, [currentSessionId, setMessages]);
 
-  // Fetch all sessions, but filter out "New Chat" sessions for display
+  // Fetch all sessions
   const fetchSessions = async () => {
     const { data, error } = await supabase
       .from('chat_sessions')
@@ -181,8 +181,6 @@ const AskAI = ({ messages, setMessages }) => {
     if (error) {
       console.error('Error fetching sessions:', error);
     } else {
-      // Include all sessions in the list, including the current one with "New Chat" title
-      // This ensures the current session appears in history immediately
       setSessions(data || []);
     }
   };
@@ -242,14 +240,6 @@ const AskAI = ({ messages, setMessages }) => {
     };
   }, []);
 
-  // Add automatic scrolling to the latest message
-  useEffect(() => {
-    // Scroll to bottom when messages change
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-
   const handleSubmit = async () => {
     if ((!userInput.trim() && selectedFiles.length === 0) || isSubmitting) return;
 
@@ -262,7 +252,7 @@ const AskAI = ({ messages, setMessages }) => {
         newSessionId = await createNewSession();
         setCurrentSessionId(newSessionId);
         
-        // Immediately fetch sessions to show the new session in history
+        // Immediately fetch sessions to update the history dropdown
         await fetchSessions();
       }
 
@@ -338,16 +328,8 @@ const AskAI = ({ messages, setMessages }) => {
       // Generate title after adding new messages
       await generateTitle(finalMessages);
       
-      // Refresh sessions list after title generation to ensure it appears in history
-      await fetchSessions();
-      
       setUserInput('');
       setSelectedFiles([]);
-
-      // Make sure to scroll to the bottom to see the new message
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
     } catch (error) {
       console.error('Error in chat interaction:', error);
       setMessages((prevMessages) => [
@@ -666,8 +648,10 @@ const AskAI = ({ messages, setMessages }) => {
             <div className="tooltip">
               <button 
                 onClick={async () => {
-                  // Always refresh sessions list when opening the dropdown
-                  await fetchSessions();
+                  // Refresh sessions list when opening the dropdown
+                  if (!showSessionList) {
+                    await fetchSessions();
+                  }
                   setShowSessionList(!showSessionList);
                 }} 
                 className={`PreviousChatButton ${showSessionList ? 'active' : ''}`}
@@ -770,8 +754,6 @@ const AskAI = ({ messages, setMessages }) => {
             )}
           </div>
         ))}
-        {/* Add a div at the bottom for scrolling to the end */}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Chat input */}

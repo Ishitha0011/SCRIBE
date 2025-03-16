@@ -26,6 +26,7 @@
 
 /* Top Buttons in Sidebar */
 .TopButtons {
+  margin: 0.5rem;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
@@ -69,6 +70,7 @@
 
 /* File Tree Styles */
 .FileTree {
+  margin-left: 0.5rem;
   flex: 1;
   overflow-y: auto;
   padding: 5px; /* Reduced padding */

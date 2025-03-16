@@ -2,13 +2,15 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv  # Import load_dotenv
-import google.generativeai as genai 
+import google.generativeai as genai
 from uuid import uuid4  # Import uuid4 for session IDs
 import os
 import json
 import shutil
 from pathlib import Path
 from typing import List, Optional, Dict, Union
+import tkinter as tk
+from tkinter import filedialog
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,7 +20,7 @@ app = FastAPI()
 # Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,6 +36,7 @@ workspace_info = {
 
 CONFIG_FILE = "workspace_config.json"
 
+
 # Load config if it exists
 def load_config():
     global workspace_info
@@ -44,6 +47,7 @@ def load_config():
     except Exception as e:
         print(f"Error loading config: {e}")
 
+
 # Save config
 def save_config():
     try:
@@ -52,43 +56,53 @@ def save_config():
     except Exception as e:
         print(f"Error saving config: {e}")
 
+
 # Load config at startup
 load_config()
+
 
 class Message(BaseModel):
     text: str
     sender: str
     timestamp: str
 
+
 class QuestionRequest(BaseModel):
     question: str
     session_id: str
     conversation_history: Optional[List[dict]] = []  # Accept dictionaries instead of Message objects
 
+
 class TitleRequest(BaseModel):
     session_id: str
     conversation_history: List[dict]  # Accept dictionaries instead of Message objects
+
 
 # File operation request models
 class FileRequest(BaseModel):
     path: str
     content: Optional[str] = None
-    
+
+
 class DirectoryRequest(BaseModel):
     path: str
-    
+
+
 class RenameRequest(BaseModel):
     old_path: str
     new_path: str
-    
+
+
 class CreateFileRequest(BaseModel):
     path: str
     type: str
     parent_path: Optional[str] = None
     name: str
-    
+
+
 class WorkspaceRequest(BaseModel):
     directory: str
+
 
 # Helper function to convert dict to Message
 def dict_to_message(message_dict):
@@ -100,6 +114,7 @@ def dict_to_message(message_dict):
         )
     return message_dict  # Return as is if already a Message object
 
+
 class ScribeAIResponse:
     @staticmethod
     def generate_title(conversation_history: List[Message]) -> str:
@@ -108,7 +123,7 @@ class ScribeAIResponse:
             if not api_key:
                 print("Warning: GEMINI_API_KEY not found in environment variables")
                 return "New Chat"
-            
+
             genai.configure(api_key=api_key)
 
             # Validate conversation history
@@ -119,10 +134,10 @@ class ScribeAIResponse:
             # Create a prompt for title generation
             title_prompt = """Based on the following conversation, generate a very concise and descriptive title (maximum 5 words).
             The title should capture the main topic or theme of the conversation.
-            
+
             Conversation:
             """
-            
+
             # Add the first few messages for context
             context_messages = conversation_history[:3]  # Use first 3 messages
             for msg in context_messages:
@@ -133,7 +148,7 @@ class ScribeAIResponse:
                     print(f"Error accessing message attributes: {e}")
                     print(f"Problematic message: {msg}")
                     continue
-            
+
             title_prompt += "\n\nTitle (5 words max, no quotes):"
 
             try:
@@ -146,21 +161,21 @@ class ScribeAIResponse:
                         "top_k": 40,
                     }
                 )
-                
+
                 response = model.generate_content(title_prompt)
-                
+
                 if not response.text:
                     return "New Chat"
-                    
+
                 # Clean up the title
                 title = response.text.strip()
                 title = title.replace('"', '').replace("'", "")  # Remove quotes
                 title = ' '.join(title.split())  # Normalize whitespace
-                
+
                 # Ensure title length
                 if len(title) > 40:
                     title = title[:37] + "..."
-                    
+
                 return title
             except Exception as e:
                 print(f"Error generating title with Gemini API: {e}")
@@ -216,7 +231,7 @@ class ScribeAIResponse:
         try:
             # Format the conversation history including the system prompt
             formatted_history = ScribeAIResponse.format_messages_for_context(conversation_history)
-            
+
             # Initialize model
             model = genai.GenerativeModel(
                 model_name="gemini-2.0-flash",
@@ -238,7 +253,7 @@ class ScribeAIResponse:
 
             # Send the current question
             response = chat.send_message(current_question)
-            
+
             if response.text:
                 # Update session history
                 chat_sessions[session_id]["history"] = chat.history
@@ -252,6 +267,7 @@ class ScribeAIResponse:
                 del chat_sessions[session_id]  # Clear problematic session
             return ""
 
+
 # File system operations
 @app.post("/api/workspace/set")
 async def set_workspace(request: WorkspaceRequest):
@@ -260,15 +276,16 @@ async def set_workspace(request: WorkspaceRequest):
         directory = request.directory
         if not os.path.exists(directory):
             raise HTTPException(status_code=404, detail="Directory not found")
-        
+
         # Save to global config
         workspace_info["last_directory"] = directory
         save_config()
-        
+
         return {"status": "success", "directory": directory}
     except Exception as e:
         print(f"Error setting workspace: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/workspace/get")
 async def get_workspace():
@@ -282,6 +299,7 @@ async def get_workspace():
         print(f"Error getting workspace: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/files/list")
 async def list_files(directory: Optional[str] = None):
     """List all files in a directory"""
@@ -290,10 +308,10 @@ async def list_files(directory: Optional[str] = None):
             directory = workspace_info.get("last_directory")
             if not directory:
                 return {"items": [], "error": "No workspace set"}
-        
+
         if not os.path.exists(directory):
             raise HTTPException(status_code=404, detail="Directory not found")
-        
+
         # Get file structure recursively
         structure = read_directory_structure(directory)
         return {"items": structure}
@@ -301,16 +319,17 @@ async def list_files(directory: Optional[str] = None):
         print(f"Error listing files: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 def read_directory_structure(directory, base_path=None):
     """Read directory structure recursively"""
     items = []
     if base_path is None:
         base_path = directory
-    
+
     try:
         for entry in os.scandir(directory):
             relative_path = os.path.relpath(entry.path, base_path)
-            
+
             if entry.is_dir():
                 items.append({
                     "id": relative_path,
@@ -329,21 +348,22 @@ def read_directory_structure(directory, base_path=None):
         print(f"Error reading directory structure: {e}")
         return []
 
+
 @app.get("/api/files/read")
 async def read_file(path: str):
     """Read file content"""
     try:
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
-            
+
         full_path = os.path.join(workspace_info["last_directory"], path)
-        
+
         if not os.path.exists(full_path):
             raise HTTPException(status_code=404, detail="File not found")
-        
+
         if not os.path.isfile(full_path):
             raise HTTPException(status_code=400, detail="Path is not a file")
-        
+
         try:
             with open(full_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -355,25 +375,27 @@ async def read_file(path: str):
         print(f"Error reading file: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/api/files/write")
 async def write_file(request: FileRequest):
     """Write content to a file"""
     try:
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
-            
+
         full_path = os.path.join(workspace_info["last_directory"], request.path)
-        
+
         # Create directories if they don't exist
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        
+
         with open(full_path, 'w', encoding='utf-8') as f:
             f.write(request.content or "")
-        
+
         return {"status": "success"}
     except Exception as e:
         print(f"Error writing file: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/files/create")
 async def create_file_or_folder(request: CreateFileRequest):
@@ -381,16 +403,16 @@ async def create_file_or_folder(request: CreateFileRequest):
     try:
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
-        
+
         # Determine the parent directory
         if request.parent_path:
             parent_dir = os.path.join(workspace_info["last_directory"], request.parent_path)
         else:
             parent_dir = workspace_info["last_directory"]
-            
+
         # Create full path
         full_path = os.path.join(parent_dir, request.name)
-        
+
         if request.type == "folder":
             # Create directory
             os.makedirs(full_path, exist_ok=True)
@@ -398,16 +420,16 @@ async def create_file_or_folder(request: CreateFileRequest):
             # Create file
             # Make sure parent directories exist
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
-            
+
             # Create empty file
             with open(full_path, 'w', encoding='utf-8') as f:
                 pass
-        
+
         # Get relative path from workspace root
         relative_path = os.path.relpath(full_path, workspace_info["last_directory"])
-        
+
         return {
-            "status": "success", 
+            "status": "success",
             "id": relative_path,
             "name": request.name,
             "type": request.type
@@ -416,27 +438,29 @@ async def create_file_or_folder(request: CreateFileRequest):
         print(f"Error creating file/folder: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.delete("/api/files/delete")
 async def delete_file(path: str):
     """Delete a file or directory"""
     try:
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
-            
+
         full_path = os.path.join(workspace_info["last_directory"], path)
-        
+
         if not os.path.exists(full_path):
             raise HTTPException(status_code=404, detail="File not found")
-        
+
         if os.path.isdir(full_path):
             shutil.rmtree(full_path)
         else:
             os.remove(full_path)
-        
+
         return {"status": "success"}
     except Exception as e:
         print(f"Error deleting file: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/files/rename")
 async def rename_file(request: RenameRequest):
@@ -444,28 +468,30 @@ async def rename_file(request: RenameRequest):
     try:
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
-            
+
         old_full_path = os.path.join(workspace_info["last_directory"], request.old_path)
         new_full_path = os.path.join(workspace_info["last_directory"], request.new_path)
-        
+
         if not os.path.exists(old_full_path):
             raise HTTPException(status_code=404, detail="File not found")
-        
+
         # Create parent directories if they don't exist
         os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
-        
+
         # Rename/move the file
         shutil.move(old_full_path, new_full_path)
-        
+
         return {"status": "success"}
     except Exception as e:
         print(f"Error renaming file: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/create-session")
 async def create_session():
     session_id = str(uuid4())
     return {"session_id": session_id}
+
 
 @app.post("/generate-title")
 async def generate_title(request: TitleRequest):
@@ -473,12 +499,12 @@ async def generate_title(request: TitleRequest):
         # Debug logging
         print(f"Received title request for session: {request.session_id}")
         print(f"Conversation history length: {len(request.conversation_history)}")
-        
+
         # Validate conversation history
         if not request.conversation_history:
             print("Warning: Empty conversation history received")
             return {"title": "New Chat"}
-        
+
         # Convert dictionary messages to Message objects
         message_objects = []
         for msg_dict in request.conversation_history:
@@ -491,11 +517,11 @@ async def generate_title(request: TitleRequest):
                 print(f"Problematic message: {msg_dict}")
                 # Skip invalid messages
                 continue
-        
+
         if not message_objects:
             print("No valid messages after conversion")
             return {"title": "New Chat"}
-            
+
         title = ScribeAIResponse.generate_title(message_objects)
         print(f"Generated title: {title}")
         return {"title": title}
@@ -504,6 +530,7 @@ async def generate_title(request: TitleRequest):
         # Return a default title instead of raising an exception
         return {"title": "New Chat"}
 
+
 @app.post("/ask-ai")
 async def ask_ai(request: QuestionRequest):
     try:
@@ -511,7 +538,7 @@ async def ask_ai(request: QuestionRequest):
         print(f"Received question for session: {request.session_id}")
         print(f"Question: {request.question}")
         print(f"Conversation history length: {len(request.conversation_history)}")
-        
+
         # Convert dictionary messages to Message objects
         message_objects = []
         for msg_dict in request.conversation_history:
@@ -522,7 +549,7 @@ async def ask_ai(request: QuestionRequest):
                 print(f"Error converting message in ask-ai: {e}")
                 # Skip invalid messages
                 continue
-        
+
         # Get AI response with conversation history
         ai_response = ScribeAIResponse.get_scribe_response(
             request.question,
@@ -537,12 +564,45 @@ async def ask_ai(request: QuestionRequest):
             del chat_sessions[request.session_id]
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.delete("/clear-session/{session_id}")
 async def clear_session(session_id: str):
     if session_id in chat_sessions:
         del chat_sessions[session_id]
     return {"status": "success"}
 
+
+@app.post("/api/workspace/select-directory")
+async def select_directory():
+    """Open native file dialog to select directory"""
+    try:
+        # Create a root window but hide it
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+
+        # Open the native file dialog
+        selected_dir = filedialog.askdirectory(
+            title='Select Workspace Directory',
+            mustexist=True  # Ensure the directory exists
+        )
+
+        # Destroy the root window
+        root.destroy()
+
+        if selected_dir:
+            # Update workspace info
+            workspace_info["last_directory"] = selected_dir
+            save_config()
+            return {"status": "success", "directory": selected_dir}
+        else:
+            return {"status": "cancelled", "directory": None}
+
+    except Exception as e:
+        print(f"Error selecting directory: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

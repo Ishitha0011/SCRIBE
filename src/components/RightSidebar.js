@@ -104,7 +104,7 @@ const RightSidebar = () => {
         
         {/* Collapsible icon */}
         <div className="CollapseIcon" onClick={toggleCollapse} title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          {isCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </div>
       </div>
     </div>

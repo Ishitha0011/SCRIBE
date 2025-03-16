@@ -31,8 +31,6 @@ const ChatPopup = ({
   const fileInputRef = useRef(null);
   // Add state to track current title for display
   const [displayTitle, setDisplayTitle] = useState(chatTitle);
-  // Add a dedicated ref for scrolling to the end of messages
-  const messagesEndRef = useRef(null);
 
   // Update display title when chatTitle prop changes
   useEffect(() => {
@@ -66,14 +64,12 @@ const ChatPopup = ({
     }
   }, [focusedMessageId, isOpen]);
 
-  // Improve the auto-scroll behavior to ensure it always scrolls to new messages
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    // Always scroll to the latest message when new messages arrive
-    if (messageContainerRef.current && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-      setAutoScroll(true); // Reset auto-scroll to true when new messages come in
+    if (messageContainerRef.current && autoScroll) {
+      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
     }
-  }, [chatHistory]);
+  }, [chatHistory, autoScroll]);
 
   // Handle scroll to detect if user has scrolled up
   const handleScroll = () => {
@@ -99,13 +95,6 @@ const ChatPopup = ({
       onSendMessage(finalMessage);
       setMessage('');
       setSelectedFiles([]);
-      
-      // Ensure we scroll to the bottom after sending a message
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
       
       if (inputRef.current) {
         inputRef.current.focus();
@@ -210,8 +199,6 @@ const ChatPopup = ({
               </div>
             </div>
           ))}
-          {/* Add div for automatic scrolling to latest message */}
-          <div ref={messagesEndRef} />
         </div>
         
         {!autoScroll && (
