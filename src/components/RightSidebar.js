@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, MessageSquare, BookOpen, FlaskConical } from 'lucide-react';
 import AskAI from './AskAI';
+import Labs from './Labs';
 import '../css/RightSidebar.css';
 import { useTheme } from '../ThemeContext';
 
@@ -100,7 +101,7 @@ const RightSidebar = () => {
       <div className="DynamicContent">
         {selectedOption === 'AI' && !isCollapsed && <AskAI messages={messages} setMessages={setMessages} />}
         {selectedOption === 'Notes' && !isCollapsed && <div className="ComingSoonPlaceholder">Notes feature coming soon</div>}
-        {selectedOption === 'Labs' && !isCollapsed && <div className="ComingSoonPlaceholder">Labs feature coming soon</div>}
+        {selectedOption === 'Labs' && !isCollapsed && <Labs />}
         
         {/* Collapsible icon */}
         <div className="CollapseIcon" onClick={toggleCollapse} title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>

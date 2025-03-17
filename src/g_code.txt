@@ -1,0 +1,958 @@
+#main.jsx
+
+import {createRoot} from 'react-dom/client'
+import App from './App.jsx'
+import './styles/main.sass'
+
+createRoot(document.getElementById('root')).render(<App />)
+
+--- 
+App.jsx
+import {useRef, useState} from 'react'
+import c from 'classnames'
+import VideoPlayer from './VideoPlayer.jsx'
+import Chart from './Chart.jsx'
+import modes from './modes'
+import {timeToSecs} from './utils'
+import generateContent from './api'
+import functions from './functions'
+
+const chartModes = Object.keys(modes.Chart.subModes)
+
+export default function App() {
+  const [vidUrl, setVidUrl] = useState(null)
+  const [file, setFile] = useState(null)
+  const [timecodeList, setTimecodeList] = useState(null)
+  const [requestedTimecode, setRequestedTimecode] = useState(null)
+  const [selectedMode, setSelectedMode] = useState(Object.keys(modes)[0])
+  const [activeMode, setActiveMode] = useState()
+  const [isLoading, setIsLoading] = useState(false)
+  const [showSidebar, setShowSidebar] = useState(true)
+  const [isLoadingVideo, setIsLoadingVideo] = useState(false)
+  const [videoError, setVideoError] = useState(false)
+  const [customPrompt, setCustomPrompt] = useState('')
+  const [chartMode, setChartMode] = useState(chartModes[0])
+  const [chartPrompt, setChartPrompt] = useState('')
+  const [chartLabel, setChartLabel] = useState('')
+  const [theme] = useState(
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  )
+  const scrollRef = useRef()
+  const isCustomMode = selectedMode === 'Custom'
+  const isChartMode = selectedMode === 'Chart'
+  const isCustomChartMode = isChartMode && chartMode === 'Custom'
+  const hasSubMode = isCustomMode || isChartMode
+
+  const setTimecodes = ({timecodes}) =>
+    setTimecodeList(
+      timecodes.map(t => ({...t, text: t.text.replaceAll("\\'", "'")}))
+    )
+
+  const onModeSelect = async mode => {
+    setActiveMode(mode)
+    setIsLoading(true)
+    setChartLabel(chartPrompt)
+
+    const resp = await generateContent({
+      text: isCustomMode
+        ? modes[mode].prompt(customPrompt)
+        : isChartMode
+        ? modes[mode].prompt(
+            isCustomChartMode ? chartPrompt : modes[mode].subModes[chartMode]
+          )
+        : modes[mode].prompt,
+      file,
+      functionDeclarations: functions({
+        set_timecodes: setTimecodes,
+        set_timecodes_with_objects: setTimecodes,
+        set_timecodes_with_numeric_values: ({timecodes}) =>
+          setTimecodeList(timecodes)
+      })
+    })
+
+    const call = resp.functionCalls()[0]
+
+    if (call) {
+      ;({
+        set_timecodes: setTimecodes,
+        set_timecodes_with_objects: setTimecodes,
+        set_timecodes_with_numeric_values: ({timecodes}) =>
+          setTimecodeList(timecodes)
+      })[call.name](call.args)
+    }
+
+    setIsLoading(false)
+    scrollRef.current.scrollTo({top: 0})
+  }
+
+  const uploadVideo = async e => {
+    e.preventDefault()
+    setIsLoadingVideo(true)
+    setVidUrl(URL.createObjectURL(e.dataTransfer.files[0]))
+
+    const formData = new FormData()
+    formData.set('video', e.dataTransfer.files[0])
+    const resp = await (
+      await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+    ).json()
+    setFile(resp.data)
+    checkProgress(resp.data.name)
+  }
+
+  const checkProgress = async fileId => {
+    const resp = await (
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({fileId})
+      })
+    ).json()
+
+    if (resp.progress.state === 'ACTIVE') {
+      setIsLoadingVideo(false)
+    } else if (resp.progress.state === 'FAILED') {
+      setVideoError(true)
+    } else {
+      setTimeout(() => checkProgress(fileId), 1000)
+    }
+  }
+
+  return (
+    <main
+      className={theme}
+      onDrop={uploadVideo}
+      onDragOver={e => e.preventDefault()}
+      onDragEnter={() => {}}
+      onDragLeave={() => {}}
+    >
+      <section className="top">
+        {vidUrl && !isLoadingVideo && (
+          <>
+            <div className={c('modeSelector', {hide: !showSidebar})}>
+              {hasSubMode ? (
+                <>
+                  <div>
+                    {isCustomMode ? (
+                      <>
+                        <h2>Custom prompt:</h2>
+                        <textarea
+                          placeholder="Type a custom prompt..."
+                          value={customPrompt}
+                          onChange={e => setCustomPrompt(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              onModeSelect(selectedMode)
+                            }
+                          }}
+                          rows="5"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <h2>Chart this video by:</h2>
+
+                        <div className="modeList">
+                          {chartModes.map(mode => (
+                            <button
+                              key={mode}
+                              className={c('button', {
+                                active: mode === chartMode
+                              })}
+                              onClick={() => setChartMode(mode)}
+                            >
+                              {mode}
+                            </button>
+                          ))}
+                        </div>
+                        <textarea
+                          className={c({active: isCustomChartMode})}
+                          placeholder="Or type a custom prompt..."
+                          value={chartPrompt}
+                          onChange={e => setChartPrompt(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              onModeSelect(selectedMode)
+                            }
+                          }}
+                          onFocus={() => setChartMode('Custom')}
+                          rows="2"
+                        />
+                      </>
+                    )}
+                    <button
+                      className="button generateButton"
+                      onClick={() => onModeSelect(selectedMode)}
+                      disabled={
+                        (isCustomMode && !customPrompt.trim()) ||
+                        (isChartMode &&
+                          isCustomChartMode &&
+                          !chartPrompt.trim())
+                      }
+                    >
+                      ▶️ Generate
+                    </button>
+                  </div>
+                  <div className="backButton">
+                    <button
+                      onClick={() => setSelectedMode(Object.keys(modes)[0])}
+                    >
+                      <span className="icon">chevron_left</span>
+                      Back
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <h2>Explore this video via:</h2>
+                    <div className="modeList">
+                      {Object.entries(modes).map(([mode, {emoji}]) => (
+                        <button
+                          key={mode}
+                          className={c('button', {
+                            active: mode === selectedMode
+                          })}
+                          onClick={() => setSelectedMode(mode)}
+                        >
+                          <span className="emoji">{emoji}</span> {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <button
+                      className="button generateButton"
+                      onClick={() => onModeSelect(selectedMode)}
+                    >
+                      ▶️ Generate
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+            <button
+              className="collapseButton"
+              onClick={() => setShowSidebar(!showSidebar)}
+            >
+              <span className="icon">
+                {showSidebar ? 'chevron_left' : 'chevron_right'}
+              </span>
+            </button>
+          </>
+        )}
+
+        <VideoPlayer
+          url={vidUrl}
+          requestedTimecode={requestedTimecode}
+          timecodeList={timecodeList}
+          jumpToTimecode={setRequestedTimecode}
+          isLoadingVideo={isLoadingVideo}
+          videoError={videoError}
+        />
+      </section>
+
+      <div className={c('tools', {inactive: !vidUrl})}>
+        <section
+          className={c('output', {['mode' + activeMode]: activeMode})}
+          ref={scrollRef}
+        >
+          {isLoading ? (
+            <div className="loading">
+              Waiting for model<span>...</span>
+            </div>
+          ) : timecodeList ? (
+            activeMode === 'Table' ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Description</th>
+                    <th>Objects</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {timecodeList.map(({time, text, objects}, i) => (
+                    <tr
+                      key={i}
+                      role="button"
+                      onClick={() => setRequestedTimecode(timeToSecs(time))}
+                    >
+                      <td>
+                        <time>{time}</time>
+                      </td>
+                      <td>{text}</td>
+                      <td>{objects.join(', ')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : activeMode === 'Chart' ? (
+              <Chart
+                data={timecodeList}
+                yLabel={chartLabel}
+                jumpToTimecode={setRequestedTimecode}
+              />
+            ) : modes[activeMode].isList ? (
+              <ul>
+                {timecodeList.map(({time, text}, i) => (
+                  <li key={i} className="outputItem">
+                    <button
+                      onClick={() => setRequestedTimecode(timeToSecs(time))}
+                    >
+                      <time>{time}</time>
+                      <p className="text">{text}</p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              timecodeList.map(({time, text}, i) => (
+                <>
+                  <span
+                    key={i}
+                    className="sentence"
+                    role="button"
+                    onClick={() => setRequestedTimecode(timeToSecs(time))}
+                  >
+                    <time>{time}</time>
+                    <span>{text}</span>
+                  </span>{' '}
+                </>
+              ))
+            )
+          ) : null}
+        </section>
+      </div>
+    </main>
+  )
+}
+---
+
+videoplayer.jsx
+import {useCallback, useEffect, useState, useMemo} from 'react'
+import c from 'classnames'
+import {timeToSecs} from './utils'
+
+const formatTime = t =>
+  `${Math.floor(t / 60)}:${Math.floor(t % 60)
+    .toString()
+    .padStart(2, '0')}`
+
+export default function VideoPlayer({
+  url,
+  timecodeList,
+  requestedTimecode,
+  isLoadingVideo,
+  videoError,
+  jumpToTimecode
+}) {
+  const [video, setVideo] = useState(null)
+  const [duration, setDuration] = useState(0)
+  const [scrubberTime, setScrubberTime] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isScrubbing, setIsScrubbing] = useState(false)
+  const [currentCaption, setCurrentCaption] = useState(null)
+  const currentSecs = duration * scrubberTime || 0
+  const currentPercent = scrubberTime * 100
+  const timecodeListReversed = useMemo(
+    () => timecodeList?.toReversed(),
+    [timecodeList]
+  )
+
+  const togglePlay = useCallback(() => {
+    if (isPlaying) {
+      video.pause()
+    } else {
+      video.play()
+    }
+  }, [isPlaying, video])
+
+  const updateDuration = () => setDuration(video.duration)
+
+  const updateTime = () => {
+    if (!isScrubbing) {
+      setScrubberTime(video.currentTime / video.duration)
+    }
+
+    if (timecodeList) {
+      setCurrentCaption(
+        timecodeListReversed.find(t => timeToSecs(t.time) <= video.currentTime)
+          ?.text
+      )
+    }
+  }
+
+  const onPlay = () => setIsPlaying(true)
+  const onPause = () => setIsPlaying(false)
+
+  useEffect(() => {
+    setScrubberTime(0)
+    setIsPlaying(false)
+  }, [url])
+
+  useEffect(() => {
+    if (video && requestedTimecode !== null) {
+      video.currentTime = requestedTimecode
+    }
+  }, [video, requestedTimecode])
+
+  useEffect(() => {
+    const onKeyPress = e => {
+      if (
+        e.target.tagName !== 'INPUT' &&
+        e.target.tagName !== 'TEXTAREA' &&
+        e.key === ' '
+      ) {
+        togglePlay()
+      }
+    }
+
+    addEventListener('keypress', onKeyPress)
+
+    return () => {
+      removeEventListener('keypress', onKeyPress)
+    }
+  }, [togglePlay])
+
+  return (
+    <div className="videoPlayer">
+      {url && !isLoadingVideo ? (
+        <>
+          <div>
+            <video
+              src={url}
+              ref={setVideo}
+              onClick={togglePlay}
+              preload="auto"
+              crossOrigin="anonymous"
+              onDurationChange={updateDuration}
+              onTimeUpdate={updateTime}
+              onPlay={onPlay}
+              onPause={onPause}
+            />
+
+            {currentCaption && (
+              <div className="videoCaption">{currentCaption}</div>
+            )}
+          </div>
+
+          <div className="videoControls">
+            <div className="videoScrubber">
+              <input
+                style={{'--pct': `${currentPercent}%`}}
+                type="range"
+                min="0"
+                max="1"
+                value={scrubberTime || 0}
+                step="0.000001"
+                onChange={e => {
+                  setScrubberTime(e.target.valueAsNumber)
+                  video.currentTime = e.target.valueAsNumber * duration
+                }}
+                onPointerDown={() => setIsScrubbing(true)}
+                onPointerUp={() => setIsScrubbing(false)}
+              />
+            </div>
+            <div className="timecodeMarkers">
+              {timecodeList?.map(({time, text, value}, i) => {
+                const secs = timeToSecs(time)
+                const pct = (secs / duration) * 100
+
+                return (
+                  <div
+                    className="timecodeMarker"
+                    key={i}
+                    style={{left: `${pct}%`}}
+                  >
+                    <div
+                      className="timecodeMarkerTick"
+                      onClick={() => jumpToTimecode(secs)}
+                    >
+                      <div />
+                    </div>
+                    <div
+                      className={c('timecodeMarkerLabel', {right: pct > 50})}
+                    >
+                      <div>{time}</div>
+                      <p>{value || text}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="videoTime">
+              <button>
+                <span className="icon" onClick={togglePlay}>
+                  {isPlaying ? 'pause' : 'play_arrow'}
+                </span>
+              </button>
+              {formatTime(currentSecs)} / {formatTime(duration)}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="emptyVideo">
+          <p>
+            {isLoadingVideo
+              ? 'Processing video...'
+              : videoError
+              ? 'Error processing video.'
+              : 'Drag and drop a video file here to get started.'}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+---
+Chart.jsx
+import {useEffect, useRef, useState} from 'react'
+import {scaleBand, scaleLinear} from 'd3-scale'
+import {max, min} from 'd3-array'
+import {line} from 'd3-shape'
+import {timeToSecs} from './utils'
+
+export default function Chart({data, yLabel, jumpToTimecode}) {
+  const chartRef = useRef()
+  const [width, setWidth] = useState(1)
+  const [height, setHeight] = useState(1)
+  const margin = 55
+  const xMax = width
+  const yMax = height - margin
+  const xScale = scaleBand()
+    .range([margin + 10, xMax])
+    .domain(data.map(d => d.time))
+    .padding(0.2)
+
+  const vals = data.map(d => d.value)
+  const yScale = scaleLinear()
+    .domain([min(vals), max(vals)])
+    .nice()
+    .range([yMax, margin])
+
+  const yTicks = yScale.ticks(Math.floor(height / 70))
+
+  const lineGen = line()
+    .x(d => xScale(d.time))
+    .y(d => yScale(d.value))
+
+  useEffect(() => {
+    const setSize = () => {
+      setWidth(chartRef.current.clientWidth)
+      setHeight(chartRef.current.clientHeight)
+    }
+
+    setSize()
+    addEventListener('resize', setSize)
+    return () => removeEventListener('resize', setSize)
+  }, [])
+
+  return (
+    <svg className="lineChart" ref={chartRef}>
+      <g className="axisLabels" transform={`translate(0 ${0})`}>
+        {yTicks.map(tick => {
+          const y = yScale(tick)
+
+          return (
+            <g key={tick} transform={`translate(0 ${y})`}>
+              <text x={margin - 10} dy="0.25em" textAnchor="end">
+                {tick}
+              </text>
+            </g>
+          )
+        })}
+      </g>
+
+      <g
+        className="axisLabels timeLabels"
+        transform={`translate(0 ${yMax + 40})`}
+      >
+        {data.map(({time}, i) => {
+          return (
+            <text
+              key={i}
+              x={xScale(time)}
+              role="button"
+              onClick={() => jumpToTimecode(timeToSecs(time))}
+            >
+              {time.length > 5 ? time.replace(/^00:/, '') : time}
+            </text>
+          )
+        })}
+      </g>
+
+      <g>
+        <path d={lineGen(data)} />
+      </g>
+
+      <g>
+        {data.map(({time, value}, i) => {
+          return (
+            <g key={i} className="dataPoint">
+              <circle cx={xScale(time)} cy={yScale(value)} r={4} />
+
+              <text x={xScale(time)} y={yScale(value) - 12}>
+                {value}
+              </text>
+            </g>
+          )
+        })}
+      </g>
+
+      <text
+        className="axisTitle"
+        x={margin}
+        y={-width + margin}
+        transform="rotate(90)"
+      >
+        {yLabel}
+      </text>
+    </svg>
+  )
+}
+
+---
+modes.js
+
+export default {
+  'A/V captions': {
+    emoji: '👀',
+    prompt: `For each scene in this video, generate captions that describe the \
+    scene along with any spoken text placed in quotation marks. Place each \
+    caption into an object sent to set_timecodes with the timecode of the caption \
+    in the video.`,
+    isList: true
+  },
+
+  Paragraph: {
+    emoji: '📝',
+    prompt: `Generate a paragraph that summarizes this video. Keep it to 3 to 5 \
+sentences. Place each sentence of the summary into an object sent to \
+set_timecodes with the timecode of the sentence in the video.`
+  },
+
+  'Key moments': {
+    emoji: '🔑',
+    prompt: `Generate bullet points for the video. Place each bullet point into an \
+object sent to set_timecodes with the timecode of the bullet point in the video.`,
+    isList: true
+  },
+
+  Table: {
+    emoji: '🤓',
+    prompt: `Choose 5 key shots from this video and call set_timecodes_with_objects \
+with the timecode, text description of 10 words or less, and a list of objects \
+visible in the scene (with representative emojis).`
+  },
+
+  Haiku: {
+    emoji: '🌸',
+    prompt: `Generate a haiku for the video. Place each line of the haiku into an \
+object sent to set_timecodes with the timecode of the line in the video. Make sure \
+to follow the syllable count rules (5-7-5).`
+  },
+
+  Chart: {
+    emoji: '📈',
+    prompt: input =>
+      `Generate chart data for this video based on the following instructions: \
+${input}. Call set_timecodes_with_numeric_values once with the list of data values and timecodes.`,
+    subModes: {
+      Excitement:
+        'for each scene, estimate the level of excitement on a scale of 1 to 10',
+      Importance:
+        'for each scene, estimate the level of overall importance to the video on a scale of 1 to 10',
+      'Number of people': 'for each scene, count the number of people visible'
+    }
+  },
+
+  Custom: {
+    emoji: '🔧',
+    prompt: input =>
+      `Call set_timecodes once using the following instructions: ${input}`,
+    isList: true
+  }
+}
+
+
+---
+utils.js
+
+export const timeToSecs = timecode => {
+  const split = timecode.split(':').map(parseFloat)
+
+  return split.length === 2
+    ? split[0] * 60 + split[1]
+    : split[0] * 3600 + split[1] * 60 + split[2]
+}
+---
+api.js
+
+import {GoogleGenerativeAI} from '@google/generative-ai'
+
+const systemInstruction = `When given a video and a query, call the relevant \
+function only once with the appropriate timecodes and text for the video`
+
+const client = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
+
+export default async ({text, functionDeclarations, file}) => {
+  const {response} = await client
+    .getGenerativeModel(
+      {model: 'gemini-2.0-flash-exp', systemInstruction},
+      {apiVersion: 'v1beta'}
+    )
+    .generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {text},
+            {
+              fileData: {
+                mimeType: file.mimeType,
+                fileUri: file.uri
+              }
+            }
+          ]
+        }
+      ],
+      generationConfig: {temperature: 0.5},
+      tools: [{functionDeclarations}]
+    })
+
+  return response
+}
+
+---
+functions.js
+
+const functions = [
+  {
+    name: 'set_timecodes',
+    description: 'Set the timecodes for the video with associated text',
+    parameters: {
+      type: 'object',
+      properties: {
+        timecodes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              time: {
+                type: 'string'
+              },
+              text: {
+                type: 'string'
+              }
+            },
+            required: ['time', 'text']
+          }
+        }
+      },
+      required: ['timecodes']
+    }
+  },
+  {
+    name: 'set_timecodes_with_objects',
+    description:
+      'Set the timecodes for the video with associated text and object list',
+    parameters: {
+      type: 'object',
+      properties: {
+        timecodes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              time: {
+                type: 'string'
+              },
+              text: {
+                type: 'string'
+              },
+              objects: {
+                type: 'array',
+                items: {
+                  type: 'string'
+                }
+              }
+            },
+            required: ['time', 'text', 'objects']
+          }
+        }
+      },
+      required: ['timecodes']
+    }
+  },
+  {
+    name: 'set_timecodes_with_numeric_values',
+    description:
+      'Set the timecodes for the video with associated numeric values',
+    parameters: {
+      type: 'object',
+      properties: {
+        timecodes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              time: {
+                type: 'string'
+              },
+              value: {
+                type: 'number'
+              }
+            },
+            required: ['time', 'value']
+          }
+        }
+      },
+      required: ['timecodes']
+    }
+  }
+]
+
+export default fnMap =>
+  functions.map(fn => ({
+    ...fn,
+    callback: fnMap[fn.name]
+  }))
+---
+
+index.html
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
+      rel="stylesheet"
+    />
+    <title>SCRIBE - Video</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+---
+
+/server/index.mjs
+import express from 'express'
+import ViteExpress from 'vite-express'
+import multer from 'multer'
+import {checkProgress, promptVideo, uploadVideo} from './upload.mjs'
+
+const app = express()
+app.use(express.json())
+
+const upload = multer({dest: '/tmp/'})
+app.post('/api/upload', upload.single('video'), async (req, res) => {
+  try {
+    const file = req.file
+    const resp = await uploadVideo(file)
+    res.json({data: resp})
+  } catch (error) {
+    res.status(500).json({error})
+  }
+})
+
+app.post('/api/progress', async (req, res) => {
+  try {
+    const progress = await checkProgress(req.body.fileId)
+    res.json({progress})
+  } catch (error) {
+    res.status(500).json({error})
+  }
+})
+
+app.post('/api/prompt', async (req, res) => {
+  try {
+    const reqData = req.body
+    const videoResponse = await promptVideo(
+      reqData.uploadResult,
+      reqData.prompt,
+      reqData.model
+    )
+    res.json(videoResponse)
+  } catch (error) {
+    res.json({error}, {status: 400})
+  }
+})
+
+const port = process.env.NODE_ENV === 'production' ? 8080 : 8000
+
+ViteExpress.listen(app, port, () => console.log('Server is listening...'))
+
+
+---
+/server/upload.mjs
+import {GoogleGenerativeAI} from '@google/generative-ai'
+import {GoogleAIFileManager} from '@google/generative-ai/server'
+
+const key = process.env.VITE_GEMINI_API_KEY
+const fileManager = new GoogleAIFileManager(key)
+const genAI = new GoogleGenerativeAI(key)
+
+export const uploadVideo = async file => {
+  try {
+    const uploadResult = await fileManager.uploadFile(file.path, {
+      displayName: file.originalname,
+      mimeType: file.mimetype
+    })
+    return uploadResult.file
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
+}
+
+export const checkProgress = async fileId => {
+  try {
+    const result = await fileManager.getFile(fileId)
+    return result
+  } catch (error) {
+    console.error(error)
+    return {error}
+  }
+}
+
+export const promptVideo = async (uploadResult, prompt, model) => {
+  try {
+    const req = [
+      {text: prompt},
+      {
+        fileData: {
+          mimeType: uploadResult.mimeType,
+          fileUri: uploadResult.uri
+        }
+      }
+    ]
+    const result = await genAI.getGenerativeModel({model}).generateContent(req)
+
+    return {
+      text: result.response.text(),
+      candidates: result.response.candidates,
+      feedback: result.response.promptFeedback
+    }
+  } catch (error) {
+    console.error(error)
+    return {error}
+  }
+}
+
+

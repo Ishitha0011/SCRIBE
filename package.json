@@ -2,28 +2,39 @@
   "name": "scribe_reactapp",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:8001",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.0",
     "@fortawesome/free-regular-svg-icons": "^6.7.0",
     "@fortawesome/free-solid-svg-icons": "^6.7.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@google/generative-ai": "^0.3.0",
     "@supabase/supabase-js": "^2.49.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.3",
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",
     "marked": "^15.0.2",
+    "mime-types": "^2.1.35",
+    "multer": "^1.4.5-lts.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
     "react-scripts": "^5.0.1",
     "styled-components": "^6.1.13",
     "uuid": "^11.1.0",
+    "vite-express": "^0.16.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "update-env": "node update-env.js",
+    "prestart": "npm run update-env",
     "start": "react-scripts start",
+    "server": "node server/index.mjs",
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -45,5 +56,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "http-proxy-middleware": "^3.0.3"
   }
 }

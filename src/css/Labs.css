@@ -1,0 +1,740 @@
+.LabsContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  background-color: var(--primary-bg-color, #fff);
+  color: var(--editor-text-color, #333);
+  padding: 16px;
+  gap: 16px;
+}
+
+.LabsContainer.dark {
+  background-color: var(--dark-bg-color, #1e1e1e);
+  color: var(--editor-text-color, #e0e0e0);
+}
+
+.LabsHeader {
+  padding: 14px 16px;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.LabsContainer.dark .LabsHeader {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.LabsTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.LabsTitle h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.LabsDescription {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+.LabsContainer.dark .LabsDescription {
+  color: #aaa;
+}
+
+/* Video Section */
+.VideoSection {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #0f0f0f;
+  min-height: 240px;
+  max-height: 50vh;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.LabsContainer.dark .VideoSection {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.VideoPlayerWrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.VideoPlayer {
+  width: 100%;
+  height: calc(100% - 50px);
+  object-fit: contain;
+  background-color: #000;
+}
+
+.VideoControls {
+  position: relative;
+  height: 50px;
+  background-color: rgba(0, 0, 0, 0.85);
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.VideoScrubber {
+  width: 100%;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.ScrubberInput {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+  position: relative;
+  margin: 8px 0;
+  cursor: pointer;
+}
+
+.ScrubberInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #bb44f0;
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.ScrubberInput::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #bb44f0;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.ScrubberInput:hover {
+  height: 6px;
+}
+
+.ScrubberInput:hover::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+}
+
+.VideoControlsBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.PlayButton {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.PlayButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.VideoTime {
+  color: white;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.TimecodeMarkers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  pointer-events: none;
+  padding: 0;
+}
+
+.TimecodeMarker {
+  position: absolute;
+  width: 3px;
+  height: 8px;
+  background-color: #bb44f0;
+  transform: translateX(-50%);
+  cursor: pointer;
+  pointer-events: auto;
+  top: 6px;
+  border-radius: 1px;
+  transition: height 0.15s ease, background-color 0.15s ease;
+}
+
+.TimecodeMarker:hover {
+  background-color: #d67aff;
+  height: 14px;
+  top: 3px;
+}
+
+/* Upload styles */
+.VideoUploadArea {
+  width: 100%;
+  height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.03);
+  border: 2px dashed rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  color: #333;
+  padding: 32px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.LabsContainer.dark .VideoUploadArea {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.VideoUploadArea:hover {
+  background-color: rgba(187, 68, 240, 0.05);
+  border-color: rgba(187, 68, 240, 0.3);
+}
+
+.UploadPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.UploadIcon {
+  color: #bb44f0;
+  opacity: 0.8;
+  margin-bottom: 16px;
+}
+
+.UploadPrompt p {
+  font-size: 16px;
+  max-width: 300px;
+  margin: 0;
+}
+
+.UploadHint {
+  font-size: 13px !important;
+  color: #888;
+  margin-top: 8px !important;
+}
+
+.LabsContainer.dark .UploadHint {
+  color: #777;
+}
+
+.LoadingIndicator, .ErrorMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.LoadingIndicator p, .ErrorMessage p {
+  font-size: 16px;
+  margin: 0;
+}
+
+.Spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(187, 68, 240, 0.3);
+  border-top: 3px solid #bb44f0;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ErrorMessage {
+  color: #ff6b6b;
+}
+
+/* Modes Grid Section */
+.ModesGridSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.ModesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.ModeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  height: 100px;
+}
+
+.LabsContainer.dark .ModeCard {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ModeCard.active {
+  background-color: rgba(187, 68, 240, 0.1);
+  border-color: rgba(187, 68, 240, 0.3);
+  box-shadow: 0 0 0 2px rgba(187, 68, 240, 0.2);
+  transform: translateY(-2px);
+}
+
+.ModeCard:hover:not(.active) {
+  background-color: rgba(187, 68, 240, 0.05);
+  transform: translateY(-2px);
+}
+
+.ModeIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: rgba(187, 68, 240, 0.1);
+  color: #bb44f0;
+  transition: all 0.2s ease;
+}
+
+.ModeCard.active .ModeIcon {
+  background-color: rgba(187, 68, 240, 0.2);
+  transform: scale(1.1);
+}
+
+.ModeName {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ModeEmoji {
+  font-size: 15px;
+  margin-right: 4px;
+}
+
+/* Chart mode selector */
+.ChartModeSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: rgba(187, 68, 240, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(187, 68, 240, 0.1);
+}
+
+.ChartModeSelector h4 {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+  color: #666;
+}
+
+.LabsContainer.dark .ChartModeSelector h4 {
+  color: #aaa;
+}
+
+.ChartModeButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ChartModeButton {
+  padding: 6px 12px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-size: 12px;
+}
+
+.LabsContainer.dark .ChartModeButton {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ChartModeButton.active {
+  background-color: rgba(187, 68, 240, 0.1);
+  border-color: rgba(187, 68, 240, 0.2);
+  font-weight: 500;
+}
+
+.ChartModeButton:hover {
+  background-color: rgba(187, 68, 240, 0.05);
+}
+
+.GenerateButton {
+  width: 100%;
+  padding: 12px;
+  background-color: #bb44f0;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(187, 68, 240, 0.2);
+}
+
+.GenerateButton:hover:not(:disabled) {
+  background-color: #a030d8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(187, 68, 240, 0.3);
+}
+
+.GenerateButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Results Section */
+.ResultsOuterSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.LabsContainer.dark .ResultsOuterSection {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ResultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ResultsHeader h3 {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.ResultsContent {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 450px;
+  padding-right: 6px;
+}
+
+/* Display mode toggle */
+.DisplayModeToggle {
+  display: flex;
+  gap: 2px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.LabsContainer.dark .DisplayModeToggle {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.DisplayModeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 3px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.LabsContainer.dark .DisplayModeButton {
+  color: #aaa;
+}
+
+.DisplayModeButton.active {
+  background-color: rgba(187, 68, 240, 0.2);
+  color: #bb44f0;
+}
+
+.DisplayModeButton:hover:not(.active) {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.LabsContainer.dark .DisplayModeButton:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Results formats */
+.ResultsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.TimecodeItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.LabsContainer.dark .TimecodeItem {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.TimecodeItem:hover {
+  background-color: rgba(187, 68, 240, 0.05);
+  transform: translateY(-1px);
+}
+
+.TimecodeTime {
+  font-size: 11px;
+  font-weight: 600;
+  color: #bb44f0;
+  font-family: monospace;
+}
+
+.TimecodeText {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Paragraph view */
+.ResultsParagraph {
+  font-size: 13px;
+  line-height: 1.5;
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: 12px;
+  border-radius: 5px;
+}
+
+.LabsContainer.dark .ResultsParagraph {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.TimecodeSpan {
+  cursor: pointer;
+  position: relative;
+  white-space: normal;
+}
+
+.TimecodeSpan:hover .TimecodeTime {
+  text-decoration: underline;
+  color: #d67aff;
+}
+
+.TimecodeSpan .TimecodeTime {
+  font-size: 11px;
+  font-weight: 600;
+  color: #bb44f0;
+  margin-right: 4px;
+}
+
+/* Table view */
+.ResultsTable {
+  overflow-x: auto;
+}
+
+.ResultsTable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ResultsTable th {
+  text-align: left;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+}
+
+.LabsContainer.dark .ResultsTable th {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ResultsTable td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  vertical-align: top;
+}
+
+.LabsContainer.dark .ResultsTable td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.TableRow {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.TableRow:hover {
+  background-color: rgba(187, 68, 240, 0.05);
+}
+
+/* Chart view */
+.ChartContainer {
+  width: 100%;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 5px;
+}
+
+.LabsContainer.dark .ChartContainer {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.ChartTitle {
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.Chart {
+  overflow: visible;
+}
+
+.darkText {
+  fill: #e0e0e0 !important;
+}
+
+/* Logs Panel */
+.LogsPanel {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.LogsToggleButton {
+  align-self: center;
+  padding: 6px 12px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.LabsContainer.dark .LogsToggleButton {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.LogsToggleButton:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.LabsContainer.dark .LogsToggleButton:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.LogsContainer {
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.LabsContainer.dark .LogsContainer {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.LogEntry {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ModesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .ModesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .LabsContainer {
+    padding: 8px;
+    gap: 12px;
+  }
+  
+  .VideoSection {
+    min-height: 180px;
+  }
+}
