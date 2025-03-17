@@ -2,8 +2,21 @@ import {GoogleGenerativeAI} from '@google/generative-ai'
 import fs from 'fs'
 import path from 'path'
 import mime from 'mime-types'
+import dotenv from 'dotenv'
+import { fileURLToPath } from 'url'
 
-const key = process.env.VITE_GEMINI_API_KEY
+// Get the directory path of the current module
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Load .env file from server root directory
+dotenv.config({ path: path.resolve(__dirname, '../.env') })
+
+// Validate API key exists
+const key = process.env.GEMINI_API_KEY
+if (!key) {
+  throw new Error('GEMINI_API_KEY is not set in .env file')
+}
+
 const genAI = new GoogleGenerativeAI(key)
 
 // Helper function to convert file to a base64 encoded data URI
@@ -45,7 +58,9 @@ export const checkProgress = async fileId => {
     const fileExists = fs.existsSync(filePath);
     
     // Check if API key is configured properly
-    if (!key || key === 'your_gemini_api_key_here') {
+    
+    if (!key || key === "your_api_key_here") {
+      console.log("Key :", key);
       console.warn("Gemini API key not properly configured in .env file");
       return {
         state: 'WARNING',
@@ -85,7 +100,7 @@ export const promptVideo = async (uploadResult, prompt, model) => {
     console.log("Upload result:", uploadResult);
     
     // Check if API key is configured properly
-    if (!key || key === 'your_gemini_api_key_here') {
+    if (!key || key === "your_api_key_here") {
       throw new Error('Gemini API key not properly configured. Please set VITE_GEMINI_API_KEY in your .env file.');
     }
     
@@ -112,4 +127,4 @@ export const promptVideo = async (uploadResult, prompt, model) => {
     console.error("Error in promptVideo:", error);
     return {error: error.toString()};
   }
-} 
+}
