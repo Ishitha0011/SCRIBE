@@ -35,7 +35,8 @@ A web application for analyzing videos using Google's Gemini AI. Upload videos a
    ```
    cp .env.example .env
    ```
-4. Add your Gemini API key to the `.env` file:
+4. Get your Gemini API key from https://makersuite.google.com/app/apikey
+5. Add your API key to the `.env` file:
    ```
    VITE_GEMINI_API_KEY=your_gemini_api_key_here
    ```
