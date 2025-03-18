@@ -1,13 +1,13 @@
 .LabsContainer {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   height: 100%;
   width: 100%;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background-color: var(--primary-bg-color, #fff);
   color: var(--editor-text-color, #333);
-  padding: 16px;
-  gap: 16px;
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .LabsContainer.dark {
@@ -16,50 +16,74 @@
 }
 
 .LabsHeader {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--primary-bg-color, #fff);
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 14px 16px;
   margin-bottom: 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  z-index: 99;
   flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: background-color 0.3s ease;
 }
 
 .LabsContainer.dark .LabsHeader {
+  background-color: var(--dark-bg-color, #1e1e1e);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.LabsTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.LabsTitle h2 {
-  font-size: 18px;
+.LabsHeader h2 {
+  font-size: 16px;
   font-weight: 600;
   margin: 0;
 }
 
-.LabsDescription {
-  font-size: 13px;
-  color: #666;
-  margin: 0;
+.LabsContentWrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
-.LabsContainer.dark .LabsDescription {
-  color: #aaa;
+.LabsContainer.dark .LabsContentWrapper {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.LabsContentWrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.LabsContentWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.LabsContentWrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.LabsContainer.dark .LabsContentWrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Video Section */
 .VideoSection {
   width: 100%;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   background-color: #0f0f0f;
-  min-height: 240px;
-  max-height: 50vh;
+  min-height: 200px;
+  max-height: 240px;
   flex-shrink: 0;
   position: relative;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
 }
 
 .LabsContainer.dark .VideoSection {
@@ -78,6 +102,7 @@
   height: calc(100% - 50px);
   object-fit: contain;
   background-color: #000;
+  cursor: pointer;
 }
 
 .VideoControls {
@@ -87,6 +112,7 @@
   padding: 6px 12px;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(8px);
 }
 
 .VideoScrubber {
@@ -96,16 +122,15 @@
 }
 
 .ScrubberInput {
-  width: 100%;
-  height: 4px;
   -webkit-appearance: none;
-  appearance: none;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  outline: none;
-  position: relative;
-  margin: 8px 0;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.2);
+  background-image: linear-gradient(#0a84ff, #0a84ff);
+  background-repeat: no-repeat;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .ScrubberInput::-webkit-slider-thumb {
@@ -117,6 +142,7 @@
   background: #bb44f0;
   cursor: pointer;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease;
 }
 
 .ScrubberInput::-moz-range-thumb {
@@ -127,6 +153,7 @@
   cursor: pointer;
   border: none;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease;
 }
 
 .ScrubberInput:hover {
@@ -134,8 +161,11 @@
 }
 
 .ScrubberInput:hover::-webkit-slider-thumb {
-  width: 14px;
-  height: 14px;
+  transform: scale(1.2);
+}
+
+.ScrubberInput:hover::-moz-range-thumb {
+  transform: scale(1.2);
 }
 
 .VideoControlsBottom {
@@ -144,7 +174,13 @@
   justify-content: space-between;
 }
 
-.PlayButton {
+.VideoControlsLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.PlayButton, .VolumeButton {
   background: none;
   border: none;
   color: white;
@@ -156,17 +192,21 @@
   justify-content: center;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.1);
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.PlayButton:hover {
+.PlayButton:hover, .VolumeButton:hover {
   background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
 }
 
 .VideoTime {
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   font-family: monospace;
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .TimecodeMarkers {
@@ -189,19 +229,20 @@
   pointer-events: auto;
   top: 6px;
   border-radius: 1px;
-  transition: height 0.15s ease, background-color 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .TimecodeMarker:hover {
   background-color: #d67aff;
   height: 14px;
   top: 3px;
+  box-shadow: 0 0 8px rgba(187, 68, 240, 0.5);
 }
 
 /* Upload styles */
 .VideoUploadArea {
   width: 100%;
-  height: 240px;
+  height: 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -209,9 +250,9 @@
   cursor: pointer;
   background-color: rgba(0, 0, 0, 0.03);
   border: 2px dashed rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border-radius: 12px;
   color: #333;
-  padding: 32px;
+  padding: 16px;
   text-align: center;
   transition: all 0.2s ease;
 }
@@ -225,29 +266,35 @@
 .VideoUploadArea:hover {
   background-color: rgba(187, 68, 240, 0.05);
   border-color: rgba(187, 68, 240, 0.3);
+  transform: translateY(-2px);
 }
 
 .UploadPrompt {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 .UploadIcon {
   color: #bb44f0;
   opacity: 0.8;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  transition: transform 0.2s ease;
+}
+
+.VideoUploadArea:hover .UploadIcon {
+  transform: scale(1.1);
 }
 
 .UploadPrompt p {
-  font-size: 16px;
-  max-width: 300px;
+  font-size: 14px;
+  max-width: 100%;
   margin: 0;
 }
 
 .UploadHint {
-  font-size: 13px !important;
+  font-size: 12px !important;
   color: #888;
   margin-top: 8px !important;
 }
@@ -264,13 +311,13 @@
 }
 
 .LoadingIndicator p, .ErrorMessage p {
-  font-size: 16px;
+  font-size: 14px;
   margin: 0;
 }
 
 .Spinner {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: 3px solid rgba(187, 68, 240, 0.3);
   border-top: 3px solid #bb44f0;
   border-radius: 50%;
@@ -290,14 +337,93 @@
 .ModesGridSection {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
+  margin-bottom: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
 }
 
-.ModesGrid {
+.LabsContainer.dark .ModesGridSection {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ModesGridHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ModesGridHeader h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.ModesToggleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.LabsContainer.dark .ModesToggleButton {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ModesToggleButton:hover {
+  background-color: rgba(187, 68, 240, 0.1);
+}
+
+.ModeToggleContainer {
+  display: flex;
+  margin-bottom: 10px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.LabsContainer.dark .ModeToggleContainer {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ModeToggleButton {
+  flex: 1;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.ModeToggleButton.active {
+  background-color: white;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.LabsContainer.dark .ModeToggleButton.active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.ModesGridContainer {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
 
 .ModeCard {
@@ -305,15 +431,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 16px;
+  gap: 4px;
+  padding: 10px;
   border-radius: 8px;
   background-color: rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
-  height: 100px;
+  height: auto;
+}
+
+.ModeCardContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
 }
 
 .LabsContainer.dark .ModeCard {
@@ -325,39 +458,22 @@
   background-color: rgba(187, 68, 240, 0.1);
   border-color: rgba(187, 68, 240, 0.3);
   box-shadow: 0 0 0 2px rgba(187, 68, 240, 0.2);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .ModeCard:hover:not(.active) {
   background-color: rgba(187, 68, 240, 0.05);
-  transform: translateY(-2px);
-}
-
-.ModeIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background-color: rgba(187, 68, 240, 0.1);
-  color: #bb44f0;
-  transition: all 0.2s ease;
-}
-
-.ModeCard.active .ModeIcon {
-  background-color: rgba(187, 68, 240, 0.2);
-  transform: scale(1.1);
-}
-
-.ModeName {
-  font-size: 14px;
-  font-weight: 500;
+  transform: translateY(-1px);
 }
 
 .ModeEmoji {
-  font-size: 15px;
+  font-size: 14px;
   margin-right: 4px;
+}
+
+.ModeName {
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* Chart mode selector */
@@ -366,30 +482,30 @@
   flex-direction: column;
   gap: 8px;
   background-color: rgba(187, 68, 240, 0.05);
-  padding: 12px;
+  padding: 10px;
   border-radius: 8px;
   border: 1px solid rgba(187, 68, 240, 0.1);
 }
 
-.ChartModeSelector h4 {
+.ChartModeHeader {
   font-size: 13px;
   font-weight: 500;
   margin: 0;
   color: #666;
 }
 
-.LabsContainer.dark .ChartModeSelector h4 {
+.LabsContainer.dark .ChartModeHeader {
   color: #aaa;
 }
 
 .ChartModeButtons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .ChartModeButton {
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -414,18 +530,23 @@
   background-color: rgba(187, 68, 240, 0.05);
 }
 
+/* Generate Button */
 .GenerateButton {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   background-color: #bb44f0;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
   box-shadow: 0 2px 6px rgba(187, 68, 240, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .GenerateButton:hover:not(:disabled) {
@@ -440,17 +561,36 @@
   box-shadow: none;
 }
 
+.GenerateButton.processing {
+  background-color: #a030d8;
+  cursor: pointer;
+}
+
+.GenerateButton.processing:hover {
+  background-color: #ff3b30;
+}
+
+.GenerateButton .spinning {
+  animation: spin 1s linear infinite;
+}
+
 /* Results Section */
 .ResultsOuterSection {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  border-radius: 8px;
+  gap: 10px;
+  border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 16px;
+  padding: 14px;
   background-color: rgba(0, 0, 0, 0.02);
   max-height: 500px;
   overflow: hidden;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .LabsContainer.dark .ResultsOuterSection {
@@ -465,16 +605,22 @@
 }
 
 .ResultsHeader h3 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   margin: 0;
+}
+
+.ResultsActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .ResultsContent {
   flex: 1;
   overflow-y: auto;
-  max-height: 450px;
-  padding-right: 6px;
+  max-height: 300px;
+  padding-right: 4px;
 }
 
 /* Display mode toggle */
@@ -482,7 +628,7 @@
   display: flex;
   gap: 2px;
   background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 2px;
 }
 
@@ -494,14 +640,43 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
   border: none;
   background: none;
   cursor: pointer;
   color: #666;
   transition: all 0.2s ease;
+}
+
+.ClearResultsButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.ClearResultsButton:hover {
+  background-color: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
+}
+
+.LabsContainer.dark .ClearResultsButton {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+}
+
+.LabsContainer.dark .ClearResultsButton:hover {
+  background-color: rgba(255, 59, 48, 0.2);
+  color: #ff453a;
 }
 
 .LabsContainer.dark .DisplayModeButton {
@@ -533,7 +708,7 @@
   flex-direction: column;
   gap: 3px;
   padding: 10px;
-  border-radius: 5px;
+  border-radius: 8px;
   background-color: rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: pointer;
@@ -567,8 +742,8 @@
   font-size: 13px;
   line-height: 1.5;
   background-color: rgba(0, 0, 0, 0.02);
-  padding: 12px;
-  border-radius: 5px;
+  padding: 14px;
+  border-radius: 8px;
 }
 
 .LabsContainer.dark .ResultsParagraph {
@@ -606,7 +781,7 @@
 
 .ResultsTable th {
   text-align: left;
-  padding: 8px;
+  padding: 10px;
   background-color: rgba(0, 0, 0, 0.05);
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   font-weight: 500;
@@ -618,7 +793,7 @@
 }
 
 .ResultsTable td {
-  padding: 8px;
+  padding: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   vertical-align: top;
 }
@@ -639,9 +814,9 @@
 /* Chart view */
 .ChartContainer {
   width: 100%;
-  padding: 8px;
+  padding: 12px;
   background-color: rgba(0, 0, 0, 0.02);
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 .LabsContainer.dark .ChartContainer {
@@ -649,7 +824,7 @@
 }
 
 .ChartTitle {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   text-align: center;
   margin-bottom: 12px;
@@ -663,78 +838,595 @@
   fill: #e0e0e0 !important;
 }
 
-/* Logs Panel */
-.LogsPanel {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.LogsToggleButton {
-  align-self: center;
-  padding: 6px 12px;
-  background-color: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-.LabsContainer.dark .LogsToggleButton {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.LogsToggleButton:hover {
-  background-color: rgba(0, 0, 0, 0.08);
-}
-
-.LabsContainer.dark .LogsToggleButton:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-.LogsContainer {
-  max-height: 150px;
-  overflow-y: auto;
-  background-color: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
-  padding: 8px;
-  font-family: monospace;
-  font-size: 12px;
-}
-
-.LabsContainer.dark .LogsContainer {
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.LogEntry {
-  margin-bottom: 4px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .ModesGrid {
+  .ModesGridContainer {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 480px) {
-  .ModesGrid {
+  .ModesGridContainer {
     grid-template-columns: 1fr;
   }
   
-  .LabsContainer {
+  .LabsContentWrapper {
     padding: 8px;
-    gap: 12px;
   }
   
   .VideoSection {
     min-height: 180px;
+  }
+}
+
+/* Raw Response Section */
+.RawResponseSection {
+  margin-top: 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+.LabsContainer.dark .RawResponseSection {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.RawResponseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.LabsContainer.dark .RawResponseHeader {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.RawResponseHeader h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.RawResponseContent {
+  padding: 14px;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Terminal Output Section */
+.TerminalSection {
+  margin-top: 16px;
+  border-radius: 10px;
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  overflow: hidden;
+}
+
+.TerminalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #3d3d3d;
+}
+
+.TerminalHeader h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  color: #e0e0e0;
+}
+
+.TerminalContent {
+  padding: 14px;
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.TerminalContent::-webkit-scrollbar,
+.RawResponseContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.TerminalContent::-webkit-scrollbar-track,
+.RawResponseContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.TerminalContent::-webkit-scrollbar-thumb,
+.RawResponseContent::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+}
+
+.TerminalPrompt {
+  color: #4CAF50;
+  margin-right: 8px;
+}
+
+.TerminalCommand {
+  color: #64B5F6;
+}
+
+.TerminalOutput {
+  color: #e0e0e0;
+  margin-top: 8px;
+}
+
+.TerminalError {
+  color: #FF5252;
+}
+
+.ModeDescription {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  z-index: 100;
+  margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.ModeDescription::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent rgba(0, 0, 0, 0.8) transparent;
+}
+
+.ModeCard:hover .ModeDescription {
+  display: block;
+}
+
+.CustomPromptContainer {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.LabsContainer.dark .CustomPromptContainer {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.CustomPromptHeader {
+  font-weight: 500;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.CustomPromptInput {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: white;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+  margin-bottom: 0px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.LabsContainer.dark .CustomPromptInput {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.CustomPromptInput:focus {
+  outline: none;
+  border-color: #0a84ff;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.1);
+}
+
+.CustomPromptToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  user-select: none;
+}
+
+.CustomPromptToggle input {
+  margin: 0;
+}
+
+.RemoveVideoButton {
+  background-color: rgba(0, 0, 0, 0.4);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.RemoveVideoButton:hover {
+  background-color: rgba(255, 59, 48, 0.8);
+  transform: scale(1.05);
+}
+
+.LabsContainer.dark .RemoveVideoButton {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.LabsContainer.dark .RemoveVideoButton:hover {
+  background-color: rgba(255, 59, 48, 0.8);
+}
+
+/* Enlarged view */
+.EnlargedViewOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.EnlargedViewContent {
+  width: 80%;
+  max-width: 800px;
+  max-height: 90vh;
+  background-color: var(--primary-bg-color, #fff);
+  color: var(--editor-text-color, #333);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.LabsContainer.dark .EnlargedViewContent {
+  background-color: var(--dark-bg-color, #1e1e1e);
+  color: var(--editor-text-color, #e0e0e0);
+}
+
+.EnlargedViewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.LabsContainer.dark .EnlargedViewHeader {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.EnlargedViewHeader h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.EnlargedViewActions {
+  display: flex;
+  gap: 8px;
+}
+
+.EnlargedViewBody {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(90vh - 70px);
+}
+
+.ResultsParagraph.enlarged,
+.ResultsList.enlarged {
+  max-height: none;
+  font-size: 15px;
+}
+
+.ResultsList.enlarged .TimecodeItem {
+  padding: 14px;
+}
+
+.ResultsList.enlarged .TimecodeText {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.ActionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.LabsContainer.dark .ActionButton {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+}
+
+.ActionButton:hover {
+  background-color: rgba(187, 68, 240, 0.1);
+  color: #bb44f0;
+}
+
+@media (max-width: 480px) {
+  .EnlargedViewContent {
+    width: 95%;
+  }
+  
+  .ModesGridContainer {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Header Actions */
+.HeaderActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Analysis History Section */
+.AnalysisHistorySection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--primary-bg-color, #fff);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease;
+}
+
+.LabsContainer.dark .AnalysisHistorySection {
+  background-color: var(--dark-bg-color, #1e1e1e);
+}
+
+.SectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.LabsContainer.dark .SectionHeader {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.SectionHeader h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.HistoryList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.HistoryItem {
+  background-color: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.LabsContainer.dark .HistoryItem {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.HistoryItem:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.HistoryItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.HistoryMode {
+  font-weight: 500;
+  color: #bb44f0;
+  font-size: 14px;
+}
+
+.HistoryDate {
+  font-size: 12px;
+  color: #666;
+}
+
+.LabsContainer.dark .HistoryDate {
+  color: #aaa;
+}
+
+.HistoryActions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+/* Custom Templates Section */
+.CustomTemplatesSection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--primary-bg-color, #fff);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease;
+}
+
+.LabsContainer.dark .CustomTemplatesSection {
+  background-color: var(--dark-bg-color, #1e1e1e);
+}
+
+.TemplatesList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.TemplateItem {
+  background-color: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.LabsContainer.dark .TemplateItem {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.TemplateItem:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.TemplateName {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.TemplateActions {
+  display: flex;
+  gap: 4px;
+}
+
+.SaveTemplateForm {
+  padding: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 8px;
+}
+
+.LabsContainer.dark .SaveTemplateForm {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.TemplateNameInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.LabsContainer.dark .TemplateNameInput {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.SaveTemplateButton {
+  padding: 8px 16px;
+  background-color: #bb44f0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.SaveTemplateButton:hover:not(:disabled) {
+  background-color: #a030d8;
+  transform: translateY(-1px);
+}
+
+.SaveTemplateButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .HeaderActions {
+    gap: 4px;
+  }
+  
+  .SaveTemplateForm {
+    flex-direction: column;
+  }
+  
+  .TemplateNameInput {
+    width: 100%;
+  }
+  
+  .SaveTemplateButton {
+    width: 100%;
   }
 }

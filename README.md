@@ -71,3 +71,39 @@ A web application for analyzing videos using Google's Gemini AI. Upload videos a
 ## License
 
 MIT
+
+## Worker Logs
+
+The application now supports detailed logging to help track and diagnose issues.
+
+### How to Start the Log Server
+
+1. Open a new terminal
+2. Run: `npm run start:logs`
+3. The log server will start on http://localhost:9999
+
+### Viewing Logs
+
+- **Web Interface**: Open http://localhost:9999 in your browser to see logs with auto-refresh
+- **Raw Logs**: Access http://localhost:9999/raw for plain text logs
+- **Log File**: All logs are stored in `worker.logs` in the project root directory
+
+### Log Types
+
+The application logs various events:
+
+- **Video Upload**: Start, progress, completion, and errors
+- **Content Generation**: Requests, responses, and errors
+- **API Interactions**: All API calls and their results
+
+### Log Format
+
+Each log entry includes:
+- Timestamp
+- Event type (info, error, request, response)
+- Action (upload_video, generate_content, etc.)
+- Relevant details and data
+
+## Using the Application
+
+// ... rest of README content

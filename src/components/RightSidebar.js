@@ -10,10 +10,14 @@ const RightSidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [prevCollapsedState, setPrevCollapsedState] = useState(false);
 
   const { theme } = useTheme();
   const dropdownRef = useRef(null);
   const sidebarRef = useRef(null);
+  
+  // Create refs for components to persist them
+  const labsRef = useRef(<Labs />);
 
   const toggleDropdown = () => setIsOpen((prev) => !prev);
   
@@ -23,6 +27,8 @@ const RightSidebar = () => {
   };
   
   const toggleCollapse = () => {
+    // Store the previous state for restoration
+    setPrevCollapsedState(isCollapsed);
     setIsCollapsed((prev) => !prev);
     // If opening from collapsed state, ensure dropdown is closed
     if (isCollapsed) {
@@ -52,6 +58,22 @@ const RightSidebar = () => {
         return <FlaskConical size={16} />;
       default:
         return <MessageSquare size={16} />;
+    }
+  };
+
+  // Render the selected component
+  const renderSelectedComponent = () => {
+    if (isCollapsed) return null;
+    
+    switch (selectedOption) {
+      case 'AI':
+        return <AskAI messages={messages} setMessages={setMessages} />;
+      case 'Notes':
+        return <div className="ComingSoonPlaceholder">Notes feature coming soon</div>;
+      case 'Labs':
+        return labsRef.current;
+      default:
+        return null;
     }
   };
 
@@ -97,11 +119,8 @@ const RightSidebar = () => {
         </div>
       </div>
 
-      {/* Dynamic Content Based on Selected Option */}
       <div className="DynamicContent">
-        {selectedOption === 'AI' && !isCollapsed && <AskAI messages={messages} setMessages={setMessages} />}
-        {selectedOption === 'Notes' && !isCollapsed && <div className="ComingSoonPlaceholder">Notes feature coming soon</div>}
-        {selectedOption === 'Labs' && !isCollapsed && <Labs />}
+        {renderSelectedComponent()}
         
         {/* Collapsible icon */}
         <div className="CollapseIcon" onClick={toggleCollapse} title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>

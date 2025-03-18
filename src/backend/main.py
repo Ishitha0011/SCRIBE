@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv  # Import load_dotenv
@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import List, Optional, Dict, Union
 import tkinter as tk
 from tkinter import filedialog
+from datetime import datetime
+import asyncio
 
 # Load environment variables from .env file
 load_dotenv()
@@ -102,6 +104,10 @@ class CreateFileRequest(BaseModel):
 
 class WorkspaceRequest(BaseModel):
     directory: str
+
+
+class LogEntry(BaseModel):
+    log: str
 
 
 # Helper function to convert dict to Message
@@ -600,6 +606,25 @@ async def select_directory():
     except Exception as e:
         print(f"Error selecting directory: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/write-log")
+async def write_log(log_entry: LogEntry):
+    try:
+        # Create logs directory if it doesn't exist
+        os.makedirs("logs", exist_ok=True)
+        
+        # Get current date for the log file name
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        log_file_path = f"logs/scribe_ai_{current_date}.log"
+        
+        # Append the log entry to the file
+        with open(log_file_path, "a", encoding="utf-8") as f:
+            f.write(log_entry.log)
+        
+        return {"status": "success", "message": "Log entry written successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to write log: {str(e)}")
 
 
 if __name__ == "__main__":

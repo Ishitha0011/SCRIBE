@@ -22,6 +22,7 @@
 .env.example
 
 /tmp
+worker.logs
 
 npm-debug.log*
 yarn-debug.log*
