@@ -1,714 +1,603 @@
-.ChatContainer {
-  position: relative;
+/* AskAI.css */
+
+/* === Base Theme Variables (PLACEHOLDERS - MAP THESE TO YOUR THEME PROVIDER) === */
+:root {
+  /* Backgrounds */
+  --bg-primary: var(--bg-color);
+  --bg-secondary: var(--input-bg-color);
+  --input-bg: var(--input-bg-color);
+  --button-hover-bg: var(--cancel-hover-bg-color);
+  --button-active-bg: var(--cancel-bg-color);
+  --action-menu-bg: var(--bg-color);
+
+  /* Text */
+  --text-primary: var(--text-color);
+  --text-secondary: var(--cancel-text-color);
+  --text-placeholder: var(--muted-text-color);
+  --text-accent: var(--primary-color);
+  --text-ai: var(--success-color);
+  --text-on-accent: #ffffff;
+  --danger-color: #ff3b30;
+
+  /* Borders */
+  --border-color: var(--border-color);
+
+  /* Shadows */
+  --action-menu-shadow: rgba(0, 0, 0, 0.1);
+
+  /* Scrollbars */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-track: transparent;
+}
+
+.dark {
+  /* Backgrounds */
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252525;
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --textarea-text-color: #e0e0e0;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-primary: #e0e0e0;
+  --text-secondary: #aaa;
+  --text-ai: #69b4ff;
+  --text-accent: #4e8fef;
+  --text-on-accent: #fff;
+  --button-bg: rgba(255, 255, 255, 0.05);
+  --button-hover-bg: rgba(255, 255, 255, 0.1);
+  --button-active-bg: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --danger-color: #f76e6e;
+  --muted-text-color: rgba(255, 255, 255, 0.4);
+
+  /* Shadows */
+  --action-menu-shadow: rgba(0, 0, 0, 0.2);
+
+  /* Scrollbars */
+  --scrollbar-track: transparent;
+}
+/* === End Theme Variables === */
+
+
+/* === Base Container === */
+.ModernChatContainer {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--primary-bg-color, #fff);
-  color: var(--primary-text-color, #333);
-  transition: background-color 0.3s ease, color 0.3s ease;
-  overflow: visible;
-}
-
-.ChatContainer.dark {
-  background-color: var(--dark-bg-color, #1e1e1e);
-  color: var(--dark-text-color, #e0e0e0);
-}
-
-.ChatContainer.light {
-  background-color: var(--sidebar-bg-color, #f9f9f9);
-  color: var(--editor-text-color);
-}
-
-.ChatDisplayContainer {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  padding-bottom: 140px;
-  margin-bottom: 0;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-}
-
-.ChatContainer.dark .ChatDisplayContainer {
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
-
-.ChatDisplayContainer::-webkit-scrollbar {
-  width: 6px;
-}
-
-.ChatDisplayContainer::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.ChatDisplayContainer::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
-}
-
-.ChatContainer.dark .ChatDisplayContainer::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.Message {
-  padding: 12px 0;
-  margin-bottom: 20px;
-  max-width: 95%;
-  position: relative;
-  animation: fadeIn 0.3s ease;
+  background-color: var(--bg-primary, #fff);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   line-height: 1.5;
-  font-size: 14px;
-  border-radius: 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden; /* Prevent any possible overflow issues */
+  border-radius: 6px;
+  margin-bottom: 8px; /* Space at the bottom */
 }
 
-.Message.user {
-  align-self: flex-end;
-  margin-left: auto;
-  background-color: transparent;
-  color: var(--editor-text-color, #333);
-  padding-right: 8px;
-}
-
-.Message.ai {
-  align-self: flex-start;
-  background-color: transparent;
-  color: var(--editor-text-color, #333);
-  padding-left: 8px;
-}
-
-.ChatContainer.dark .Message.user {
-  background-color: transparent;
-  color: var(--dark-text-color, #e0e0e0);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.ChatContainer.dark .Message.ai {
-  background-color: transparent;
-  color: var(--dark-text-color, #e0e0e0);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.Message::before {
-  content: 'You';
-  font-size: 12px;
-  font-weight: 600;
-  color: #0a84ff;
-  margin-bottom: 6px;
-  display: block;
-}
-
-.Message.ai::before {
-  content: 'AI';
-  color: #777;
-}
-
-.ChatContainer.dark .Message.ai::before {
-  color: #aaa;
-}
-
-.ChatContainer.dark .Message.user::before {
-  color: #4da3ff;
-}
-
-.MessageContent {
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-}
-
-.MessageContent p {
-  margin: 0 0 12px 0;
-}
-
-.MessageContent p:last-child {
-  margin-bottom: 0;
-}
-
-.ChatInputContainer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px;
-  padding-bottom: 4rem;
-  background-color: var(--primary-bg-color, #fff);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
-  z-index: 10;
+/* === Header === */
+.ModernChatHeader {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  transition: background-color 0.3s ease;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.ChatContainer.dark .ChatInputContainer {
-  background-color: var(--dark-bg-color, #1e1e1e);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.ChatInputWrapper {
-  position: relative;
-  display: flex;
-  width: 100%;
-}
-
-.AskAIInput {
-  width: 100%;
-  height: auto;
-  padding: 12px 16px;
-  padding-right: 90px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  font-size: 14px;
-  resize: none;
-  max-height: 120px;
-  overflow-y: auto;
-  outline: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-  min-height: 48px;
-  background-color: #ffffff;
-  color: #333;
-  font-family: inherit;
-}
-
-.AskAIInput:focus {
-  border-color: #0a84ff;
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.1);
-}
-
-.ChatContainer.dark .AskAIInput {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.ChatContainer.dark .AskAIInput:focus {
-  border-color: #0a84ff;
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
-}
-
-.ChatControlContainer {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  background-color: var(--primary-bg-color, #fff);
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  margin-right: 0;
-  position: relative;
-  z-index: 99;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-  transition: background-color 0.3s ease;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  background-color: var(--bg-color);
+  min-height: 44px;
 }
 
-.ChatContainer.dark .ChatControlContainer {
-  background-color: var(--dark-bg-color, #1e1e1e);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.HeaderTitleContainer {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0; /* Prevent title pushing buttons */
+  margin-right: 12px;
 }
-
-.ChatTitle {
-  margin-left: 0;
-  font-size: 16px;
+.HeaderTitleText {
+  font-size: 15px;
   font-weight: 600;
-  color: var(--primary-text-color, #333);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 70%;
-}
-
-.ChatContainer.dark .ChatTitle {
-  color: var(--dark-text-color, #e0e0e0);
-}
-
-.ButtonGroup {
-  margin-right: 1rem;
+  cursor: pointer;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+}
+.HeaderEditIcon {
+  opacity: 0; /* Hidden by default */
+  color: var(--text-secondary);
+  transition: opacity 0.2s;
+  flex-shrink: 0; /* Don't shrink the icon */
+}
+.HeaderTitleText:hover .HeaderEditIcon { opacity: 0.7; }
+.HeaderTitleEditInput {
+  font-size: 15px; font-weight: 600;
+  padding: 2px 4px; margin: -2px -4px; /* Offset padding to match text */
+  border: 1px solid var(--text-accent);
+  border-radius: 4px; outline: none;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  width: 100%; /* Take full container width */
 }
 
-.NewChatButton,
-.PreviousChatButton {
-  background-color: rgba(0, 0, 0, 0.04);
-  border: none;
-  width: 32px;
-  height: 32px;
+.HeaderActions { display: flex; gap: 4px; flex-shrink: 0; }
+.HeaderButton {
+  background: none; border: none; padding: 6px;
+  border-radius: 6px; cursor: pointer;
+  color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  width: 32px; height: 32px; /* Ensure consistent button size */
+}
+.HeaderButton:hover:not(:disabled) { background-color: var(--button-hover-bg); color: var(--text-primary); }
+.HeaderButton:active:not(:disabled), .HeaderButton.active { background-color: var(--button-active-bg); }
+.HeaderButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Tiny Spinner for History Button Loading State */
+.TinySpinner {
+  width: 16px; height: 16px; /* Match icon size */
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+  opacity: 0.7;
+}
+
+/* History Dropdown */
+.history-container { position: relative; }
+.ModernSessionHistoryDropdown {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  width: 240px; max-height: 300px; overflow-y: auto;
+  background-color: var(--action-menu-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #555;
-  transition: all 0.2s ease;
+  box-shadow: 0 3px 12px var(--action-menu-shadow);
+  z-index: 110; padding: 4px 0;
+  scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
+.ModernSessionHistoryDropdown::-webkit-scrollbar { width: 5px; }
+.ModernSessionHistoryDropdown::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb); border-radius: 3px; }
+.SessionHistory_Header { padding: 6px 10px; font-size: 12px; font-weight: 500; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); margin-bottom: 4px; }
+.SessionHistory_NoItems { padding: 10px; font-size: 13px; color: var(--text-secondary); text-align: center; }
+.SessionHistory_Item { display: flex; align-items: center; padding: 7px 10px; cursor: pointer; transition: background-color 0.15s ease; gap: 8px; }
+.SessionHistory_Item:hover { background-color: var(--button-hover-bg); }
+.SessionHistory_Item.active { background-color: var(--button-active-bg); }
+.SessionHistory_ItemTitle { flex-grow: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+.SessionHistory_Item.active .SessionHistory_ItemTitle { font-weight: 500; }
+.SessionHistory_DeleteBtn { background: none; border: none; padding: 3px; border-radius: 4px; color: var(--text-secondary); cursor: pointer; opacity: 0; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; margin-left: auto; /* Push to right */ flex-shrink: 0; }
+.SessionHistory_Item:hover .SessionHistory_DeleteBtn { opacity: 0.6; }
+.SessionHistory_DeleteBtn:hover { opacity: 1; color: var(--danger-color); background-color: var(--button-hover-bg); }
 
-.ChatContainer.dark .NewChatButton,
-.ChatContainer.dark .PreviousChatButton {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: #e0e0e0;
+/* === Message Display Area === */
+.ModernChatDisplay {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 12px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
+.ModernChatDisplay::-webkit-scrollbar { width: 6px; }
+.ModernChatDisplay::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb); border-radius: 3px; }
 
-.NewChatButton:hover,
-.PreviousChatButton:hover {
-  background-color: rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
-}
-
-.ChatContainer.dark .NewChatButton:hover,
-.ChatContainer.dark .PreviousChatButton:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-}
-
-.tooltip {
+.MessageItem {
+  margin-bottom: 20px;
   position: relative;
-  display: inline-block;
+  max-width: 100%;
+  animation: fadeIn 0.3s ease forwards; /* Keep animation */
+}
+@keyframes fadeIn { /* Keep animation */
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.tooltip .tooltiptext {
-  visibility: hidden;
-  width: auto;
-  min-width: 120px;
-  background-color: #333;
-  color: #fff;
-  text-align: center;
-  border-radius: 6px;
-  padding: 5px 8px;
-  position: absolute;
-  z-index: 100;
-  top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.3s;
-  font-size: 12px;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.tooltip .tooltiptext::after {
-  content: "";
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: transparent transparent #333 transparent;
-}
-
-.tooltip:last-child .tooltiptext {
-  left: auto;
-  right: 0;
-  transform: translateX(0);
-}
-
-.tooltip:last-child .tooltiptext::after {
-  left: auto;
-  right: 10px;
-  margin-left: 0;
-}
-
-.tooltip:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
-}
-
-.FileButton {
-  position: absolute;
-  right: 48px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: transparent;
-  color: #777;
-  border: none;
+.MessageMeta {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 15;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  height: 20px; /* Give it some height for alignment */
+}
+.SenderLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.MessageItem.user .SenderLabel { color: var(--text-accent); }
+.MessageItem.ai .SenderLabel { color: var(--text-ai); }
+
+.MessageContent {
+  line-height: 1.55;
+  overflow-wrap: break-word;
+  color: var(--text-color);
+}
+/* Markdown styles within MessageContent */
+.MessageContent p { margin: 0 0 0.6em 0; }
+.MessageContent p:last-child { margin-bottom: 0; }
+.MessageContent ul, .MessageContent ol { margin: 0.5em 0 0.8em 20px; padding-left: 0; /* Reset browser default */ }
+.MessageContent li { margin-bottom: 0.3em; }
+.MessageContent code { background-color: var(--input-bg-color); padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.9em; font-family: monospace; color: var(--text-color); }
+.MessageContent pre { background-color: var(--input-bg-color); padding: 0.8em; border-radius: 6px; margin: 0.8em 0; overflow-x: auto; font-size: 0.9em; font-family: monospace; color: var(--text-color); }
+.MessageContent a { color: var(--text-accent); text-decoration: none; }
+.MessageContent a:hover { text-decoration: underline; }
+
+/* Message Actions */
+.MessageActionsContainer { position: relative; } /* Container for trigger and menu */
+.MessageActionTrigger {
+  background: none; border: none; padding: 4px; margin: -4px; /* Larger hit area */
+  border-radius: 50%; cursor: pointer; color: var(--text-secondary);
+  opacity: 0; /* Hide initially */
+  transition: opacity 0.2s, background-color 0.2s;
+  display: flex; align-items: center; justify-content: center; /* Center icon */
+}
+.MessageItem:hover .MessageActionTrigger { opacity: 0.7; } /* Show on message hover */
+.MessageActionTrigger:hover { opacity: 1; background-color: var(--button-hover-bg); }
+.ModernActionMenu { /* Action dropdown menu */
+  position: absolute; top: calc(100% + 2px); right: 0;
+  background-color: var(--action-menu-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px; box-shadow: 0 2px 8px var(--action-menu-shadow);
+  z-index: 115; padding: 4px 0; min-width: 120px; display: flex; flex-direction: column;
+  animation: fadeInMenu 0.1s ease-out; /* Subtle fade in */
+}
+@keyframes fadeInMenu {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.FileButton:hover {
-  color: #333;
+.ModernActionMenu button {
+  background: none; border: none; text-align: left; padding: 6px 12px;
+  font-size: 13px; cursor: pointer; color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px; transition: background-color 0.15s ease;
+  white-space: nowrap; /* Prevent wrapping */
+}
+.ModernActionMenu button:hover { background-color: var(--button-hover-bg); }
+.ModernActionMenu button svg { color: var(--text-secondary); flex-shrink: 0; }
+.ModernActionMenu button .copied svg { color: var(--text-ai); } /* Copied checkmark color */
+.ModernActionMenu button.delete { color: var(--danger-color); }
+.ModernActionMenu button.delete svg { color: var(--danger-color); }
+
+/* Typing / Loading Indicator */
+.typing-cursor { display: inline-block; width: 8px; height: 1.1em; background-color: currentColor; animation: blink 1s step-end infinite; vertical-align: text-bottom; margin-left: 2px; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.MessageItem.typing-indicator .MessageContent { display: flex; align-items: center; height: 24px; }
+.ModernLoadingDots span { /* 3 dots animation */
+    display: inline-block; width: 5px; height: 5px; border-radius: 50%; background-color: currentColor; opacity: 0.6; margin: 0 1.5px;
+    animation: bounce 1.2s infinite ease-in-out;
+}
+.ModernLoadingDots span:nth-child(1) { animation-delay: -0.30s; }
+.ModernLoadingDots span:nth-child(2) { animation-delay: -0.15s; }
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+
+/* === Input Area === */
+.ModernChatInputZone {
+  padding: 8px 12px 12px 12px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  flex-shrink: 0;
+  margin-bottom: 60px;
+  position: relative;
 }
 
-.ChatContainer.dark .FileButton {
-  color: #aaa;
-}
-
-.ChatContainer.dark .FileButton:hover {
-  color: #fff;
-}
-
-.SubmitButton {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #0a84ff;
-  color: white;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 15;
-}
-
-.SubmitButton:hover {
-  background-color: #0070e0;
-  transform: translateY(-50%) scale(1.05);
-}
-
-.SubmitButton:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  transform: translateY(-50%);
-}
-
-.ChatContainer.dark .SubmitButton:disabled {
-  background-color: #555;
-}
-
-.SelectedFilesContainer {
+/* Attached Files Preview */
+.AttachedFilesPreview {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   margin-bottom: 8px;
-  max-width: 100%;
-  overflow-x: auto;
+}
+
+.FileChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background-color: var(--input-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 12px;
+  max-width: 200px;
+  color: var(--text-color);
+}
+
+.FileChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.FileChipRemoveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 2px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.FileChipRemoveBtn:hover {
+  background-color: var(--button-hover-bg);
+  color: var(--text-primary);
+}
+
+/* Input Bar */
+.ModernInputBar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  background-color: var(--input-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 4px;
+  position: relative;
+  min-height: 44px;
+}
+
+.ModernInputBar:focus-within {
+  border-color: var(--primary-color);
+}
+
+.InputBarButton {
+  background: none; border: none; padding: 8px; margin: 0;
+  border-radius: 50%; cursor: pointer;
+  color: var(--text-secondary); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s, background-color 0.2s;
+  width: 36px; height: 36px; /* Consistent size */
+}
+.InputBarButton:hover:not(:disabled) { color: var(--text-primary); background-color: var(--button-hover-bg); }
+.InputBarButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.InputBarButton.attach { margin-right: 2px; }
+.InputBarButton.send {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  margin-left: 4px;
+}
+.InputBarButton.send:hover:not(:disabled) { background-color: color-mix(in srgb, var(--text-accent) 85%, black); color: var(--text-on-accent); } /* Darken accent */
+.InputBarButton.send:disabled {
+   background-color: color-mix(in srgb, var(--text-secondary) 50%, transparent); /* Muted background */
+   color: color-mix(in srgb, var(--text-primary) 50%, transparent); /* Muted text */
+}
+/* Input Loading Spinner */
+.InputLoadingSpinner {
+   width: 18px; height: 18px;
+   border: 2px solid rgba(255, 255, 255, 0.5); /* White spinner on accent bg */
+   border-radius: 50%;
+   border-top-color: #fff;
+   animation: spin 0.8s linear infinite;
+}
+
+.InputBarTextarea {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  background: none;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 8px 4px;
+  max-height: 120px;
+  overflow-y: auto;
+  color: var(--text-color);
   scrollbar-width: none;
 }
+.InputBarTextarea::-webkit-scrollbar { display: none; }
+.InputBarTextarea::placeholder { color: var(--muted-text-color); }
 
-.SelectedFilesContainer::-webkit-scrollbar {
-  display: none;
-}
-
-.SelectedFileTag {
-  display: inline-flex;
-  align-items: center;
-  background-color: rgba(10, 132, 255, 0.1);
-  color: #0a84ff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  max-width: 150px;
-  height: 22px;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.FileTagName {
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ChatContainer.dark .SelectedFileTag {
-  background-color: rgba(10, 132, 255, 0.2);
-  color: #4da3ff;
-}
-
-.MoreFilesIndicator {
-  display: inline-flex;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #777;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  height: 22px;
-}
-
-.ChatContainer.dark .MoreFilesIndicator {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #aaa;
-}
-
-.RemoveFileButton {
-  background: none;
-  border: none;
-  color: inherit;
-  margin-left: 4px;
-  padding: 1px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-  font-size: 14px;
-}
-
-.SelectedFileTag:hover .RemoveFileButton {
-  opacity: 0.7;
-}
-
-.RemoveFileButton:hover {
-  opacity: 1;
-}
-
-.MessageActions {
+/* File Selector */
+.FileSelector {
   position: absolute;
-  top: 8px;
+  bottom: calc(100% + 8px); /* Position above the input bar */
+  left: 0;
   right: 0;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.Message:hover .MessageActions {
-  opacity: 1;
-}
-
-.MessageActionButton, 
-.CopyButton, 
-.DeleteMessageButton, 
-.ExpandMessageButton {
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  border-radius: 4px;
-  color: inherit;
-  opacity: 0.6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.MessageActionButton:hover, 
-.CopyButton:hover, 
-.DeleteMessageButton:hover, 
-.ExpandMessageButton:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-  opacity: 1;
-}
-
-.ChatContainer.dark .MessageActionButton:hover, 
-.ChatContainer.dark .CopyButton:hover, 
-.ChatContainer.dark .DeleteMessageButton:hover,
-.ChatContainer.dark .ExpandMessageButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.LoadingSpinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.typing-cursor {
-  display: inline-block;
-  width: 6px;
-  height: 16px;
-  background-color: currentColor;
-  margin-left: 2px;
-  animation: blink 1s step-end infinite;
-  vertical-align: middle;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.history-container {
-  position: relative;
-}
-
-.SessionHistoryDropdown {
-  position: absolute;
-  top: 40px;
-  right: auto;
-  left: auto;
-  transform: translateX(-80%);
-  width: 280px;
-  max-height: 400px;
-  overflow-y: auto;
-  background-color: white;
-  border-radius: 12px;
+  width: 100%;
+  background-color: var(--bg-primary, #fff);
+  border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 100;
-  animation: fadeIn 0.2s ease;
-  padding: 0;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-@media (max-width: 480px) {
-  .SessionHistoryDropdown {
-    transform: translateX(-70%);
-    width: 250px;
-  }
-}
-
-@media (max-width: 320px) {
-  .SessionHistoryDropdown {
-    transform: translateX(-60%);
-    width: 220px;
-  }
-}
-
-.ChatContainer.dark .SessionHistoryDropdown {
-  background-color: #2d2d2d;
-  border-color: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.SessionHistoryHeader {
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  background-color: white;
-  z-index: 1;
-}
-
-.ChatContainer.dark .SessionHistoryHeader {
-  background-color: #2d2d2d;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.SessionHistoryHeader h3 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-}
-
-.ChatContainer.dark .SessionHistoryHeader h3 {
-  color: #e0e0e0;
-}
-
-.NoSessionsMessage {
-  padding: 16px;
-  text-align: center;
-  color: #777;
-  font-size: 14px;
-}
-
-.ChatContainer.dark .NoSessionsMessage {
-  color: #aaa;
-}
-
-.SessionItem {
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.SessionItem:hover {
-  background-color: rgba(0, 0, 0, 0.03);
-}
-
-.SessionItem.active {
-  background-color: rgba(10, 132, 255, 0.08);
-}
-
-.ChatContainer.dark .SessionItem {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.ChatContainer.dark .SessionItem:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.ChatContainer.dark .SessionItem.active {
-  background-color: rgba(10, 132, 255, 0.15);
-}
-
-.SessionItemContent {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.SessionInfo {
+  overflow: hidden;
+  max-height: 320px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.SessionTitle {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
   margin-bottom: 4px;
 }
 
-.ChatContainer.dark .SessionTitle {
-  color: #e0e0e0;
+.FileSelectorHeader {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  flex-shrink: 0;
 }
 
-.SessionDate {
-  font-size: 12px;
-  color: #777;
+.SearchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--input-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
 }
 
-.ChatContainer.dark .SessionDate {
-  color: #aaa;
+.SearchBox svg {
+  color: var(--text-secondary);
 }
 
-.DeleteSessionButton {
-  background: none;
+.SearchBox input {
   border: none;
-  padding: 6px;
-  border-radius: 4px;
-  color: #777;
+  background: none;
+  outline: none;
+  width: 100%;
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.SearchBox input::placeholder {
+  color: var(--muted-text-color);
+}
+
+.FileSelectorContent {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--bg-color);
+}
+
+.FileSelectorSection {
+  padding: 4px 8px;
+}
+
+.SectionTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  padding: 0 4px;
+}
+
+.FileList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  padding: 4px;
+  min-height: 0;
+  max-height: 250px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.FileList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.FileList::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+.FileItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
   cursor: pointer;
-  opacity: 0;
+  color: var(--text-color);
+  border-radius: 6px;
+  font-size: 13px;
   transition: all 0.2s ease;
+}
+
+.FileItem:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.FileItem svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.FileItem span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.NoResults {
+  padding: 12px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.FileSelectorSection:first-child {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.FileSelectorSection:last-child {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  padding: 8px;
+}
+
+.FileSelectorDivider {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 8px 0;
+  position: relative;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.FileSelectorDivider::before,
+.FileSelectorDivider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background-color: var(--border-color);
+}
+
+.FileSelectorDivider::before {
+  left: 16px;
+}
+
+.FileSelectorDivider::after {
+  right: 16px;
+}
+
+.UploadButton {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--border-color);
+  background: none;
+  border-radius: 6px;
+  color: var(--text-accent);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.SessionItem:hover .DeleteSessionButton {
-  opacity: 0.7;
+.UploadButton:hover {
+  background-color: var(--button-hover-bg);
+  border-color: var(--text-accent);
 }
 
-.DeleteSessionButton:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  opacity: 1;
-  color: #ff3b30;
+.UploadButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.ChatContainer.dark .DeleteSessionButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ff453a;
-}
+@keyframes spin { to { transform: rotate(360deg); } } /* Spinner animation */

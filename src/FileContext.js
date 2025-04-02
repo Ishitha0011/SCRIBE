@@ -13,6 +13,8 @@ export const FileProvider = ({ children }) => {
   const [fileStructure, setFileStructure] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Load workspace path on mount
   useEffect(() => {
@@ -65,15 +67,28 @@ export const FileProvider = ({ children }) => {
     }
   };
 
-  // Open a file and set it as active
-  const openFile = async (fileItem) => {
+  // Open a file and set it as active, optionally with a search term to highlight
+  const openFile = async (fileItem, searchTerm = null, lineNumber = null) => {
     try {
       // Check if file is already open
       const isOpen = openFiles.some(file => file.id === fileItem.id);
       
       if (!isOpen) {
         // Add to open files if not already open
-        setOpenFiles(prev => [...prev, fileItem]);
+        // Include searchTerm and lineNumber if provided
+        const fileWithSearch = {
+          ...fileItem,
+          searchHighlight: searchTerm,
+          scrollToLine: lineNumber
+        };
+        setOpenFiles(prev => [...prev, fileWithSearch]);
+      } else if (searchTerm || lineNumber) {
+        // Update existing open file with search highlight info
+        setOpenFiles(prev => prev.map(file => 
+          file.id === fileItem.id 
+            ? { ...file, searchHighlight: searchTerm, scrollToLine: lineNumber } 
+            : file
+        ));
       }
       
       // Set as active
@@ -327,6 +342,26 @@ export const FileProvider = ({ children }) => {
     return openFiles.find(file => file.id === activeFileId) || null;
   };
 
+  // Search in file contents
+  const searchInContent = async (searchTerm) => {
+    if (!searchTerm || searchTerm.trim() === '') {
+      setSearchResults([]);
+      return [];
+    }
+    
+    try {
+      setIsSearching(true);
+      const results = await FileService.searchContent(searchTerm);
+      setSearchResults(results);
+      setIsSearching(false);
+      return results;
+    } catch (error) {
+      console.error('Error searching in contents:', error);
+      setIsSearching(false);
+      return [];
+    }
+  };
+
   return (
     <FileContext.Provider
       value={{
@@ -337,6 +372,8 @@ export const FileProvider = ({ children }) => {
         fileStructure,
         loading,
         error,
+        searchResults,
+        isSearching,
         setWorkspace,
         loadFileStructure,
         openFile,
@@ -347,7 +384,8 @@ export const FileProvider = ({ children }) => {
         getActiveFile,
         createItem,
         deleteItem,
-        renameItem
+        renameItem,
+        searchInContent
       }}
     >
       {children}

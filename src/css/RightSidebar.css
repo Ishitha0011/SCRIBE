@@ -1,41 +1,75 @@
 /* RightSidebar container */
 .RightSidebar {
-  width: 320px;
+  /* REMOVED fixed width: 320px; */
   height: 100vh;
   background-color: var(--sidebar-bg-color, #f8f9fa);
   color: var(--editor-text-color, #333);
   border-left: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  /* Transition applied mainly for collapse/expand and theme changes */
+  /* Width transition during drag might feel laggy, consider removing 'width' from transition */
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative; /* Needed for absolute positioning of handle and collapse icon */
+  overflow: hidden; /* Crucial to hide overflowing content */
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
+  min-width: 48px; /* Corresponds to collapsed width */
+  /* Define max-width here too if you want CSS to enforce it, but JS clamp is primary */
+  /* max-width: 600px; */
+  flex-shrink: 0; /* Prevent the sidebar from shrinking if the container is flex */
 }
 
+/* Collapsed state */
 .RightSidebar.collapsed {
-  width: 48px;
+  width: 48px !important; /* Override inline style width when collapsed */
+  min-width: 48px;
   padding: 0;
+  /* Ensure transition applies smoothly when collapsing/expanding */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Dark theme adjustments */
 .RightSidebar.dark {
-  background-color: var(--sidebar-bg-color, #2c2f33);
+  background-color: var(--sidebar-bg-color, #1e1e1e);
   color: var(--editor-text-color, #e0e0e0);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Top section with logo and dropdown */
+/* --- NEW: Resize Handle --- */
+.ResizeHandle {
+  position: absolute;
+  left: -2px; /* Position slightly outside/on the left border */
+  top: 0;
+  bottom: 0;
+  width: 5px; /* Width of the clickable area */
+  cursor: col-resize; /* Standard cursor for horizontal resizing */
+  z-index: 10; /* Ensure it's above other elements near the edge */
+  /* Optional: Add a subtle visual indicator (use borders or background) */
+  /* border-left: 1px dashed rgba(0,0,0,0.2); */
+  /* background-color: rgba(0, 123, 255, 0.05); */ /* For debugging visibility */
+}
+
+/* Optional: Dark theme style for resize handle visual */
+.RightSidebar.dark .ResizeHandle {
+   /* border-left: 1px dashed rgba(255,255,255,0.2); */
+}
+
+
+/* Top section */
 .TopSection {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  height: 60px;
+  height: 60px; /* Fixed height */
   background-color: var(--primary-bg-color, #fff);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   transition: background-color 0.3s ease;
+  flex-shrink: 0; /* Prevent this section from shrinking */
+  position: relative; /* Establish stacking context if needed */
+  z-index: 999; /* Ensure it's below the resize handle */
 }
 
 .RightSidebar.dark .TopSection {
@@ -47,14 +81,17 @@
 .RightSidebar.collapsed .TopSection {
   justify-content: center;
   padding: 16px 0;
+  border-bottom: none; /* Maybe remove border when collapsed */
 }
 
+/* Main content area */
 .DynamicContent {
-  flex: 1;
+  flex: 1; /* Takes remaining vertical space */
   display: flex;
   flex-direction: column;
-  position: relative;
-  overflow: hidden;
+  position: relative; /* Needed for absolute positioning of collapse icon */
+  overflow: hidden; /* Prevents content spilling out */
+  z-index: 1; /* Ensure it's below the resize handle */
 }
 
 /* Logo */
@@ -65,6 +102,8 @@
   letter-spacing: 0.5px;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden; /* Hide text if container shrinks too much */
 }
 
 .RightSidebar.dark .Logo {
@@ -74,21 +113,21 @@
 .RightSidebar.collapsed .Logo {
   opacity: 0;
   visibility: hidden;
-  position: absolute;
+  position: absolute; /* Remove from layout */
 }
 
 /* Dropdown container */
 .DropdownContainer {
   display: flex;
   align-items: center;
-  position: relative;
+  position: relative; /* For DropdownList positioning */
 }
 
 .RightSidebar.collapsed .DropdownContainer {
-  display: none;
+  display: none; /* Hide dropdown when collapsed */
 }
 
-/* Custom dropdown */
+/* Custom dropdown trigger */
 .SelectDropdown {
   display: flex;
   justify-content: space-between;
@@ -100,8 +139,9 @@
   padding: 8px 12px;
   font-size: 14px;
   cursor: pointer;
-  width: 100px;
+  width: 100px; /* Fixed width for the dropdown trigger */
   transition: background-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .RightSidebar.dark .SelectDropdown {
@@ -117,35 +157,38 @@
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-/* Dropdown indicator */
+/* Dropdown arrow icon */
 .DropdownIcon {
   color: #777;
   transition: transform 0.3s ease;
+  margin-left: 4px; /* Space between text and icon */
 }
 
 .DropdownIcon.open {
   transform: rotate(180deg);
 }
 
-/* Dropdown options */
+/* Dropdown options list */
 .DropdownList {
   position: absolute;
-  top: 40px;
+  top: calc(100% + 4px); /* Position below the trigger */
   left: 0;
-  width: 100%;
+  width: 100%; /* Match trigger width */
+  min-width: 120px; /* Ensure minimum width */
   background-color: #fff;
   color: #333;
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  z-index: 1000; /* Ensure it's above other content */
   overflow: hidden;
   max-height: 300px;
   overflow-y: auto;
+  padding: 4px 0; /* Padding around options */
 }
 
 .RightSidebar.dark .DropdownList {
-  background-color: #2a2a2a;
+  background-color: #252525;
   color: #e0e0e0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -156,6 +199,9 @@
   color: #333;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  display: flex; /* Align icon and text */
+  align-items: center;
+  gap: 8px; /* Space between icon and text */
 }
 
 .RightSidebar.dark .Option {
@@ -170,11 +216,20 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Collapse button */
-.CollapseIcon {
+/* --- MODIFIED: Collapse Button Positioning --- */
+.CollapseIconWrapper {
   position: absolute;
   bottom: 20px;
-  left: 16px;
+  left: 16px; /* Default position */
+  z-index: 20; /* Above content, potentially below dropdown if it overlaps */
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth transition when collapsing/expanding */
+}
+
+.RightSidebar.collapsed .CollapseIconWrapper {
+   left: 6px; /* Center the icon in the collapsed bar */
+}
+
+.CollapseIcon {
   width: 36px;
   height: 36px;
   display: flex;
@@ -186,7 +241,6 @@
   color: #555;
   border: 1px solid rgba(0, 0, 0, 0.08);
   transition: all 0.2s ease;
-  z-index: 20;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
@@ -197,14 +251,8 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.RightSidebar.collapsed .CollapseIcon {
-  left: 6px;
-  width: 36px;
-  height: 36px;
-}
-
 .CollapseIcon:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px); /* Subtle hover effect */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
   background-color: #f8f8f8;
 }
@@ -214,59 +262,95 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Dark theme adjustments */
-.RightSidebar.dark .AskAIInput {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #e0e0e0;
-  border-color: rgba(255, 255, 255, 0.1);
+
+/* --- Styles for Components inside DynamicContent --- */
+
+/* Ensure child components (like AskAI, Labs) fill the space */
+/* You might need to adjust styles within AskAI.jsx/Labs.jsx and their CSS */
+.DynamicContent > * {
+  flex-grow: 1; /* Allow the direct child (AskAI, Labs, Placeholder) to grow */
+  overflow-y: auto; /* Add scrollbar IF the component's content overflows */
+  overflow-x: hidden; /* Prevent horizontal scrolling usually */
+  min-height: 0; /* Important for flex children that need to scroll */
+  /* Add padding inside the component or here if needed */
+  /* padding: 16px; */
 }
 
-.RightSidebar.dark .AskAIInput::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-/* Ask AI input container */
-.AskAIContainer {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 90%;
-  padding-bottom: 1.4rem;
-}
-
-.AskAIInput:focus {
-  border-color: #bb44f0;
-  box-shadow: 0px 0px 4px rgba(187, 68, 240, 0.5);
-}
-
-.AskAIInput::placeholder {
-  color: #aaa;
-  font-style: italic;
-}
-
-/* Add ComingSoonPlaceholder style */
+/* Example: Placeholder style */
 .ComingSoonPlaceholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: 100%; /* Fill available space */
   color: #777;
   font-size: 14px;
   text-align: center;
   padding: 20px;
+  box-sizing: border-box; /* Include padding in height calculation */
 }
 
 .RightSidebar.dark .ComingSoonPlaceholder {
   color: #aaa;
 }
 
-/* Completely revamp tooltip styles for RightSidebar */
+/* Styles related to AskAI (adjust as needed based on AskAI component structure) */
+/* Assuming AskAI has an input at the bottom */
+.AskAIContainer { /* This class should be inside AskAI.jsx */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Make sure AskAI itself tries to fill the space */
+  padding: 16px; /* Example padding */
+  box-sizing: border-box;
+  background-color: var(--primary-bg-color, #fff);
+}
+
+.RightSidebar.dark .AskAIContainer {
+  background-color: var(--dark-bg-color, #1e1e1e);
+}
+
+.AskAIChatArea { /* Assuming a chat area that should scroll */
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-bottom: 10px; /* Space before input */
+}
+
+.AskAIInputArea { /* Assuming a container for the input/button */
+  flex-shrink: 0; /* Prevent input area from shrinking */
+  /* Add styles for input, button etc. */
+}
+
+.AskAIInput { /* Example input style */
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background-color: #fff;
+  color: #333;
+}
+
+.RightSidebar.dark .AskAIInput {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.AskAIInput::placeholder {
+  color: #aaa;
+}
+
+.RightSidebar.dark .AskAIInput::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+
+/* Tooltip Styles (Keep as they were if needed) */
 .RightSidebar .tooltip {
   position: relative;
   display: inline-block;
 }
-
+/* ... rest of your tooltip styles ... */
 .RightSidebar .tooltip .tooltiptext {
   visibility: hidden;
   width: auto;
@@ -278,7 +362,7 @@
   padding: 5px 8px;
   position: absolute;
   z-index: 100;
-  top: 40px;
+  top: 40px; /* Adjust as needed */
   left: 50%;
   transform: translateX(-50%);
   opacity: 0;
@@ -287,8 +371,6 @@
   pointer-events: none;
   white-space: nowrap;
 }
-
-/* Add arrow to tooltip pointing up */
 .RightSidebar .tooltip .tooltiptext::after {
   content: "";
   position: absolute;
@@ -299,38 +381,28 @@
   border-style: solid;
   border-color: transparent transparent #333 transparent;
 }
-
-/* Special handling for collapsed sidebar */
 .RightSidebar.collapsed .tooltip .tooltiptext {
   left: 40px;
-  top: 0;
-  transform: none;
+  top: 50%;
+  transform: translateY(-50%);
 }
-
 .RightSidebar.collapsed .tooltip .tooltiptext::after {
   bottom: auto;
   top: 50%;
-  left: -10px;
+  left: -10px; /* Arrow points left */
   margin-left: 0;
   margin-top: -5px;
   border-color: transparent #333 transparent transparent;
 }
-
 .RightSidebar .tooltip:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
 }
 
-/* Adjust dropdown position when near the bottom of the screen */
+
+/* Responsive adjustments */
 @media (max-height: 600px) {
   .RightSidebar .DropdownList {
-    max-height: 200px;
+    max-height: 200px; /* Limit dropdown height on smaller screens */
   }
 }
-
-
-
-
-
-
-

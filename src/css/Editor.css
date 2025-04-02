@@ -609,3 +609,14 @@
 .Tab + .Tab {
   margin-left: 2px;
 }
+
+/* Add custom selection styles */
+.TextArea::selection {
+  background-color: var(--selection-background, #e8defd);
+  color: var(--selection-color, #000);
+}
+
+.dark .TextArea::selection {
+  background-color: var(--selection-background, #7952b3);
+  color: var(--selection-color, #fff);
+}

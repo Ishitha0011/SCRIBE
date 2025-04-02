@@ -35,7 +35,7 @@
     "prestart": "npm run update-env",
     "start": "react-scripts start",
     "server": "node server/index.mjs",
-    "dev": "concurrently \"npm run server\" \"npm run start\"",
+    "dev": "concurrently \"npm run server\" \"npm run start\" \"npm run start:logs\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",

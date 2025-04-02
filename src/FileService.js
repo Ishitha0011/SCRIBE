@@ -67,6 +67,113 @@ class FileService {
     }
   }
 
+  // Search within file contents
+  async searchContent(searchTerm, maxResults = 50) {
+    try {
+      const allFiles = await this.getAllFiles();
+      const results = [];
+      
+      // Process files in parallel with a limit of 10 concurrent operations
+      const batchSize = 10;
+      for (let i = 0; i < allFiles.length; i += batchSize) {
+        const batch = allFiles.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (file) => {
+          try {
+            // Skip binary files and very large files
+            const extension = file.name.split('.').pop().toLowerCase();
+            const binaryExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'ico', 'pdf', 'zip', 'gz', 'tar', 'exe', 'dll', 'bin'];
+            
+            if (binaryExtensions.includes(extension)) {
+              return null;
+            }
+            
+            const content = await this.readFile(file.id);
+            if (!content) return null;
+            
+            // Search for matches in content
+            const matches = [];
+            const lines = content.split('\n');
+            const searchTermLower = searchTerm.toLowerCase();
+            
+            lines.forEach((line, index) => {
+              const lineContent = line.trim();
+              if (lineContent.toLowerCase().includes(searchTermLower)) {
+                // Find the position of the match in the line
+                const matchIndex = lineContent.toLowerCase().indexOf(searchTermLower);
+                
+                // Extract context (text before and after the match)
+                const contextStart = Math.max(0, matchIndex - 30);
+                const contextEnd = Math.min(lineContent.length, matchIndex + searchTermLower.length + 30);
+                
+                // Get preview with ellipsis if needed
+                const preview = {
+                  before: contextStart > 0 ? '...' + lineContent.substring(contextStart, matchIndex) : lineContent.substring(0, matchIndex),
+                  match: lineContent.substring(matchIndex, matchIndex + searchTermLower.length),
+                  after: contextEnd < lineContent.length ? lineContent.substring(matchIndex + searchTermLower.length, contextEnd) + '...' : lineContent.substring(matchIndex + searchTermLower.length)
+                };
+                
+                matches.push({
+                  line: index + 1,
+                  content: lineContent,
+                  preview: preview
+                });
+              }
+            });
+            
+            if (matches.length > 0) {
+              results.push({
+                file: file,
+                matches: matches
+              });
+              
+              // Stop if we've reached the max results
+              if (results.length >= maxResults) {
+                return 'max_reached';
+              }
+            }
+            
+            return null;
+          } catch (error) {
+            console.error(`Error searching file ${file.name}:`, error);
+            return null;
+          }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        if (batchResults.includes('max_reached')) {
+          break;
+        }
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('Error searching content:', error);
+      throw error;
+    }
+  }
+  
+  // Helper method to get all files recursively
+  async getAllFiles(directory = '') {
+    try {
+      const items = await this.listFiles(directory);
+      let files = [];
+      
+      for (const item of items) {
+        if (item.type === 'file') {
+          files.push(item);
+        } else if (item.type === 'folder') {
+          const childFiles = await this.getAllFiles(item.id);
+          files = [...files, ...childFiles];
+        }
+      }
+      
+      return files;
+    } catch (error) {
+      console.error('Error getting all files:', error);
+      return [];
+    }
+  }
+
   // Write file content
   async writeFile(path, content) {
     try {

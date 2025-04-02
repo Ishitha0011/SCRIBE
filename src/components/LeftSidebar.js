@@ -17,6 +17,8 @@ import {
   X,
   FileCode,
   FileBox,
+  Loader,
+  AlertCircle,
 } from 'lucide-react';
 import '../css/LeftSidebar.css';
 import { useTheme } from '../ThemeContext';
@@ -38,6 +40,8 @@ const LeftSidebar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [addMenuVisible, setAddMenuVisible] = useState(false);
+  const [contentSearchActive, setContentSearchActive] = useState(false);
+  const [searchMode, setSearchMode] = useState('filename'); // 'filename' or 'content'
 
   // Use theme from context
   const { theme } = useTheme();
@@ -54,7 +58,10 @@ const LeftSidebar = () => {
     deleteItem,
     renameItem,
     loading,
-    error
+    error,
+    searchInContent,
+    searchResults,
+    isSearching
   } = useFileContext();
 
   const menuRef = useRef(null);
@@ -356,10 +363,63 @@ const LeftSidebar = () => {
           searchInputRef.current.focus();
         }
       }, 100);
+    } else {
+      // Clear search when closing
+      setSearchTerm('');
+      setContentSearchActive(false);
+      setSearchMode('filename');
     }
   };
   
-  // Handle keyboard shortcut for search
+  // Handle search mode toggle
+  const toggleSearchMode = () => {
+    setSearchMode(prev => prev === 'filename' ? 'content' : 'filename');
+    setContentSearchActive(false);
+    
+    // If switching to content search with existing term, perform the search
+    if (searchTerm && searchMode === 'filename') {
+      handleContentSearch();
+    }
+  };
+  
+  // Handle content search
+  const handleContentSearch = async () => {
+    if (!searchTerm || searchTerm.trim() === '') return;
+    
+    setContentSearchActive(true);
+    await searchInContent(searchTerm);
+  };
+  
+  // Handle search term change with debounce for content search
+  const [searchDebounce, setSearchDebounce] = useState(null);
+  
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Clear previous debounce timer
+    if (searchDebounce) {
+      clearTimeout(searchDebounce);
+    }
+    
+    // If content search is active, debounce the search
+    if (searchMode === 'content') {
+      setSearchDebounce(setTimeout(() => {
+        handleContentSearch();
+      }, 500)); // 500ms debounce
+    }
+  };
+
+  // Handle item click from search results
+  const handleSearchResultClick = (file, match) => {
+    // Open the file with search highlighting info
+    openFile(file, searchTerm, match.line);
+    setIsSearchOpen(false);
+    setSearchTerm('');
+    setContentSearchActive(false);
+  };
+
+  // Function to handle keyboard shortcut for search
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Cmd/Ctrl + K to open search
@@ -372,17 +432,34 @@ const LeftSidebar = () => {
       if (e.key === 'Escape' && isSearchOpen) {
         setIsSearchOpen(false);
         setSearchTerm('');
+        setContentSearchActive(false);
       }
       
       // Enter to select first search result
       if (e.key === 'Enter' && isSearchOpen && searchTerm) {
         e.preventDefault();
-        const results = filterStructure(fileStructure, searchTerm);
-        if (results.length > 0) {
-          handleItemClick(results[0]);
-          setIsSearchOpen(false);
-          setSearchTerm('');
+        
+        if (searchMode === 'filename') {
+          const results = filterStructure(fileStructure, searchTerm);
+          if (results.length > 0) {
+            handleItemClick(results[0]);
+            setIsSearchOpen(false);
+            setSearchTerm('');
+          }
+        } else if (searchMode === 'content' && !contentSearchActive) {
+          // Trigger content search on Enter key
+          handleContentSearch();
+        } else if (searchMode === 'content' && contentSearchActive && searchResults.length > 0) {
+          // Open the first search result
+          const firstResult = searchResults[0];
+          handleSearchResultClick(firstResult.file, firstResult.matches[0]);
         }
+      }
+      
+      // Alt+F to toggle search mode (changed from Ctrl+F)
+      if (e.altKey && e.key.toLowerCase() === 'f' && isSearchOpen) {
+        e.preventDefault();
+        toggleSearchMode();
       }
     };
     
@@ -390,7 +467,7 @@ const LeftSidebar = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isSearchOpen, searchTerm, fileStructure, toggleSearch]);
+  }, [isSearchOpen, searchTerm, fileStructure, searchMode, contentSearchActive, searchResults]);
 
   return (
     <div
@@ -508,17 +585,81 @@ const LeftSidebar = () => {
               <Search size={18} className="SpotlightSearchIcon" />
               <input
                 type="text"
-                placeholder="Search files..."
+                placeholder={searchMode === 'filename' ? "Search files..." : "Search in file contents..."}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 className={`SpotlightSearchInput ${theme}`}
                 ref={searchInputRef}
               />
+              <button 
+                className={`SpotlightModeToggle ${theme} ${searchMode === 'content' ? 'active' : ''}`}
+                onClick={toggleSearchMode}
+                title={searchMode === 'filename' ? "Switch to content search" : "Switch to filename search"}
+              >
+                {searchMode === 'filename' ? 'Aa' : 'Aa'}
+              </button>
               <button className={`SpotlightCloseButton ${theme}`} onClick={() => setIsSearchOpen(false)}>
                 <X size={16} />
               </button>
             </div>
-            {searchTerm && (
+            
+            {/* Search loading indicator */}
+            {searchMode === 'content' && isSearching && (
+              <div className={`SearchLoadingIndicator ${theme}`}>
+                <Loader size={18} className="Spinner" />
+                <span>Searching in files...</span>
+              </div>
+            )}
+            
+            {/* Keyboard shortcut hint */}
+            {searchTerm === '' && (
+              <div className={`SpotlightHint ${theme}`}>
+                <span>Press <kbd>Alt+F</kbd> to {searchMode === 'filename' ? 'search in content' : 'search filenames'}</span>
+              </div>
+            )}
+            
+            {/* Content search results */}
+            {searchMode === 'content' && contentSearchActive && searchTerm && (
+              <div className={`SpotlightResults ${theme}`}>
+                {searchResults.length > 0 ? (
+                  <div className={`ContentSearchResults ${theme}`}>
+                    <div className={`ResultsCount ${theme}`}>
+                      Found {searchResults.reduce((acc, result) => acc + result.matches.length, 0)} matches in {searchResults.length} files
+                    </div>
+                    {searchResults.map((result) => (
+                      <div key={result.file.id} className={`ContentResultFile ${theme}`}>
+                        <div className={`ContentResultFileName ${theme}`}>
+                          {getFileIcon(result.file)}
+                          <span>{result.file.name}</span>
+                          <span className="MatchCount">({result.matches.length} {result.matches.length === 1 ? 'match' : 'matches'})</span>
+                        </div>
+                        <div className={`ContentResultMatches ${theme}`}>
+                          {result.matches.map((match, matchIndex) => (
+                            <div
+                              key={`${result.file.id}-match-${matchIndex}`}
+                              className={`ContentResultMatch ${theme}`}
+                              onClick={() => handleSearchResultClick(result.file, match)}
+                            >
+                              <div className="LineNumber">{match.line}</div>
+                              <div className="MatchPreview">
+                                <span className="PreviewBefore">{match.preview.before}</span>
+                                <span className="MatchHighlight">{match.preview.match}</span>
+                                <span className="PreviewAfter">{match.preview.after}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  !isSearching && <div className={`SpotlightNoResults ${theme}`}>No matches found in file contents</div>
+                )}
+              </div>
+            )}
+            
+            {/* Filename search results */}
+            {(searchMode === 'filename' || !contentSearchActive) && searchTerm && (
               <div className={`SpotlightResults ${theme}`}>
                 {filterStructure(fileStructure, searchTerm).length > 0 ? (
                   filterStructure(fileStructure, searchTerm).map((item) => (
@@ -528,7 +669,7 @@ const LeftSidebar = () => {
                       onClick={() => {
                         handleItemClick(item);
                         setIsSearchOpen(false);
-                        setSearchTerm(''); // Clear the search term when selecting a result
+                        setSearchTerm('');
                       }}
                     >
                       {getFileIcon(item)}

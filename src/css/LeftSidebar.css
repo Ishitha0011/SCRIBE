@@ -526,46 +526,35 @@
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 100px;
   z-index: 1000;
 }
 
 .SpotlightSearch {
   width: 600px;
   max-width: 90%;
+  max-height: 80vh;
   background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  animation: slideUp 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
 }
 
 .SpotlightSearch.dark {
-  background-color: #2a2a2a;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  background-color: #1e1e1e;
+  border: 1px solid #333;
 }
 
 .SpotlightSearchHeader {
   display: flex;
   align-items: center;
-  gap: 10px;
   padding: 12px 16px;
   border-bottom: 1px solid #eee;
 }
@@ -575,48 +564,61 @@
 }
 
 .SpotlightSearchIcon {
-  color: #777;
-}
-
-.SpotlightSearchIcon.dark {
-  color: #aaa;
+  color: #666;
+  margin-right: 10px;
 }
 
 .SpotlightSearchInput {
   flex: 1;
   border: none;
-  background: none;
-  font-size: 16px;
   outline: none;
+  font-size: 16px;
+  background: transparent;
   color: #333;
 }
 
 .SpotlightSearchInput.dark {
-  color: #e0e0e0;
+  color: #ddd;
 }
 
-.SpotlightSearchInput::placeholder {
-  color: #999;
+.SpotlightModeToggle {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-right: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #666;
+  font-weight: bold;
+  transition: all 0.2s;
 }
 
-.SpotlightSearchInput.dark::placeholder {
-  color: #777;
+.SpotlightModeToggle.dark {
+  border-color: #444;
+  color: #aaa;
+}
+
+.SpotlightModeToggle.active {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.SpotlightModeToggle.dark.active {
+  background-color: #333;
+  color: #fff;
 }
 
 .SpotlightCloseButton {
   background: none;
   border: none;
-  padding: 5px;
   cursor: pointer;
-  color: #777;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
+  color: #666;
+  padding: 4px;
+  border-radius: 4px;
 }
 
 .SpotlightCloseButton:hover {
-  background-color: #eee;
+  background-color: #f0f0f0;
 }
 
 .SpotlightCloseButton.dark {
@@ -624,44 +626,236 @@
 }
 
 .SpotlightCloseButton.dark:hover {
-  background-color: #444;
+  background-color: #333;
 }
 
 .SpotlightResults {
-  max-height: 400px;
   overflow-y: auto;
+  max-height: calc(80vh - 60px);
   padding: 8px 0;
 }
 
 .SpotlightResultItem {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   cursor: pointer;
   color: #333;
-  transition: background-color 0.1s;
+}
+
+.SpotlightResultItem.dark {
+  color: #ddd;
 }
 
 .SpotlightResultItem:hover {
   background-color: #f5f5f5;
 }
 
-.SpotlightResultItem.dark {
-  color: #e0e0e0;
+.SpotlightResultItem.dark:hover {
+  background-color: #2a2a2a;
 }
 
-.SpotlightResultItem.dark:hover {
-  background-color: #383838;
+.SpotlightResultItem svg {
+  margin-right: 10px;
+  color: #666;
+}
+
+.SpotlightResultItem.dark svg {
+  color: #aaa;
 }
 
 .SpotlightNoResults {
   padding: 16px;
   text-align: center;
-  color: #999;
-  font-style: italic;
+  color: #666;
 }
 
 .SpotlightNoResults.dark {
+  color: #aaa;
+}
+
+/* Loading indicator for search */
+.SearchLoadingIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  color: #666;
+}
+
+.SearchLoadingIndicator.dark {
+  color: #aaa;
+}
+
+.Spinner {
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Keyboard shortcut hint */
+.SpotlightHint {
+  padding: 12px 16px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.SpotlightHint.dark {
   color: #777;
+  border-bottom: 1px solid #333;
+}
+
+.SpotlightHint kbd {
+  display: inline-block;
+  padding: 2px 5px;
+  font-size: 12px;
+  font-family: monospace;
+  line-height: 1;
+  color: #444;
+  background-color: #f7f7f7;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+
+.SpotlightHint.dark kbd {
+  color: #ddd;
+  background-color: #333;
+  border-color: #555;
+}
+
+/* Content search results */
+.ContentSearchResults {
+  display: flex;
+  flex-direction: column;
+}
+
+.ResultsCount {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #666;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #eee;
+}
+
+.ResultsCount.dark {
+  color: #aaa;
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #333;
+}
+
+.ContentResultFile {
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.ContentResultFile.dark {
+  border-bottom: 1px solid #333;
+}
+
+.ContentResultFileName {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  font-weight: bold;
+  color: #333;
+  background-color: #f9f9f9;
+}
+
+.ContentResultFileName.dark {
+  color: #ddd;
+  background-color: #252525;
+}
+
+.ContentResultFileName svg {
+  margin-right: 8px;
+  color: #666;
+}
+
+.ContentResultFileName.dark svg {
+  color: #aaa;
+}
+
+.MatchCount {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: normal;
+  color: #666;
+}
+
+.MatchCount.dark {
+  color: #999;
+}
+
+.ContentResultMatches {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ContentResultMatch {
+  display: flex;
+  padding: 6px 16px;
+  cursor: pointer;
+  border-top: 1px solid #f0f0f0;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ContentResultMatch:hover {
+  background-color: #f5f5f5;
+}
+
+.ContentResultMatch.dark {
+  border-top: 1px solid #2a2a2a;
+}
+
+.ContentResultMatch.dark:hover {
+  background-color: #2a2a2a;
+}
+
+.LineNumber {
+  min-width: 50px;
+  padding-right: 16px;
+  text-align: right;
+  color: #999;
+  user-select: none;
+}
+
+.MatchPreview {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #555;
+}
+
+.MatchPreview.dark {
+  color: #bbb;
+}
+
+.PreviewBefore, .PreviewAfter {
+  color: #666;
+}
+
+.PreviewBefore.dark, .PreviewAfter.dark {
+  color: #999;
+}
+
+.MatchHighlight {
+  background-color: #e8defd;
+  color: #000;
+  font-weight: bold;
+  padding: 2px 0;
+}
+
+.MatchHighlight.dark {
+  background-color: #7952b3;
+  color: #fff;
 }

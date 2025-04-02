@@ -142,6 +142,120 @@ const Editor = () => {
     };
   }, [activeFileId, localContent]);
 
+  // Handle search highlighting and scrolling to line when opening a file with search results
+  useEffect(() => {
+    if (activeFileId && textAreaRef.current) {
+      const activeFile = openFiles.find(file => file.id === activeFileId);
+      
+      if (activeFile && (activeFile.searchHighlight || activeFile.scrollToLine)) {
+        const textarea = textAreaRef.current;
+        const content = fileContents[activeFileId] || '';
+        
+        // Wait for the textarea to update with content
+        setTimeout(() => {
+          // If we have a specific line to scroll to
+          if (activeFile.scrollToLine) {
+            // Find position of the target line
+            const lines = content.split('\n');
+            const targetLineIdx = activeFile.scrollToLine - 1; // Convert to 0-based index
+            
+            if (targetLineIdx >= 0 && targetLineIdx < lines.length) {
+              // Calculate the character position at the start of the target line
+              let charPosition = 0;
+              for (let i = 0; i < targetLineIdx; i++) {
+                charPosition += lines[i].length + 1; // +1 for the newline character
+              }
+              
+              // Scroll to the target line
+              textarea.focus();
+              
+              // If we also have a search term to highlight
+              if (activeFile.searchHighlight) {
+                const searchTerm = activeFile.searchHighlight.toLowerCase();
+                const targetLine = lines[targetLineIdx].toLowerCase();
+                const matchIndex = targetLine.indexOf(searchTerm);
+                
+                if (matchIndex >= 0) {
+                  // Position at the start of the match
+                  const selectionStart = charPosition + matchIndex;
+                  const selectionEnd = selectionStart + searchTerm.length;
+                  
+                  // Apply custom highlight style for the selection
+                  textarea.setSelectionRange(selectionStart, selectionEnd);
+                  
+                  // Add custom style for text selection (handled in CSS)
+                  document.documentElement.style.setProperty('--selection-background', '#e8defd');
+                  document.documentElement.style.setProperty('--selection-color', '#000');
+                  
+                  if (theme === 'dark') {
+                    document.documentElement.style.setProperty('--selection-background', '#7952b3');
+                    document.documentElement.style.setProperty('--selection-color', '#fff');
+                  }
+                  
+                  // Ensure the selection is visible
+                  const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+                  const scrollTarget = targetLineIdx * lineHeight;
+                  textarea.scrollTop = scrollTarget - textarea.clientHeight / 2;
+                } else {
+                  // Just scroll to the line if search term is not found
+                  textarea.setSelectionRange(charPosition, charPosition);
+                  const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+                  const scrollTarget = targetLineIdx * lineHeight;
+                  textarea.scrollTop = scrollTarget - textarea.clientHeight / 2;
+                }
+              } else {
+                // Just scroll to the line without highlighting
+                textarea.setSelectionRange(charPosition, charPosition);
+                const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+                const scrollTarget = targetLineIdx * lineHeight;
+                textarea.scrollTop = scrollTarget - textarea.clientHeight / 2;
+              }
+            }
+          } 
+          // If we only have a search term without a specific line
+          else if (activeFile.searchHighlight) {
+            const searchTerm = activeFile.searchHighlight.toLowerCase();
+            const contentLower = content.toLowerCase();
+            const matchIndex = contentLower.indexOf(searchTerm);
+            
+            if (matchIndex >= 0) {
+              // Position at the start of the match
+              textarea.focus();
+              
+              // Apply custom highlight style for the selection
+              textarea.setSelectionRange(matchIndex, matchIndex + searchTerm.length);
+              
+              // Add custom style for text selection
+              document.documentElement.style.setProperty('--selection-background', '#e8defd');
+              document.documentElement.style.setProperty('--selection-color', '#000');
+              
+              if (theme === 'dark') {
+                document.documentElement.style.setProperty('--selection-background', '#7952b3');
+                document.documentElement.style.setProperty('--selection-color', '#fff');
+              }
+              
+              // Scroll to make the selection visible
+              // Calculate approximate line number
+              const textBeforeMatch = content.substring(0, matchIndex);
+              const lineNumber = textBeforeMatch.split('\n').length - 1;
+              const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+              const scrollTarget = lineNumber * lineHeight;
+              textarea.scrollTop = scrollTarget - textarea.clientHeight / 2;
+            }
+          }
+        }, 50);
+        
+        // Clear the search highlight and scroll info after handling
+        // to avoid re-highlighting on content changes
+        openFile({
+          ...activeFile,
+          searchHighlight: null,
+          scrollToLine: null
+        });
+      }
+    }
+  }, [activeFileId, fileContents, openFiles, theme]);
+
   const handleNewFile = () => {
     const newTab = {
       id: `new-${Date.now()}`,

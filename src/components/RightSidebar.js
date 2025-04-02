@@ -1,42 +1,116 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, MessageSquare, BookOpen, FlaskConical } from 'lucide-react';
-import AskAI from './AskAI';
-import Labs from './Labs';
-import '../css/RightSidebar.css';
-import { useTheme } from '../ThemeContext';
+import AskAI from './AskAI'; // Make sure this path is correct
+import Labs from './Labs';   // Make sure this path is correct
+import '../css/RightSidebar.css'; // Make sure this path is correct
+import { useTheme } from '../ThemeContext'; // Make sure this path is correct
+
+// --- Configuration for Resizing ---
+const MIN_WIDTH = 200; // Minimum sidebar width in pixels
+const MAX_WIDTH = 600; // Maximum sidebar width in pixels
+const DEFAULT_WIDTH = 320; // Default sidebar width in pixels
+// --- End Configuration ---
 
 const RightSidebar = () => {
   const [selectedOption, setSelectedOption] = useState('AI');
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [prevCollapsedState, setPrevCollapsedState] = useState(false);
+  const [messages, setMessages] = useState([]); // Assuming AskAI uses this
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
 
   const { theme } = useTheme();
   const dropdownRef = useRef(null);
   const sidebarRef = useRef(null);
-  
-  // Create refs for components to persist them
+  const resizeHandleRef = useRef(null);
+  const isResizingRef = useRef(false);
+
+  // Persist Labs component instance
   const labsRef = useRef(<Labs />);
 
   const toggleDropdown = () => setIsOpen((prev) => !prev);
-  
+
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
     setIsOpen(false);
   };
-  
+
   const toggleCollapse = () => {
-    // Store the previous state for restoration
-    setPrevCollapsedState(isCollapsed);
-    setIsCollapsed((prev) => !prev);
-    // If opening from collapsed state, ensure dropdown is closed
-    if (isCollapsed) {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    if (newState === false) {
       setIsOpen(false);
+      // Optional: Restore default width on expand, or keep last resized width.
+      // If you want to always expand to the last resized width, comment the next line out.
+      // If you want to always expand to DEFAULT_WIDTH, keep the next line.
+      // setSidebarWidth(DEFAULT_WIDTH);
     }
+    // Width when collapsed is handled by CSS class '.collapsed'
   };
 
-  // Handle clicks outside the dropdown
+  // --- Resizing Logic ---
+  const handleMouseDownOnResizeHandle = (e) => {
+    // Only allow left mouse button click
+    if (e.button !== 0) return;
+
+    e.preventDefault(); // Prevent text selection/drag behavior
+    if (isCollapsed) return; // Don't resize if collapsed
+
+    isResizingRef.current = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize'; // Indicate resizing globally
+    document.body.style.userSelect = 'none'; // Prevent text selection during drag
+  };
+
+  // Use useCallback for performance and stable referencing in listeners
+  const handleMouseMove = useCallback((e) => {
+    if (!isResizingRef.current || !sidebarRef.current) return;
+
+    // Calculate new width based on mouse X position relative to the right edge of the viewport
+    const newWidth = document.documentElement.clientWidth - e.clientX;
+
+    // Clamp the width within defined MIN and MAX bounds
+    const clampedWidth = Math.max(MIN_WIDTH, Math.min(newWidth, MAX_WIDTH));
+
+    // Update the state (can cause re-renders, might feel laggy on complex components)
+    setSidebarWidth(clampedWidth);
+
+    // --- Alternative: Direct DOM manipulation for smoother feedback ---
+    // sidebarRef.current.style.width = `${clampedWidth}px`;
+    // Note: If using direct manipulation, you might want to update the state
+    // *only* in handleMouseUp to persist the final width.
+    // --- End Alternative ---
+
+  }, []); // No dependencies needed as it uses refs and global properties
+
+  // Use useCallback for performance and stable referencing
+  const handleMouseUp = useCallback(() => {
+    if (isResizingRef.current) {
+      isResizingRef.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = ''; // Reset global cursor
+      document.body.style.userSelect = ''; // Re-enable text selection
+
+      // If using direct DOM manipulation in handleMouseMove, uncomment the next line
+      // to update React state with the final width after dragging stops.
+      // if (sidebarRef.current) setSidebarWidth(parseInt(sidebarRef.current.style.width, 10));
+    }
+  }, [handleMouseMove]); // Dependency on handleMouseMove
+
+  // Cleanup listeners on component unmount or if resizing is interrupted
+  useEffect(() => {
+    return () => {
+      if (isResizingRef.current) {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+  }, [handleMouseMove, handleMouseUp]); // Add dependencies
+
+  // Handle clicks outside the dropdown to close it
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -47,30 +121,27 @@ const RightSidebar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Get icon based on selected option
+  // Helper to get the correct icon for the selected option
   const getOptionIcon = (option) => {
     switch (option) {
-      case 'AI':
-        return <MessageSquare size={16} />;
-      case 'Notes':
-        return <BookOpen size={16} />;
-      case 'Labs':
-        return <FlaskConical size={16} />;
-      default:
-        return <MessageSquare size={16} />;
+      case 'AI': return <MessageSquare size={16} />;
+      case 'Notes': return <BookOpen size={16} />;
+      case 'Labs': return <FlaskConical size={16} />;
+      default: return <MessageSquare size={16} />;
     }
   };
 
-  // Render the selected component
+  // Render the main content based on the selected option
   const renderSelectedComponent = () => {
-    if (isCollapsed) return null;
-    
+    if (isCollapsed) return null; // Don't render content when collapsed
     switch (selectedOption) {
       case 'AI':
+        // Pass messages and setter to AskAI component
         return <AskAI messages={messages} setMessages={setMessages} />;
       case 'Notes':
         return <div className="ComingSoonPlaceholder">Notes feature coming soon</div>;
       case 'Labs':
+        // Render the persistent Labs component instance
         return labsRef.current;
       default:
         return null;
@@ -78,10 +149,24 @@ const RightSidebar = () => {
   };
 
   return (
-    <div 
+    <div
       className={`RightSidebar ${theme} ${isCollapsed ? 'collapsed' : ''}`}
       ref={sidebarRef}
+      // Apply the dynamic width via inline style ONLY when not collapsed
+      // The 'collapsed' class CSS will override this when active
+      style={!isCollapsed ? { width: `${sidebarWidth}px` } : {}}
     >
+      {/* Resize Handle - Only rendered when not collapsed */}
+      {!isCollapsed && (
+        <div
+          ref={resizeHandleRef}
+          className="ResizeHandle"
+          onMouseDown={handleMouseDownOnResizeHandle}
+          title="Drag to resize sidebar" // Tooltip for accessibility
+        />
+      )}
+
+      {/* Top section with Logo and Dropdown */}
       <div className="TopSection">
         <div className="Logo">{!isCollapsed && 'Scribe'}</div>
         <div className="DropdownContainer" ref={dropdownRef}>
@@ -98,20 +183,17 @@ const RightSidebar = () => {
             <div className="DropdownList">
               <div className="Option" onClick={() => handleOptionSelect('AI')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <MessageSquare size={16} />
-                  <span>AI</span>
+                  <MessageSquare size={16} /> <span>AI</span>
                 </div>
               </div>
               <div className="Option" onClick={() => handleOptionSelect('Notes')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <BookOpen size={16} />
-                  <span>Notes</span>
+                  <BookOpen size={16} /> <span>Notes</span>
                 </div>
               </div>
               <div className="Option" onClick={() => handleOptionSelect('Labs')}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FlaskConical size={16} />
-                  <span>Labs</span>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FlaskConical size={16} /> <span>Labs</span>
                 </div>
               </div>
             </div>
@@ -119,12 +201,20 @@ const RightSidebar = () => {
         </div>
       </div>
 
+      {/* Main dynamic content area */}
       <div className="DynamicContent">
         {renderSelectedComponent()}
-        
-        {/* Collapsible icon */}
-        <div className="CollapseIcon" onClick={toggleCollapse} title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+
+        {/* Collapse/Expand Button Wrapper */}
+        {/* Positioned absolutely within DynamicContent */}
+        <div className="CollapseIconWrapper">
+           <div
+             className="CollapseIcon"
+             onClick={toggleCollapse}
+             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+           >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </div>
         </div>
       </div>
     </div>

@@ -62,3 +62,115 @@ button {
   background-color: rgba(0, 0, 0, 0.1);
   color: #000;
 }
+
+/* === Modern Tooltip Styles === */
+
+/* Define tooltip colors using theme variables */
+:root {
+  /* Add these if they don't exist in your theme, or map them */
+  --tooltip-bg: #333333;       /* Dark background for tooltip */
+  --tooltip-text: #ffffff;     /* Light text for tooltip */
+  --tooltip-shadow: rgba(0, 0, 0, 0.15);
+}
+
+.dark {
+  /* Adjust tooltip colors for dark theme */
+  --tooltip-bg: #4a4a4e;       /* Slightly lighter dark background */
+  --tooltip-text: #f0f0f0;     /* Off-white text */
+  --tooltip-shadow: rgba(0, 0, 0, 0.3);
+}
+
+
+/* Tooltip Container - remains simple */
+.tooltip {
+  position: relative;
+  display: inline-block; /* Or inline-flex, flex depending on usage */
+}
+
+/* Tooltip Text Bubble */
+.tooltip .tooltiptext {
+  /* Basic Visibility & Appearance */
+  visibility: hidden;         /* Hide by default */
+  opacity: 0;               /* Fade out by default */
+  background-color: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  text-align: center;
+  border-radius: 6px;       /* Slightly rounded corners */
+  padding: 6px 10px;        /* Comfortable padding */
+  box-shadow: 0 2px 8px var(--tooltip-shadow); /* Subtle shadow */
+
+  /* Positioning */
+  position: absolute;
+  z-index: 150;             /* Ensure it's above most elements */
+  bottom: 130%;             /* Position above the trigger element + space for arrow */
+  left: 50%;
+  transform: translateX(-50%) translateY(4px); /* Center horizontally, slight initial offset for animation */
+  min-width: 50px;          /* Minimum width */
+  max-width: 200px;         /* Max width to prevent excessive length */
+  white-space: nowrap;      /* Keep text on one line unless very long */
+  font-size: 12px;          /* Clear, small font size */
+  font-weight: 500;         /* Slightly bolder */
+  pointer-events: none;     /* Tooltip itself isn't interactive */
+
+  /* Smooth Transition */
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+  transition-delay: 0.1s;   /* Slight delay before appearing */
+}
+
+/* Tooltip Arrow */
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;                /* Position arrow at the bottom of the tooltip */
+  left: 50%;
+  margin-left: -5px;        /* Center the arrow (half its width) */
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--tooltip-bg) transparent transparent transparent; /* Arrow points up */
+}
+
+/* Show Tooltip on Hover/Focus */
+.tooltip:hover .tooltiptext,
+.tooltip:focus-within .tooltiptext /* Show also when button inside has focus */
+ {
+  visibility: visible;
+  opacity: 0.95;             /* Slightly transparent can look nice */
+  transform: translateX(-50%) translateY(0); /* Move to final position */
+  transition-delay: 0.1s;   /* Keep consistent delay */
+}
+
+/* Specific Adjustments (Example: Tooltip on the right-most button) */
+/* If a tooltip is on the far right and might go off-screen */
+.HeaderActions .tooltip:last-child .tooltiptext {
+  left: auto;               /* Unset left */
+  right: 0;                 /* Align to the right edge of the container */
+  transform: translateX(0) translateY(4px); /* Adjust transform */
+}
+.HeaderActions .tooltip:last-child .tooltiptext::after {
+  left: auto;               /* Unset left */
+  right: 10px;              /* Position arrow near the right edge */
+  margin-left: 0;
+}
+/* Hover state for right-aligned tooltip */
+.HeaderActions .tooltip:last-child:hover .tooltiptext,
+.HeaderActions .tooltip:last-child:focus-within .tooltiptext {
+    transform: translateX(0) translateY(0);
+}
+
+/* Add more specific adjustments if needed for tooltips appearing below elements */
+/* Example: Tooltip below
+.tooltip .tooltiptext.below {
+    bottom: auto;
+    top: 130%;
+    transform: translateX(-50%) translateY(-4px);
+}
+.tooltip .tooltiptext.below::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent var(--tooltip-bg) transparent;
+}
+.tooltip:hover .tooltiptext.below,
+.tooltip:focus-within .tooltiptext.below {
+    transform: translateX(-50%) translateY(0);
+}
+*/
