@@ -611,12 +611,12 @@ const LeftSidebar = () => {
               </div>
             )}
             
-            {/* Keyboard shortcut hint */}
+            {/* Keyboard shortcut hint
             {searchTerm === '' && (
               <div className={`SpotlightHint ${theme}`}>
                 <span>Press <kbd>Alt+F</kbd> to {searchMode === 'filename' ? 'search in content' : 'search filenames'}</span>
               </div>
-            )}
+            )} */}
             
             {/* Content search results */}
             {searchMode === 'content' && contentSearchActive && searchTerm && (

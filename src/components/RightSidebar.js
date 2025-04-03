@@ -133,19 +133,20 @@ const RightSidebar = () => {
 
   // Render the main content based on the selected option
   const renderSelectedComponent = () => {
-    if (isCollapsed) return null; // Don't render content when collapsed
-    switch (selectedOption) {
-      case 'AI':
-        // Pass messages and setter to AskAI component
-        return <AskAI messages={messages} setMessages={setMessages} />;
-      case 'Notes':
-        return <div className="ComingSoonPlaceholder">Notes feature coming soon</div>;
-      case 'Labs':
-        // Render the persistent Labs component instance
-        return labsRef.current;
-      default:
-        return null;
-    }
+    // Instead of returning null when collapsed, we'll use CSS to hide components
+    return (
+      <>
+        <div style={{ display: selectedOption === 'AI' && !isCollapsed ? 'block' : 'none' }}>
+          <AskAI messages={messages} setMessages={setMessages} />
+        </div>
+        <div style={{ display: selectedOption === 'Notes' && !isCollapsed ? 'block' : 'none' }}>
+          <div className="ComingSoonPlaceholder">Notes feature coming soon</div>
+        </div>
+        <div style={{ display: selectedOption === 'Labs' && !isCollapsed ? 'block' : 'none' }}>
+          {labsRef.current}
+        </div>
+      </>
+    )
   };
 
   return (

@@ -668,7 +668,7 @@ const AskAI = ({ messages, setMessages }) => {
     // --- JSX (Modern Structure, Connected to Full Logic) ---
     return (
         // Use theme from context for the main class
-        <div className={`ModernChatContainer ${theme}`}>
+        <div className={`ModernChatContainer ${theme}`} style={{ backgroundColor: 'var(--dark-bg-color)' }}>
             {/* --- Header (Modern Style, Full Logic) --- */}
             <div className="ModernChatHeader">
                 <div className="HeaderTitleContainer">

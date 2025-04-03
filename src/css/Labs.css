@@ -224,19 +224,19 @@
 /* === Results Section === */
 .ResultsHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .ResultActionsGroup { display: flex; align-items: center; gap: 4px; }
-.ResultsContentArea { max-height: 350px; overflow-y: auto; padding-right: 5px; margin-right: -5px; /* Offset for scrollbar */ scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
+.ResultsContentArea { max-height: 500px; overflow-y: auto; padding-right: 10px; margin-right: -10px; /* Offset for scrollbar */ scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
 .ResultsContentArea::-webkit-scrollbar { width: 5px; }
 .ResultsContentArea::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb); border-radius: 3px; }
 
-.ResultsParagraph { line-height: 1.6; font-size: 14px; }
+.ResultsParagraph { line-height: 1.6; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
 .TimecodeInline { color: var(--text-accent); cursor: pointer; font-weight: 500; font-size: 0.9em; margin: 0 0.1em; transition: color 0.15s ease; }
 .TimecodeInline:hover { text-decoration: underline; color: color-mix(in srgb, var(--text-accent) 80%, black); }
 
-.ResultsList { display: flex; flex-direction: column; gap: 10px; }
-.ResultItem { border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; transition: background-color 0.15s ease; cursor: pointer; display: flex; gap: 10px; align-items: baseline; }
+.ResultsList { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
+.ResultItem { border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; transition: background-color 0.15s ease; cursor: pointer; display: flex; gap: 12px; align-items: flex-start; }
 .ResultItem:hover { background-color: var(--button-hover-bg); }
 .ResultItemTimecode { font-family: monospace; font-size: 12px; color: var(--text-accent); white-space: nowrap; font-weight: 500; }
-.ResultItemText { line-height: 1.5; font-size: 14px; }
+.ResultItemText { line-height: 1.5; font-size: 14px; white-space: pre-wrap; word-break: break-word; flex: 1; }
 
 /* === Overlay Panels (History, Templates) === */
 .LabsOverlayPanel {
