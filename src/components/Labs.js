@@ -52,10 +52,9 @@ const writeToLog = async (logEntry) => {
 const Labs = () => {
     const { theme } = useTheme(); // Use your theme
 
-    // --- State Variables (Keep all from your original code) ---
-    const [vidUrl, setVidUrl] = useState(null);
-    const [file, setFile] = useState(null); // Holds the upload result { name: fileId }
-    const [originalFileName, setOriginalFileName] = useState(''); // Store original name for display
+    // --- State Variables (Updated for multiple videos) ---
+    const [videos, setVideos] = useState([]); // Array of video objects with file metadata and UI state
+    const [activeVideoIndex, setActiveVideoIndex] = useState(null); // Currently expanded/playing video
     const [isLoadingVideo, setIsLoadingVideo] = useState(false);
     const [videoError, setVideoError] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -63,10 +62,8 @@ const Labs = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [selectedMode, setSelectedMode] = useState('A/V captions'); // Default mode
     const [timecodeList, setTimecodeList] = useState(null); // Parsed results
-    // const [requestedTimecode, setRequestedTimecode] = useState(null); // Keep if used
     const [isProcessing, setIsProcessing] = useState(false);
     const [displayMode, setDisplayMode] = useState('list'); // 'list' or 'paragraph' for results
-    // const [hoveredTimecode, setHoveredTimecode] = useState(null); // Less needed with new result UI
     const [rawAIResponse, setRawAIResponse] = useState(null); // Full AI text
     const [isMuted, setIsMuted] = useState(false);
     const [abortController, setAbortController] = useState(null);
@@ -77,8 +74,9 @@ const Labs = () => {
     const [showEnlargedView, setShowEnlargedView] = useState(false); // For popup results
     const [customPrompt, setCustomPrompt] = useState('');
     const [templateName, setTemplateName] = useState(''); // For saving templates
+    const [uploadProgress, setUploadProgress] = useState({}); // Track upload progress for each file
 
-    // --- Refs (Keep all) ---
+    // --- Refs (Updated for multiple videos) ---
     const videoRef = useRef(null);
     const fileInputRef = useRef(null);
     const responseContainerRef = useRef(null); // To scroll to results
@@ -103,109 +101,415 @@ const Labs = () => {
 
     const handleFileButtonClick = () => fileInputRef.current?.click();
 
-    const handleFileChange = (e) => { /* ... keep existing file change logic ... */
-        if (e.target.files && e.target.files.length > 0) handleVideoUpload(e.target.files[0]);
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const filesToProcess = Array.from(e.target.files);
+            const remainingSlots = 5 - videos.length;
+            
+            if (remainingSlots <= 0) {
+                alert("Maximum of 5 videos allowed. Please remove some videos first.");
+                return;
+            }
+            
+            // Process only up to the remaining slot limit
+            const filesToUpload = filesToProcess.slice(0, remainingSlots);
+            for (const file of filesToUpload) {
+                handleVideoUpload(file);
+            }
+        }
     };
-    const handleDrop = (e) => { /* ... keep existing drop logic ... */
-         e.preventDefault(); if (e.dataTransfer.files?.length > 0) handleVideoUpload(e.dataTransfer.files[0]);
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        if (e.dataTransfer.files?.length > 0) {
+            const filesToProcess = Array.from(e.dataTransfer.files);
+            const remainingSlots = 5 - videos.length;
+            
+            if (remainingSlots <= 0) {
+                alert("Maximum of 5 videos allowed. Please remove some videos first.");
+                return;
+            }
+            
+            // Process only up to the remaining slot limit
+            const filesToUpload = filesToProcess.slice(0, remainingSlots);
+            for (const file of filesToUpload) {
+                handleVideoUpload(file);
+            }
+        }
     };
+    
     const handleDragOver = (e) => e.preventDefault();
 
-    const handleVideoUpload = useCallback(async (videoFile) => { /* ... keep existing upload logic ... */
+    const handleVideoUpload = useCallback(async (videoFile) => {
         if (!videoFile) return;
-        setIsLoadingVideo(true); setVideoError(false); setTimecodeList(null); setRawAIResponse(null);
-        setOriginalFileName(videoFile.name); // Store original name
-        setVidUrl(URL.createObjectURL(videoFile));
-        await writeToLog({ type: 'info', action: 'upload_video', status: 'started', filename: videoFile.name, fileSize: videoFile.size });
+        
+        setIsLoadingVideo(true);
+        setVideoError(false);
+        
+        // Create a temporary video object with loading state
+        const tempVideoId = Date.now().toString();
+        const newVideo = {
+            id: tempVideoId,
+            originalFileName: videoFile.name,
+            size: videoFile.size,
+            url: URL.createObjectURL(videoFile),
+            isExpanded: false, // Don't auto-expand anymore
+            isLoading: true,
+            error: false,
+            file: null, // Will be populated after server upload
+            uploadProgress: 0 // Start with 0% progress
+        };
+        
+        // Initialize progress tracking
+        setUploadProgress(prev => ({
+            ...prev,
+            [tempVideoId]: 0
+        }));
+        
+        // Add to videos array
+        setVideos(prevVideos => [...prevVideos, newVideo]);
+        
+        await writeToLog({ 
+            type: 'info', 
+            action: 'upload_video', 
+            status: 'started', 
+            filename: videoFile.name, 
+            fileSize: videoFile.size 
+        });
+        
         try {
-            const formData = new FormData(); formData.set('video', videoFile);
+            const formData = new FormData();
+            formData.set('video', videoFile);
+            
             // Adjust API URL as needed
             const serverPort = process.env.REACT_APP_SERVER_PORT || '';
             const apiUrl = serverPort ? `http://localhost:${serverPort}/api/upload` : '/api/upload';
-            const response = await fetch(apiUrl, { method: 'POST', body: formData });
-            const responseText = await response.text();
-            if (!response.ok) throw new Error(`Upload failed: ${response.status}. ${responseText}`);
-            const data = JSON.parse(responseText); // Assume response is { data: { name: fileId } }
-            if (!data?.data?.name) throw new Error(`Invalid upload response format: ${responseText}`);
-            await writeToLog({ type: 'info', action: 'upload_video', status: 'success', filename: videoFile.name, fileId: data.data.name });
-            setFile(data.data); // Store { name: fileId }
-            await checkProgress(data.data.name); // Start checking progress
+            
+            // Create XHR for progress tracking
+            const xhr = new XMLHttpRequest();
+            
+            // Set up progress tracking
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const progress = Math.round((event.loaded / event.total) * 100);
+                    setUploadProgress(prev => ({
+                        ...prev,
+                        [tempVideoId]: progress
+                    }));
+                    
+                    // Also update the video object's progress
+                    setVideos(prevVideos => 
+                        prevVideos.map(video => 
+                            video.id === tempVideoId
+                                ? { ...video, uploadProgress: progress }
+                                : video
+                        )
+                    );
+                }
+            });
+            
+            // Use a promise to handle XHR response
+            const response = await new Promise((resolve, reject) => {
+                xhr.open('POST', apiUrl);
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(xhr.responseText);
+                    } else {
+                        reject(new Error(`Upload failed: ${xhr.status}. ${xhr.responseText}`));
+                    }
+                };
+                xhr.onerror = () => reject(new Error('Network error during upload'));
+                xhr.send(formData);
+            });
+            
+            const data = JSON.parse(response);
+            if (!data?.data?.name) throw new Error(`Invalid upload response format: ${response}`);
+            
+            await writeToLog({ 
+                type: 'info', 
+                action: 'upload_video', 
+                status: 'success', 
+                filename: videoFile.name, 
+                fileId: data.data.name 
+            });
+            
+            // Update the video in the array with the server data
+            setVideos(prevVideos => prevVideos.map(video => 
+                video.id === tempVideoId
+                    ? { 
+                        ...video, 
+                        isLoading: false,
+                        file: data.data,
+                        uploadProgress: 100
+                      }
+                    : video
+            ));
+            
+            // Start checking progress
+            await checkProgress(data.data.name, tempVideoId);
+            
         } catch (error) {
-            console.error('Error uploading video:', error); setVideoError(true); setIsLoadingVideo(false); setVidUrl(null); setOriginalFileName('');
-            await writeToLog({ type: 'error', action: 'upload_video', status: 'error', error: error.message });
+            console.error('Error uploading video:', error);
+            
+            // Update the video in the array with the error state
+            setVideos(prevVideos => prevVideos.map(video => 
+                video.id === tempVideoId
+                    ? { 
+                        ...video, 
+                        isLoading: false,
+                        error: true,
+                        uploadProgress: 0
+                      }
+                    : video
+            ));
+            
+            await writeToLog({ 
+                type: 'error', 
+                action: 'upload_video', 
+                status: 'error', 
+                error: error.message 
+            });
+            
             // User-friendly alerts
-            if (error.message.includes('413') || error.message.includes('Payload Too Large')) alert('Video file too large (Max ~100MB).');
-            else if (error.message.includes('Failed to fetch')) alert('Network error. Ensure server is running.');
-            else alert(`Error uploading video: ${error.message}`);
+            if (error.message.includes('413') || error.message.includes('Payload Too Large')) 
+                alert('Video file too large (Max ~100MB).');
+            else if (error.message.includes('Failed to fetch')) 
+                alert('Network error. Ensure server is running.');
+            else 
+                alert(`Error uploading video: ${error.message}`);
+        } finally {
+            setIsLoadingVideo(false);
+            
+            // Clean up progress tracking after either success or failure
+            setUploadProgress(prev => {
+                const newProgress = {...prev};
+                delete newProgress[tempVideoId];
+                return newProgress;
+            });
         }
-    }, []); // Removed checkProgress from dependencies, called directly
+    }, [videos]); // Added videos to dependencies
 
-    const checkProgress = useCallback(async (fileId) => { /* ... keep existing progress check logic ... */
-        if (!fileId) return; // Guard against calls without fileId
+    const checkProgress = useCallback(async (fileId, videoId) => {
+        if (!fileId) return;
+        
         try {
             // Adjust API URL
             const serverPort = process.env.REACT_APP_SERVER_PORT || '';
             const apiUrl = serverPort ? `http://localhost:${serverPort}/api/progress` : '/api/progress';
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId }) });
+            const response = await fetch(apiUrl, { 
+                method: 'POST', 
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ fileId }) 
+            });
+            
             const responseText = await response.text();
             if (!response.ok) throw new Error(`Progress check failed: ${response.status}. ${responseText}`);
+            
             const data = JSON.parse(responseText);
             if (!data?.progress?.state) throw new Error(`Invalid progress response: ${responseText}`);
-            await writeToLog({ type: 'info', action: 'check_progress', fileId, state: data.progress.state, message: data.progress.message });
+            
+            await writeToLog({ 
+                type: 'info', 
+                action: 'check_progress', 
+                fileId, 
+                state: data.progress.state, 
+                message: data.progress.message 
+            });
 
             switch (data.progress.state) {
-                case 'ACTIVE': setIsLoadingVideo(false); break; // Processing started successfully
-                case 'WARNING': setVideoError(true); setIsLoadingVideo(false); alert(`Warning: ${data.progress.message}`); break;
-                case 'FAILED': setVideoError(true); setIsLoadingVideo(false); alert(`Processing failed: ${data.progress.message || 'Unknown error'}`); break;
-                default: setTimeout(() => checkProgress(fileId), 1500); break; // Check again
+                case 'ACTIVE':
+                    // Video is ready and active
+                    setVideos(prevVideos => prevVideos.map(video => 
+                        video.id === videoId
+                            ? { ...video, isLoading: false }
+                            : video
+                    ));
+                    break;
+                case 'WARNING':
+                    // Warning status
+                    setVideos(prevVideos => prevVideos.map(video => 
+                        video.id === videoId
+                            ? { ...video, isLoading: false, error: true, errorMessage: data.progress.message }
+                            : video
+                    ));
+                    alert(`Warning: ${data.progress.message}`);
+                    break;
+                case 'FAILED':
+                    // Failed status
+                    setVideos(prevVideos => prevVideos.map(video => 
+                        video.id === videoId
+                            ? { ...video, isLoading: false, error: true, errorMessage: data.progress.message || 'Unknown error' }
+                            : video
+                    ));
+                    alert(`Processing failed: ${data.progress.message || 'Unknown error'}`);
+                    break;
+                default:
+                    // Keep checking for pending states
+                    setTimeout(() => checkProgress(fileId, videoId), 1500);
+                    break;
             }
         } catch (error) {
-            console.error('Error checking progress:', error); setVideoError(true); setIsLoadingVideo(false);
-            await writeToLog({ type: 'error', action: 'check_progress', fileId, error: error.message });
+            console.error('Error checking progress:', error);
+            
+            // Update the video with error state
+            setVideos(prevVideos => prevVideos.map(video => 
+                video.id === videoId
+                    ? { ...video, isLoading: false, error: true, errorMessage: error.message }
+                    : video
+            ));
+            
+            await writeToLog({ 
+                type: 'error', 
+                action: 'check_progress', 
+                fileId, 
+                error: error.message 
+            });
+            
             // Only alert if not a specific backend failure state
             if (!error.message.includes('failed:') && !error.message.includes('Invalid progress response')) {
                alert(`Error checking video progress: ${error.message}`);
             }
         }
-    }, []); // Empty dependency array is okay here
+    }, []);
 
-
-    const toggleMute = () => { /* ... keep mute logic ... */
-        if (videoRef.current) { videoRef.current.muted = !videoRef.current.muted; setIsMuted(videoRef.current.muted); }
+    // New function to handle video changes
+    const handleVideoActivation = (index) => {
+        // Reset video state for clean switching
+        setCurrentTime(0);
+        setDuration(0);
+        setIsPlaying(false);
+        
+        // Update expanded state and set active index
+        setVideos(prevVideos => prevVideos.map((video, idx) => ({
+            ...video,
+            isExpanded: idx === index ? !video.isExpanded : false
+        })));
+        setActiveVideoIndex(index);
     };
 
-    const handleModeSelect = (mode) => { /* Updated for new UI */
+    // Update toggle function to use the new handler
+    const toggleVideoExpanded = (index) => {
+        handleVideoActivation(index);
+    };
+
+    // Update toggle play to handle the video ref better
+    const togglePlay = () => { 
+        if (videoRef.current) { 
+            if (videoRef.current.paused) {
+                videoRef.current.play().catch(err => {
+                    console.warn("Error playing video:", err);
+                });
+            } else {
+                videoRef.current.pause();
+            }
+        }
+    };
+
+    // Use this function when video loads to get correct duration
+    const handleVideoLoad = () => {
+        if (videoRef.current) {
+            setDuration(videoRef.current.duration);
+            setCurrentTime(videoRef.current.currentTime);
+        }
+    };
+
+    // New function to remove a specific video
+    const removeVideo = (videoId) => {
+        setVideos(prevVideos => prevVideos.filter(video => video.id !== videoId));
+        
+        // Adjust active index if needed
+        if (videos.length <= 1) {
+            setActiveVideoIndex(null);
+        } else if (activeVideoIndex >= videos.length - 1) {
+            setActiveVideoIndex(videos.length - 2);
+        }
+    };
+
+    const toggleMute = () => {
+        if (videoRef.current) { 
+            videoRef.current.muted = !videoRef.current.muted; 
+            setIsMuted(videoRef.current.muted); 
+        }
+    };
+
+    const handleModeSelect = (mode) => {
         setSelectedMode(mode);
         setDisplayMode('list'); // Default result view
         // Don't reset customPrompt if selecting 'Custom' again
         if (mode !== 'Custom') setCustomPrompt(''); // Clear custom prompt if preset selected
     };
 
-    const copyToClipboard = (text) => { /* ... keep copy logic ... */
+    const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text).then(() => console.log('Text copied'), (err) => console.error('Copy failed: ', err));
     };
 
-    const cancelProcessing = () => { /* ... keep cancel logic ... */
-         if (abortController) { abortController.abort(); setIsProcessing(false); writeToLog({ type: 'info', action: 'cancel_processing' }); }
+    const cancelProcessing = () => {
+        if (abortController) { 
+            abortController.abort(); 
+            setIsProcessing(false); 
+            writeToLog({ type: 'info', action: 'cancel_processing' }); 
+        }
     };
 
-    const saveToHistory = (mode, results, rawResponse) => { /* ... keep history saving logic ... */ 
-        const newAnalysis = { id: Date.now(), timestamp: new Date().toISOString(), mode, results, rawResponse, videoUrl: vidUrl, originalFileName };
+    const saveToHistory = (mode, results, rawResponse) => {
+        const activeVideo = videos[activeVideoIndex];
+        if (!activeVideo) return;
+
+        const newAnalysis = { 
+            id: Date.now(), 
+            timestamp: new Date().toISOString(), 
+            mode, 
+            results, 
+            rawResponse, 
+            videoIds: videos.map(v => v.id), // Store all video IDs
+            videoUrls: videos.map(v => v.url), // Store all video URLs
+            originalFileNames: videos.map(v => v.originalFileName), // Store all original file names
+            activeVideoIndex // Store which video was active
+        };
+        
         const updatedHistory = [newAnalysis, ...analysisHistory];
         setAnalysisHistory(updatedHistory);
         localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory));
     };
 
-    const loadFromHistory = (analysis) => { /* ... keep history loading logic ... */
-        setTimecodeList(analysis.results); setRawAIResponse(analysis.rawResponse);
-        setSelectedMode(analysis.mode); setVidUrl(analysis.videoUrl); setOriginalFileName(analysis.originalFileName || '');
-        setFile({ name: 'loaded_from_history' }); // Set a dummy file state if needed for generate button logic
+    const loadFromHistory = (analysis) => {
+        // Clear existing videos
+        setVideos([]);
+        setTimecodeList(analysis.results);
+        setRawAIResponse(analysis.rawResponse);
+        setSelectedMode(analysis.mode);
+        
+        // Handle different history data formats (old single video vs new multiple videos)
+        if (analysis.videoIds && analysis.videoUrls && analysis.originalFileNames) {
+            // New format with multiple videos
+            const loadedVideos = analysis.videoIds.map((id, idx) => ({
+                id,
+                url: analysis.videoUrls[idx],
+                originalFileName: analysis.originalFileNames[idx],
+                isExpanded: idx === analysis.activeVideoIndex,
+                isLoading: false,
+                error: false,
+                file: { name: 'loaded_from_history' } // Set a dummy file state
+            }));
+            setVideos(loadedVideos);
+            setActiveVideoIndex(analysis.activeVideoIndex || 0);
+        } else if (analysis.videoUrl) {
+            // Old format with single video
+            const newVideo = {
+                id: Date.now().toString(),
+                url: analysis.videoUrl,
+                originalFileName: analysis.originalFileName || '',
+                isExpanded: true,
+                isLoading: false,
+                error: false,
+                file: { name: 'loaded_from_history' } // Set a dummy file state
+            };
+            setVideos([newVideo]);
+            setActiveVideoIndex(0);
+        }
+        
         setShowHistoryPanel(false); // Close panel
-        // Determine display mode based on loaded mode
         setDisplayMode(analysis.mode === 'Paragraph' ? 'paragraph' : 'list');
-         // If loaded analysis was custom, set the prompt (though it's not stored in history item)
-        // maybe store the prompt used in the history item?
-        // setCustomPrompt(analysis.promptUsed || '');
     };
 
     const deleteFromHistory = (analysisId) => { /* ... keep history delete logic ... */
@@ -239,31 +543,75 @@ const Labs = () => {
         setCustomTemplates(JSON.parse(localStorage.getItem('customTemplates') || '[]'));
     }, []);
 
-    const generateContent = useCallback(async () => { /* ... keep generate content logic, ensuring prompt selection works ... */
-        if (!file) { alert("Please upload a video first."); return; }
-        setIsProcessing(true); setTimecodeList(null); setRawAIResponse(null); // Reset results
-        const controller = new AbortController(); setAbortController(controller);
+    const generateContent = useCallback(async () => {
+        // Verify we have at least one video
+        if (videos.length === 0) { 
+            alert("Please upload at least one video first."); 
+            return; 
+        }
+
+        // Get all files for the uploaded videos
+        const videoFiles = videos
+            .filter(v => v.file && !v.error)
+            .map(v => v.file);
+
+        if (videoFiles.length === 0) {
+            alert("No valid video files found. Please ensure at least one video is successfully uploaded.");
+            return;
+        }
+
+        setIsProcessing(true);
+        setTimecodeList(null);
+        setRawAIResponse(null); // Reset results
+        
+        const controller = new AbortController();
+        setAbortController(controller);
 
         try {
             const isCustom = selectedMode === 'Custom';
             const finalPrompt = isCustom ? customPrompt : modes[selectedMode]?.prompt;
+            
             if (!finalPrompt || (isCustom && !finalPrompt.trim())) {
                 throw new Error("No valid prompt selected or entered.");
             }
-            await writeToLog({ type: 'request', action: 'generate_content', mode: selectedMode, useCustomPrompt: isCustom, prompt: finalPrompt });
+            
+            await writeToLog({ 
+                type: 'request', 
+                action: 'generate_content', 
+                mode: selectedMode, 
+                useCustomPrompt: isCustom, 
+                prompt: finalPrompt,
+                videoCount: videoFiles.length
+            });
+            
             // Adjust API URL
             const serverPort = process.env.REACT_APP_SERVER_PORT || '';
             const apiUrl = serverPort ? `http://localhost:${serverPort}/api/prompt` : '/api/prompt';
+            
             const response = await fetch(apiUrl, {
-                method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uploadResult: file, prompt: finalPrompt, model: 'gemini-2.0-flash' }), // Use correct model name
+                method: 'POST', 
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    uploadResults: videoFiles, // Send array of files instead of single file
+                    prompt: finalPrompt, 
+                    model: 'gemini-2.0-flash' // Use newer model that supports multiple videos
+                }), 
                 signal: controller.signal
             });
+            
             const responseText = await response.text();
             if (!response.ok) throw new Error(`Content generation failed: ${response.status}. ${responseText}`);
+            
             const data = JSON.parse(responseText);
             if (data.error) throw new Error(data.error);
-            await writeToLog({ type: 'response', action: 'generate_content', mode: selectedMode, status: 'success', rawResponse: data.text });
+            
+            await writeToLog({ 
+                type: 'response', 
+                action: 'generate_content', 
+                mode: selectedMode, 
+                status: 'success', 
+                rawResponse: data.text 
+            });
 
             // Determine display mode and parse results
             const currentDisplayMode = selectedMode === 'Paragraph' ? 'paragraph' : 'list';
@@ -275,110 +623,308 @@ const Labs = () => {
             saveToHistory(selectedMode, parsedResults, data.text); // Save successful result
 
         } catch (error) {
-            if (error.name === 'AbortError') { console.log('Request cancelled.'); return; }
+            if (error.name === 'AbortError') { 
+                console.log('Request cancelled.'); 
+                return; 
+            }
+            
             console.error('Error generating content:', error);
-            await writeToLog({ type: 'error', action: 'generate_content', mode: selectedMode, error: error.message });
+            
+            await writeToLog({ 
+                type: 'error', 
+                action: 'generate_content', 
+                mode: selectedMode, 
+                error: error.message 
+            });
+            
             if (error.message.includes('API key')) alert('API key error. Check configuration.');
             else if (error.message.includes('Failed to fetch')) alert('Network error. Ensure server is running.');
             else alert(`Error: ${error.message}`);
         } finally {
-            setIsProcessing(false); setAbortController(null);
+            setIsProcessing(false);
+            setAbortController(null);
         }
-    }, [file, selectedMode, customPrompt, saveToHistory]); // Dependencies
+    }, [videos, activeVideoIndex, selectedMode, customPrompt, saveToHistory, modes]); // Updated dependencies
 
-    const parseTimecodes = (text) => { /* ... keep parsing logic ... */
+    const parseTimecodes = (text) => {
         if (!text) return [];
-        // Improved regex to handle potential missing spaces and different list formats
-        const regex = /(\[(\d{1,2}:\d{2}(?::\d{2})?)\]|\*|-)\s*(.*?)(?=\[(\d{1,2}:\d{2}(?::\d{2})?)\]|\*|-|\n\n|$)/gs;
-        const matches = [...text.matchAll(regex)];
-        // Handle cases where the response might just be text without timecodes
-        if (matches.length === 0 && text.trim().length > 0) {
-           return [{ time: 'N/A', text: text.trim() }];
+        
+        // Split by newlines first to handle bullet points
+        const lines = text.split('\n');
+        const results = [];
+        
+        for (let line of lines) {
+            line = line.trim();
+            // Skip empty lines
+            if (!line) continue;
+            
+            // Remove bullet point markers (* or -)
+            line = line.replace(/^[*-]\s*/, '');
+            
+            // Extract timecode and text
+            const timecodeMatch = line.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s*(.*)/);
+            if (timecodeMatch) {
+                results.push({
+                    time: timecodeMatch[1],
+                    text: timecodeMatch[2].trim()
+                });
+            } else if (line.length > 0) {
+                // Handle lines without timecodes
+                results.push({
+                    time: 'N/A',
+                    text: line
+                });
+            }
         }
-        return matches.map(match => ({
-           time: match[2] || 'N/A', // Use timecode if captured, otherwise N/A
-           text: match[3].trim().replace(/^- /, '') // Remove leading list markers if any
-        })).filter(item => item.text); // Filter out empty text entries
+        
+        return results;
     };
 
-
-    const togglePlay = () => { /* ... keep play toggle logic ... */
-        if (videoRef.current) { videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause(); }
+    const handleTimeUpdate = () => { /* ... keep time update logic ... */ if (videoRef.current) setCurrentTime(videoRef.current.currentTime); };
+    const handleDurationChange = () => { /* ... keep duration logic ... */ if (videoRef.current) setDuration(videoRef.current.duration); };
+    const handleScrubberChange = (e) => { /* ... keep scrubber logic ... */
+         const newTime = parseFloat(e.target.value); setCurrentTime(newTime); if (videoRef.current) videoRef.current.currentTime = newTime;
     };
-    const jumpToTimecode = (time) => { /* ... keep jump logic ... */
-        if (videoRef.current && time !== 'N/A') { videoRef.current.currentTime = timeToSecs(time); }
+    
+    // Function to jump to a specific timecode
+    const jumpToTimecode = (time) => {
+        if (videoRef.current && time !== 'N/A') { 
+            videoRef.current.currentTime = timeToSecs(time); 
+        }
     };
-    const timeToSecs = (timecode) => { /* ... keep time conversion logic ... */
+    
+    // Function to convert timecode to seconds
+    const timeToSecs = (timecode) => {
          if (!timecode || timecode === 'N/A') return 0;
          const parts = timecode.split(':').map(Number);
          if (parts.length === 2) return parts[0] * 60 + parts[1];
          if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
          return 0; // Fallback
     };
-    const handleTimeUpdate = () => { /* ... keep time update logic ... */ if (videoRef.current) setCurrentTime(videoRef.current.currentTime); };
-    const handleDurationChange = () => { /* ... keep duration logic ... */ if (videoRef.current) setDuration(videoRef.current.duration); };
-    const handleScrubberChange = (e) => { /* ... keep scrubber logic ... */
-         const newTime = parseFloat(e.target.value); setCurrentTime(newTime); if (videoRef.current) videoRef.current.currentTime = newTime;
-    };
-    const handleRemoveVideo = () => { /* ... keep remove video logic ... */
+    
+    const handleRemoveVideo = () => {
         if (videoRef.current) videoRef.current.pause();
-        setVidUrl(null); setFile(null); setOriginalFileName(''); setCurrentTime(0); setDuration(0); setIsPlaying(false);
-        setTimecodeList(null); setRawAIResponse(null); setIsProcessing(false); // Reset state
-        if (abortController) abortController.abort(); // Cancel any ongoing processing
-        writeToLog({ type: 'info', action: 'remove_video' });
+        setVideos([]);
+        setCurrentTime(0);
+        setDuration(0);
+        setIsPlaying(false);
+        setTimecodeList(null);
+        setRawAIResponse(null);
+        setIsProcessing(false);
+        setActiveVideoIndex(null);
+        if (abortController) abortController.abort();
+        writeToLog({ type: 'info', action: 'remove_all_videos' });
     };
-    const clearResults = () => { /* ... keep clear results logic ... */
-         setTimecodeList(null); setRawAIResponse(null);
+    const clearResults = () => {
+        setTimecodeList(null);
+        setRawAIResponse(null);
+    };
+
+    // New function to close video player without removing the video
+    const closeVideoPlayer = (e, videoId) => {
+        e.stopPropagation(); // Prevent triggering the click on the parent div
+        
+        // Find index of the video to close
+        const index = videos.findIndex(v => v.id === videoId);
+        if (index !== -1) {
+            // Close video player by setting isExpanded to false
+            setVideos(prevVideos => prevVideos.map((video, idx) => 
+                idx === index ? { ...video, isExpanded: false } : video
+            ));
+            
+            // Reset video state if the active video is being closed
+            if (activeVideoIndex === index) {
+                if (videoRef.current) videoRef.current.pause();
+                setIsPlaying(false);
+            }
+        }
     };
 
     // --- Render Functions (Using New Structure) ---
 
     const renderVideoSection = () => (
         <div className="LabsSectionCard VideoSection">
-            {vidUrl && !isLoadingVideo ? (
+            {videos.length > 0 ? (
+                <div className="VideoListContainer">
+                    <div className="VideoCounter">
+                        <span className="VideoCounterText">
+                            {videos.length} video{videos.length !== 1 ? 's' : ''} 
+                            <span className="VideoCountLimit">(max 5)</span>
+                        </span>
+                        <div className="MultiVideo-Controls">
+                            <button 
+                                className="LabsTextButton compact" 
+                                onClick={handleFileButtonClick} 
+                                disabled={videos.length >= 5}
+                                title="Add more videos"
+                            >
+                                <FileVideo size={14} /> Add
+                            </button>
+                            <button 
+                                className="LabsTextButton danger compact" 
+                                onClick={() => setVideos([])} 
+                                disabled={videos.length === 0}
+                                title="Remove all videos"
+                            >
+                                <Trash2 size={14} /> Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="VideoItemsList">
+                        {videos.map((video, index) => (
+                            <div 
+                                key={video.id} 
+                                className={`VideoListItem ${video.isExpanded ? 'expanded' : ''} ${video.error ? 'error' : ''}`}
+                                onClick={() => toggleVideoExpanded(index)}
+                            >
+                                {/* Video info header (always shown) */}
+                                <div className="VideoItemHeader">
+                                    <div className="VideoItemThumbnail">
+                                        <FileVideo size={18} />
+                                    </div>
+                                    
+                                    <div className="VideoItemInfo">
+                                        <div className="VideoItemName">
+                                            {video.originalFileName}
+                                            {video.isExpanded ? (
+                                                <ChevronUp size={16} className="VideoExpandIcon" />
+                                            ) : (
+                                                <ChevronDown size={16} className="VideoExpandIcon" />
+                                            )}
+                                        </div>
+                                        <div className="VideoItemMeta">
+                                            {video.isLoading ? (
+                                                <><Loader2 className="spinning" size={12} /> Processing...</>
+                                            ) : video.error ? (
+                                                <span className="error">Error: {video.errorMessage || 'Failed to process'}</span>
+                                            ) : (
+                                                <span>{Math.round(video.size / 1024 / 1024 * 10) / 10} MB</span>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Upload progress bar */}
+                                        {video.uploadProgress !== undefined && video.uploadProgress < 100 && (
+                                            <div className="UploadProgressBar">
+                                                <div 
+                                                    className="UploadProgressBarFill" 
+                                                    style={{ width: `${video.uploadProgress}%` }}
+                                                ></div>
+                                                <span className="UploadProgressText">{video.uploadProgress}%</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="VideoItemActions" onClick={e => e.stopPropagation()}>
+                                        {video.isExpanded ? (
+                                            <button 
+                                                className="LabsIconButton small" 
+                                                onClick={(e) => closeVideoPlayer(e, video.id)}
+                                                title="Close player"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                className="LabsIconButton small danger" 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    removeVideo(video.id);
+                                                }}
+                                                title="Remove video"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                {/* Video player (only shown when expanded) */}
+                                {video.isExpanded && (
                 <div className="VideoPlayerContainer">
                     <video
-                        ref={videoRef} src={vidUrl} className="VideoElement"
-                        onClick={togglePlay} onTimeUpdate={handleTimeUpdate} onDurationChange={handleDurationChange}
-                        onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)}
-                        muted={isMuted} crossOrigin="anonymous" playsInline // Added playsInline
-                    />
-                    {originalFileName && <div className="VideoFileNameDisplay">{originalFileName}</div>}
+                                            ref={videoRef} 
+                                            src={video.url} 
+                                            className="VideoElement"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                togglePlay();
+                                            }} 
+                                            onTimeUpdate={handleTimeUpdate} 
+                                            onLoadedMetadata={handleVideoLoad}
+                                            onPlay={() => setIsPlaying(true)} 
+                                            onPause={() => setIsPlaying(false)}
+                                            muted={isMuted} 
+                                            crossOrigin="anonymous" 
+                                            playsInline
+                                        />
+                                        <div className="VideoFileNameDisplay">{video.originalFileName}</div>
                     <div className="VideoControlsBar">
-                        <button className="LabsIconButton" onClick={togglePlay} title={isPlaying ? 'Pause' : 'Play'}>
-                            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+                                            <button 
+                                                className="LabsIconButton small" 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    togglePlay();
+                                                }} 
+                                                title={isPlaying ? 'Pause' : 'Play'}
+                                            >
+                                                {isPlaying ? <Pause size={16} /> : <Play size={16} />}
                         </button>
                         <input
-                            type="range" min="0" max={duration || 0} value={currentTime}
-                            onChange={handleScrubberChange} className="VideoScrubberInput"
+                                                type="range" 
+                                                min="0" 
+                                                max={duration || 0} 
+                                                value={currentTime || 0}
+                                                onChange={handleScrubberChange} 
+                                                className="VideoScrubberInput"
                             aria-label="Video progress scrubber"
                             style={{ backgroundSize: `${(currentTime / (duration || 1)) * 100}% 100%` }}
-                        />
-                        <span className="VideoTimeDisplay">{formatTime(currentTime)} / {formatTime(duration)}</span>
-                        <button className="LabsIconButton" onClick={toggleMute} title={isMuted ? 'Unmute' : 'Mute'}>
-                            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                                                onClick={e => e.stopPropagation()}
+                                            />
+                                            <span className="VideoTimeDisplay">
+                                                {formatTime(currentTime)} / {formatTime(duration)}
+                                            </span>
+                                            <button 
+                                                className="LabsIconButton small" 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleMute();
+                                                }} 
+                                                title={isMuted ? 'Unmute' : 'Mute'}
+                                            >
+                                                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                         </button>
-                        <button className="LabsIconButton danger" onClick={handleRemoveVideo} title="Remove video">
-                            <X size={18} />
-                        </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </div>
             ) : (
                 <label className="VideoUploadArea" htmlFor="labs-video-upload" onDragOver={handleDragOver} onDrop={handleDrop}>
-                    <input id="labs-video-upload" type="file" ref={fileInputRef} onChange={handleFileChange} accept="video/*,audio/*" style={{ display: 'none' }} />
+                    <input 
+                        id="labs-video-upload" 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        accept="video/*,audio/*" 
+                        style={{ display: 'none' }} 
+                        multiple
+                    />
                     {isLoadingVideo ? (
                         <div className="UploadStatusIndicator">
-                            <Loader2 className="spinning" size={32} /><span>Processing...</span>
+                            <Loader2 className="spinning" size={24} /><span>Processing...</span>
                         </div>
                     ) : videoError ? (
                         <div className="UploadStatusIndicator error">
-                            <X size={32} /><span>Error processing. Try again.</span>
+                            <X size={24} /><span>Error processing. Try again.</span>
                         </div>
                     ) : (
                         <div className="UploadPromptContent">
-                            <FileVideo size={40} />
-                            <span>Drag & drop video/audio or click</span>
-                            <span className="UploadHintText">MP4, MOV, MP3, WAV etc. (Max ~100MB)</span>
+                            <FileVideo size={32} />
+                            <span>Drag videos/audio or click to upload</span>
+                            <span className="UploadHintText">MP4, MOV, MP3, WAV etc. (Max 100MB/file, up to 5 files)</span>
                         </div>
                     )}
                 </label>
@@ -400,8 +946,6 @@ const Labs = () => {
                      <button className="LabsIconButton" onClick={() => alert(selectedMode === 'Custom' ? 'Enter your custom analysis instructions below.' : modes[selectedMode]?.description || 'Select a mode')} title="Mode Info">
                          <Info size={18}/>
                     </button>
-                    {/* Tooltip text could be dynamic based on selected mode if needed */}
-                    {/* <span className="tooltiptext">{selectedMode === 'Custom' ? 'Enter custom instructions' : modes[selectedMode]?.description}</span> */}
                  </div>
             </div>
 
@@ -420,13 +964,11 @@ const Labs = () => {
                              <button className="LabsTextButton" onClick={() => setShowTemplatesPanel(true)} title="Load Template">
                                  <FolderOpen size={16}/> Load
                             </button>
-                            {/* <span className="tooltiptext">Load a saved template</span> */}
                          </div>
                          <div className="tooltip">
                             <button className="LabsTextButton" onClick={() => setShowTemplatesPanel(true)} title="Save as Template">
                                  <Save size={16}/> Save
                             </button>
-                            {/* <span className="tooltiptext">Save current prompt as template</span> */}
                          </div>
                     </div>
                 </div>
@@ -435,7 +977,11 @@ const Labs = () => {
             <button
                 className="LabsPrimaryButton GenerateButton"
                 onClick={isProcessing ? cancelProcessing : generateContent}
-                disabled={!vidUrl || isLoadingVideo || (selectedMode === 'Custom' && !customPrompt.trim())}
+                disabled={
+                    videos.length === 0 || 
+                    videos.every(v => v.isLoading || v.error) || 
+                    (selectedMode === 'Custom' && !customPrompt.trim())
+                }
             >
                 {isProcessing ? (
                     <><Loader2 className="spinning" size={18} /> Processing... <X size={16} onClick={(e) => {e.stopPropagation(); cancelProcessing();}} style={{ cursor: 'pointer' }} title="Cancel"/></>
@@ -454,23 +1000,18 @@ const Labs = () => {
                     <div className="ResultActionsGroup">
                          <div className="tooltip">
                             <button className={`LabsIconButton ${displayMode === 'list' ? 'active' : ''}`} onClick={() => setDisplayMode('list')} title="List View"><List size={18} /></button>
-                            {/* <span className="tooltiptext">List View</span> */}
                          </div>
                           <div className="tooltip">
                             <button className={`LabsIconButton ${displayMode === 'paragraph' ? 'active' : ''}`} onClick={() => setDisplayMode('paragraph')} title="Paragraph View"><Text size={18} /></button>
-                            {/* <span className="tooltiptext">Paragraph View</span> */}
                           </div>
                          <div className="tooltip">
                             <button className="LabsIconButton" onClick={() => copyToClipboard(rawAIResponse || '')} title="Copy Raw Response"><Copy size={18} /></button>
-                            {/* <span className="tooltiptext">Copy Raw AI Response</span> */}
                          </div>
                          <div className="tooltip">
                             <button className="LabsIconButton" onClick={() => setShowEnlargedView(true)} title="Enlarge View"><Maximize2 size={18} /></button>
-                            {/* <span className="tooltiptext">Enlarge View</span> */}
                          </div>
                          <div className="tooltip">
                             <button className="LabsIconButton danger" onClick={clearResults} title="Clear Results"><X size={18} /></button>
-                            {/* <span className="tooltiptext">Clear Results</span> */}
                          </div>
                     </div>
                 </div>
@@ -482,7 +1023,7 @@ const Labs = () => {
                                     {item.time !== 'N/A' && (
                                          <span className="TimecodeInline" onClick={() => jumpToTimecode(item.time)} title={`Jump to ${item.time}`}>[{item.time}]</span>
                                     )}
-                                    {' '}{item.text}{' '}
+                                    {' '}{item.text}{index < timecodeList.length - 1 ? '\n' : ''}
                                 </React.Fragment>
                             ))}
                         </div>
@@ -501,7 +1042,7 @@ const Labs = () => {
         )
     );
 
-    // --- Overlay Panel Render Functions (Keep Structure, ensure styling matches) ---
+    // --- Overlay Panel Render Functions ---
      const renderOverlayPanel = (title, showState, setShowState, content) => (
         showState && (
             <div className="LabsOverlayPanel">
@@ -511,7 +1052,6 @@ const Labs = () => {
                         <button className="LabsIconButton" onClick={() => setShowState(false)} title={`Close ${title}`}>
                             <X size={18} />
                         </button>
-                        {/* <span className="tooltiptext">Close</span> */}
                      </div>
                 </div>
                 <div className="OverlayPanelContent">
@@ -523,50 +1063,70 @@ const Labs = () => {
 
     const historyContent = (
         <div className="HistoryList">
-            {analysisHistory.length === 0 ? (<p className="EmptyStateText">No analysis history yet.</p>) :
+            {analysisHistory.length === 0 ? (
+                <p className="EmptyStateText">No analysis history yet.</p>
+            ) : (
              analysisHistory.map((analysis) => (
                 <div key={analysis.id} className="HistoryListItem">
                     <div className="HistoryItemInfo">
                         <span className="HistoryItemMode">{analysis.mode}</span>
-                         {analysis.originalFileName && <span className="HistoryItemFile" title={analysis.originalFileName}>({analysis.originalFileName})</span>}
+                            {analysis.originalFileNames && analysis.originalFileNames.length > 0 && (
+                                <span className="HistoryItemFile" title={analysis.originalFileNames.join(', ')}>
+                                    ({analysis.originalFileNames.length} video{analysis.originalFileNames.length !== 1 ? 's' : ''})
+                                </span>
+                            )}
                         <span className="HistoryItemDate">{new Date(analysis.timestamp).toLocaleString()}</span>
                     </div>
                     <div className="HistoryItemActions">
                          <div className="tooltip">
-                            <button className="LabsIconButton" onClick={() => loadFromHistory(analysis)} title="Load"><ChevronRight size={18} /></button>
-                            {/* <span className="tooltiptext">Load this analysis</span> */}
+                                <button className="LabsIconButton" onClick={() => loadFromHistory(analysis)} title="Load">
+                                    <ChevronRight size={18} />
+                                </button>
                          </div>
                          <div className="tooltip">
-                            <button className="LabsIconButton danger" onClick={() => deleteFromHistory(analysis.id)} title="Delete"><Trash2 size={18} /></button>
-                            {/* <span className="tooltiptext">Delete this entry</span> */}
+                                <button 
+                                    className="LabsIconButton danger" 
+                                    onClick={() => deleteFromHistory(analysis.id)} 
+                                    title="Delete"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
                          </div>
                     </div>
                 </div>
              ))
-            }
+            )}
         </div>
     );
 
     const templatesContent = (
         <>
             <div className="TemplatesList">
-                 {customTemplates.length === 0 ? (<p className="EmptyStateText">No saved templates.</p>) :
+                {customTemplates.length === 0 ? (
+                    <p className="EmptyStateText">No saved templates.</p>
+                ) : (
                  customTemplates.map((template) => (
                     <div key={template.id} className="TemplateListItem">
                         <span className="TemplateItemName">{template.name}</span>
                         <div className="TemplateItemActions">
                             <div className="tooltip">
-                                <button className="LabsIconButton" onClick={() => loadTemplate(template)} title="Load"><ChevronRight size={18} /></button>
-                                {/* <span className="tooltiptext">Load Template</span> */}
+                                    <button className="LabsIconButton" onClick={() => loadTemplate(template)} title="Load">
+                                        <ChevronRight size={18} />
+                                    </button>
                             </div>
                             <div className="tooltip">
-                                <button className="LabsIconButton danger" onClick={() => deleteTemplate(template.id)} title="Delete"><Trash2 size={18} /></button>
-                                {/* <span className="tooltiptext">Delete Template</span> */}
+                                    <button 
+                                        className="LabsIconButton danger" 
+                                        onClick={() => deleteTemplate(template.id)} 
+                                        title="Delete"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
                             </div>
                         </div>
                     </div>
                  ))
-                }
+                )}
             </div>
             <div className="SaveTemplateArea">
                  <p>Save current custom prompt as a template:</p>
@@ -574,7 +1134,11 @@ const Labs = () => {
                     type="text" placeholder="Template Name" value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)} className="TemplateNameInput"
                 />
-                <button className="LabsTextButton save-template" onClick={saveTemplate} disabled={!templateName.trim() || !customPrompt.trim()}>
+                <button 
+                    className="LabsTextButton save-template" 
+                    onClick={saveTemplate} 
+                    disabled={!templateName.trim() || !customPrompt.trim()}
+                >
                     <Save size={16}/> Save Current Prompt
                 </button>
             </div>
@@ -590,23 +1154,18 @@ const Labs = () => {
                 <div className="HeaderActions">
                      <div className="tooltip">
                         <button className="HeaderButton" onClick={() => setShowHistoryPanel(true)} title="Analysis History"><Clock size={18} /></button>
-                        {/* <span className="tooltiptext">Analysis History</span> */}
                      </div>
                      <div className="tooltip">
                         <button className="HeaderButton" onClick={() => setShowTemplatesPanel(true)} title="Custom Templates"><Settings size={18} /></button>
-                        {/* <span className="tooltiptext">Manage Custom Templates</span> */}
                      </div>
-                    {/* Add other global actions if needed */}
                 </div>
             </div>
 
             {/* Scrollable Content Area */}
             <div className="LabsContentWrapper">
                 {renderVideoSection()}
-                {vidUrl && !isLoadingVideo && !videoError && renderModesSection()}
+                {videos.length > 0 && videos.some(v => !v.isLoading && !v.error) && renderModesSection()}
                 {renderResultsSection()}
-                {/* Optional: Keep raw response section if needed */}
-                {/* {renderRawResponse()} */}
             </div>
 
             {/* Overlay Panels */}
@@ -619,15 +1178,14 @@ const Labs = () => {
                      <div className="EnlargedViewModal" onClick={(e) => e.stopPropagation()}>
                         <div className="EnlargedViewHeader">
                             <h3>Analysis Results</h3>
-                            <div className="ResultActionsGroup"> {/* Reuse styles */}
+                            <div className="ResultActionsGroup">
                                 <div className="tooltip"><button className="LabsIconButton" onClick={() => copyToClipboard(rawAIResponse || '')} title="Copy Raw"><Copy size={18} /></button></div>
                                 <div className="tooltip"><button className="LabsIconButton danger" onClick={() => setShowEnlargedView(false)} title="Close"><X size={18} /></button></div>
                             </div>
                         </div>
                         <div className="EnlargedViewBody">
-                            {/* Reuse result rendering logic */}
                              {displayMode === 'paragraph' ? (
-                                <div className="ResultsParagraph enlarged"> {/* Add enlarged class for potential style tweaks */}
+                                <div className="ResultsParagraph enlarged">
                                      {timecodeList.map((item, index) => (
                                         <React.Fragment key={index}>
                                             {item.time !== 'N/A' && <span className="TimecodeInline" onClick={() => jumpToTimecode(item.time)} title={`Jump to ${item.time}`}>[{item.time}]</span>}
@@ -649,8 +1207,6 @@ const Labs = () => {
                     </div>
                 </div>
             )}
-             {/* ChatPopup can be removed if EnlargedViewModal replaces its functionality */}
-             {/* {isPopupOpen && <ChatPopup ... />} */}
         </div>
     );
 };

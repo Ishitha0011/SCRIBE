@@ -4,6 +4,7 @@ import { marked } from 'marked';
 import { useTheme } from '../ThemeContext';
 import { useFileContext } from '../FileContext';
 import Switch from './ui/Switch';
+import NotesCanvas from './NotesCanvas';
 import '../css/Editor.css';
 
 const Editor = () => {
@@ -14,6 +15,10 @@ const Editor = () => {
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [lastSaved, setLastSaved] = useState(null);
   const [unsavedChanges, setUnsavedChanges] = useState({});
+  
+  // Canvas state
+  const [canvasData, setCanvasData] = useState({});
+  const [canvasMode, setCanvasMode] = useState(false);
   
   const { theme } = useTheme();
   const {
@@ -34,17 +39,46 @@ const Editor = () => {
   useEffect(() => {
     if (activeFileId && fileContents[activeFileId] !== undefined) {
       setLocalContent(fileContents[activeFileId]);
+      
+      // Check if this is a canvas file
+      checkCanvasFile(openFiles.find(f => f.id === activeFileId));
     } else {
       setLocalContent('');
+      setCanvasMode(false);
     }
-  }, [activeFileId, fileContents]);
+  }, [activeFileId, fileContents, openFiles]);
+
+  // Check if file is a canvas file
+  const checkCanvasFile = (file) => {
+    if (file.type === 'canvas') {
+      setCanvasMode(true);
+      try {
+        // Try to parse the canvas data
+        const canvasData = JSON.parse(file.content);
+        if (!canvasData.nodes || !canvasData.edges) {
+          // If the canvas data is not properly structured, initialize it
+          file.content = JSON.stringify({ nodes: [], edges: [] });
+        }
+        setCanvasData(canvasData);
+      } catch (error) {
+        console.error('Error parsing canvas data:', error);
+        // Initialize empty canvas data if parsing fails
+        file.content = JSON.stringify({ nodes: [], edges: [] });
+        setCanvasData({ nodes: [], edges: [] });
+      }
+    } else {
+      setCanvasMode(false);
+    }
+  };
 
   // Update character and word count when content changes
   useEffect(() => {
-    setCharCount(localContent.length);
-    const words = localContent.trim() ? localContent.trim().split(/\s+/).length : 0;
-    setWordCount(words);
-  }, [localContent]);
+    if (!canvasMode) {
+      setCharCount(localContent.length);
+      const words = localContent.trim() ? localContent.trim().split(/\s+/).length : 0;
+      setWordCount(words);
+    }
+  }, [localContent, canvasMode]);
   
   // Scroll active tab into view when it changes
   useEffect(() => {
@@ -117,7 +151,9 @@ const Editor = () => {
       // Toggle markdown view with Ctrl+M
       if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
         e.preventDefault();
-        toggleViewMarkdown();
+        if (!canvasMode) {
+          toggleViewMarkdown();
+        }
       }
       
       // Close current tab with Ctrl+W
@@ -140,11 +176,11 @@ const Editor = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeFileId, localContent]);
+  }, [activeFileId, localContent, canvasMode]);
 
   // Handle search highlighting and scrolling to line when opening a file with search results
   useEffect(() => {
-    if (activeFileId && textAreaRef.current) {
+    if (activeFileId && textAreaRef.current && !canvasMode) {
       const activeFile = openFiles.find(file => file.id === activeFileId);
       
       if (activeFile && (activeFile.searchHighlight || activeFile.scrollToLine)) {
@@ -254,7 +290,7 @@ const Editor = () => {
         });
       }
     }
-  }, [activeFileId, fileContents, openFiles, theme]);
+  }, [activeFileId, fileContents, openFiles, theme, canvasMode]);
 
   const handleNewFile = () => {
     const newTab = {
@@ -266,12 +302,45 @@ const Editor = () => {
     openFile(newTab);
   };
 
+  const handleNewCanvas = () => {
+    const newCanvasId = `canvas-${Date.now()}`;
+    console.log('Creating new canvas with ID:', newCanvasId);
+    
+    // First set up our canvas data and mode
+    setCanvasMode(true);
+    setCanvasData({ nodes: [], edges: [] });
+    
+    // Then create the canvas file object
+    const newCanvas = {
+      id: newCanvasId,
+      name: 'Untitled Canvas',
+      type: 'canvas',
+      isNew: true,
+    };
+    
+    // Save initial empty canvas data to file contents
+    updateFileContent(newCanvasId, JSON.stringify({ nodes: [], edges: [] }));
+    
+    // Finally open the file
+    openFile(newCanvas);
+  };
+
   const handleTabClick = (id) => {
     if (id !== activeFileId) {
       // Save current content before switching
-      if (activeFileId && localContent !== fileContents[activeFileId]) {
-        updateFileContent(activeFileId, localContent);
-        setUnsavedChanges({ ...unsavedChanges, [activeFileId]: true });
+      if (activeFileId) {
+        if (canvasMode) {
+          // Save canvas data
+          const canvasContent = JSON.stringify(canvasData);
+          updateFileContent(activeFileId, canvasContent);
+          if (canvasData.isDirty) {
+            setUnsavedChanges({ ...unsavedChanges, [activeFileId]: true });
+          }
+        } else if (localContent !== fileContents[activeFileId]) {
+          // Save text content
+          updateFileContent(activeFileId, localContent);
+          setUnsavedChanges({ ...unsavedChanges, [activeFileId]: true });
+        }
       }
       
       // Switch to the selected tab
@@ -280,7 +349,7 @@ const Editor = () => {
   };
 
   const handleCursorPositionChange = (e) => {
-    if (!e.target) return;
+    if (!e.target || canvasMode) return;
     
     const textarea = e.target;
     const value = textarea.value;
@@ -311,7 +380,13 @@ const Editor = () => {
     // Check for unsaved changes
     if (unsavedChanges[id]) {
       if (window.confirm('You have unsaved changes. Do you want to save before closing?')) {
-        saveFile(id, id === activeFileId ? localContent : fileContents[id]);
+        const file = openFiles.find(f => f.id === id);
+        if (file.type === 'canvas') {
+          const canvasContent = JSON.stringify(canvasData);
+          saveFile(id, canvasContent);
+        } else {
+          saveFile(id, id === activeFileId ? localContent : fileContents[id]);
+        }
       }
     }
     
@@ -320,8 +395,33 @@ const Editor = () => {
 
   const handleSaveFile = async () => {
     if (activeFileId) {
-      await saveFile(activeFileId, localContent);
+      if (canvasMode) {
+        // Save canvas data
+        const canvasContent = JSON.stringify(canvasData);
+        await saveFile(activeFileId, canvasContent);
+      } else {
+        // Save regular text content
+        await saveFile(activeFileId, localContent);
+      }
+      
       // Remove from unsaved changes
+      const updatedUnsavedChanges = { ...unsavedChanges };
+      delete updatedUnsavedChanges[activeFileId];
+      setUnsavedChanges(updatedUnsavedChanges);
+      
+      // Update last saved time
+      setLastSaved(new Date());
+    }
+  };
+
+  // Handle canvas save
+  const handleCanvasSave = (canvasFlow) => {
+    if (activeFileId) {
+      setCanvasData(canvasFlow);
+      const canvasContent = JSON.stringify(canvasFlow);
+      updateFileContent(activeFileId, canvasContent);
+      
+      // Mark as saved
       const updatedUnsavedChanges = { ...unsavedChanges };
       delete updatedUnsavedChanges[activeFileId];
       setUnsavedChanges(updatedUnsavedChanges);
@@ -341,6 +441,7 @@ const Editor = () => {
     if (!activeFileId) return '';
     const activeFile = openFiles.find(file => file.id === activeFileId);
     if (!activeFile) return '';
+    if (activeFile.type === 'canvas') return 'CANVAS';
     const parts = activeFile.name.split('.');
     return parts.length > 1 ? parts.pop().toUpperCase() : '';
   };
@@ -366,7 +467,7 @@ const Editor = () => {
           {openFiles.map((file) => (
             <div
               key={file.id}
-              className={`Tab ${file.id === activeFileId ? 'active' : ''} ${unsavedChanges[file.id] ? 'unsaved' : ''}`}
+              className={`Tab ${file.id === activeFileId ? 'active' : ''} ${unsavedChanges[file.id] ? 'unsaved' : ''} ${file.type === 'canvas' ? 'canvas-tab' : ''}`}
               onClick={() => handleTabClick(file.id)}
             >
               <span title={file.name}>{file.name}</span>
@@ -392,12 +493,25 @@ const Editor = () => {
           </button>
         </div>
         <div className="TabsRight">
-          <button className="SaveButton" onClick={handleSaveFile} disabled={!activeFileId} title="Save (Ctrl+S)">
-            <Save size={18} />
-          </button>
-          <button className="MarkdownButton" onClick={toggleViewMarkdown} title="Toggle Markdown (Ctrl+M)">
-            {viewMarkdown ? <Pencil size={18} /> : <Book size={18} />}
-          </button>
+          {canvasMode ? (
+            <button className="NewCanvasButton" onClick={handleNewCanvas} title="New Canvas">
+              <Plus size={14} />
+              <span>Canvas</span>
+            </button>
+          ) : (
+            <>
+              <button className="SaveButton" onClick={handleSaveFile} disabled={!activeFileId} title="Save (Ctrl+S)">
+                <Save size={18} />
+              </button>
+              <button className="MarkdownButton" onClick={toggleViewMarkdown} title="Toggle Markdown (Ctrl+M)">
+                {viewMarkdown ? <Pencil size={18} /> : <Book size={18} />}
+              </button>
+              <button className="NewCanvasButton" onClick={handleNewCanvas} title="New Canvas">
+                <Plus size={14} />
+                <span>Canvas</span>
+              </button>
+            </>
+          )}
           <Switch />
         </div>
       </div>
@@ -405,12 +519,21 @@ const Editor = () => {
       {/* Text Editor Canvas */}
       <div className="TextEditorCanvas">
         {activeFileId ? (
-          viewMarkdown ? (
+          canvasMode ? (
+            // Render the canvas editor
+            <NotesCanvas 
+              canvasData={canvasData} 
+              onSave={handleCanvasSave}
+              canvasId={activeFileId}
+            />
+          ) : viewMarkdown ? (
+            // Render markdown preview
             <div
               className="MarkdownView markdown-content"
               dangerouslySetInnerHTML={{ __html: renderMarkdown }}
             />
           ) : (
+            // Render text editor
             <textarea
               ref={textAreaRef}
               value={localContent}
@@ -422,9 +545,13 @@ const Editor = () => {
             />
           )
         ) : (
+          // Render empty state
           <div className="EmptyState">
-            <p>No file selected. Open a file from the sidebar or create a new file.</p>
-            <button onClick={handleNewFile} className="NewFileButton">Create New File</button>
+            <p>No file selected. Open a file from the sidebar or create a new file or canvas.</p>
+            <div className="EmptyStateButtons">
+              <button onClick={handleNewFile} className="NewFileButton">Create New File</button>
+              <button onClick={handleNewCanvas} className="NewCanvasButton">Create New Canvas</button>
+            </div>
           </div>
         )}
       </div>
@@ -438,24 +565,30 @@ const Editor = () => {
                 <FileCog size={14} />
                 <span>{getFileExtension() || 'TXT'}</span>
               </div>
-              <div className="FooterItem optional">
-                <Type size={14} />
-                <span>UTF-8</span>
-              </div>
+              {!canvasMode && (
+                <div className="FooterItem optional">
+                  <Type size={14} />
+                  <span>UTF-8</span>
+                </div>
+              )}
             </div>
             <div className="FooterRight">
-              <div className="FooterItem">
-                <Hash size={14} />
-                <span>Ln {cursorPosition.line}, Col {cursorPosition.column}</span>
-              </div>
-              <div className="FooterItem optional">
-                <Type size={14} />
-                <span>{wordCount} Words</span>
-              </div>
-              <div className="FooterItem">
-                <FileText size={14} />
-                <span>{charCount} Chars</span>
-              </div>
+              {!canvasMode && (
+                <>
+                  <div className="FooterItem">
+                    <Hash size={14} />
+                    <span>Ln {cursorPosition.line}, Col {cursorPosition.column}</span>
+                  </div>
+                  <div className="FooterItem optional">
+                    <Type size={14} />
+                    <span>{wordCount} Words</span>
+                  </div>
+                  <div className="FooterItem">
+                    <FileText size={14} />
+                    <span>{charCount} Chars</span>
+                  </div>
+                </>
+              )}
               {lastSaved && (
                 <div className="FooterItem optional">
                   <Clock size={14} />

@@ -1,0 +1,197 @@
+.NotesCanvas {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #f9f9f9;
+}
+
+.NotesCanvas.dark {
+  background: #1c1c1c;
+}
+
+/* ReactFlow overrides and custom styles */
+.NotesCanvas .react-flow__node {
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.NotesCanvas .react-flow__node-default {
+  padding: 0;
+  border-radius: 8px;
+  border: none;
+  overflow: hidden;
+  font-size: 13px;
+  background: transparent;
+  width: auto;
+}
+
+.NotesCanvas .react-flow__node.selected {
+  box-shadow: 0 0 0 2px #7952b3;
+}
+
+.NotesCanvas.dark .react-flow__node.selected {
+  box-shadow: 0 0 0 2px #9c6dde;
+}
+
+.NotesCanvas .react-flow__edge-path {
+  stroke: #888;
+  stroke-width: 1.5;
+}
+
+.NotesCanvas.dark .react-flow__edge-path {
+  stroke: #aaa;
+}
+
+.NotesCanvas .react-flow__controls {
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.NotesCanvas.dark .react-flow__controls-button {
+  background: #333;
+  border-bottom: 1px solid #444;
+  fill: #ddd;
+}
+
+.NotesCanvas.dark .react-flow__controls-button:hover {
+  background: #444;
+}
+
+.NotesCanvas .react-flow__minimap {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.NotesCanvas.dark .react-flow__minimap {
+  background-color: #1c1c1c;
+}
+
+.NotesCanvas.dark .react-flow__minimap-mask {
+  fill: rgba(255, 255, 255, 0.1);
+}
+
+.NotesCanvas.dark .react-flow__minimap-node {
+  fill: #444;
+  stroke: none;
+}
+
+.NotesCanvas .react-flow__background {
+  z-index: -1;
+}
+
+.NotesCanvas.dark .react-flow__background path {
+  stroke: #333;
+}
+
+/* Canvas Actions */
+.canvas-actions {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.NotesCanvas.dark .canvas-actions {
+  background: rgba(30, 30, 30, 0.9);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.canvas-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s;
+}
+
+.NotesCanvas.dark .canvas-action-btn {
+  background: #333;
+  border-color: #444;
+  color: #ddd;
+}
+
+.canvas-action-btn:hover {
+  background: #f5f5f5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.NotesCanvas.dark .canvas-action-btn:hover {
+  background: #444;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Special styling for save button when dirty */
+.canvas-action-btn.dirty {
+  background: #7952b3;
+  color: #fff;
+  border-color: #6942a4;
+}
+
+.canvas-action-btn.dirty:hover {
+  background: #6942a4;
+}
+
+.NotesCanvas.dark .canvas-action-btn.dirty {
+  background: #9c6dde;
+  border-color: #8c5dce;
+}
+
+.node-actions {
+  background-color: var(--background-primary, #fff);
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border-color, #eee);
+}
+
+.selected-node-info {
+  font-size: 13px;
+  color: var(--text-primary, #333);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #fff2f2 !important;
+  color: #e53935 !important;
+  border: 1px solid #ffcdd2 !important;
+}
+
+.delete-btn:hover {
+  background-color: #ffebee !important;
+}
+
+.dark .node-actions {
+  background-color: var(--background-primary, #2d2d2d);
+  border-color: var(--border-color, #444);
+}
+
+.dark .selected-node-info {
+  color: var(--text-primary, #e0e0e0);
+}
+
+.dark .delete-btn {
+  background-color: #4a2c2c !important;
+  color: #ff6b6b !important;
+  border: 1px solid #5c3a3a !important;
+}
+
+.dark .delete-btn:hover {
+  background-color: #5a3636 !important;
+} 

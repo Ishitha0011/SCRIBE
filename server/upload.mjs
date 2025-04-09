@@ -104,25 +104,59 @@ export const promptVideo = async (uploadResult, prompt, model) => {
       throw new Error('Gemini API key not properly configured. Please set VITE_GEMINI_API_KEY in your .env file.');
     }
     
-    // Convert the file to a generative part
-    const filePart = await fileToGenerativePart(uploadResult.path, uploadResult.mimeType);
+    // Check if we have an array of files or a single file
+    const isMultipleFiles = Array.isArray(uploadResult);
     
-    // Create the generative model
-    const genModel = genAI.getGenerativeModel({ model });
-    
-    // Generate content
-    const result = await genModel.generateContent([
-      prompt,
-      filePart
-    ]);
-    
-    const response = result.response;
-    
-    return {
-      text: response.text(),
-      candidates: response.candidates,
-      feedback: response.promptFeedback
-    };
+    // Handle multiple files case
+    if (isMultipleFiles) {
+      console.log(`Processing ${uploadResult.length} files`);
+      
+      // Convert each file to a generative part
+      const fileParts = await Promise.all(
+        uploadResult.map(async (file) => {
+          return await fileToGenerativePart(file.path, file.mimeType);
+        })
+      );
+      
+      // Create the generative model
+      const genModel = genAI.getGenerativeModel({ model });
+      
+      // Generate content with all file parts
+      const result = await genModel.generateContent([
+        prompt,
+        ...fileParts
+      ]);
+      
+      const response = result.response;
+      
+      return {
+        text: response.text(),
+        candidates: response.candidates,
+        feedback: response.promptFeedback
+      };
+    } 
+    // Original single file logic
+    else {
+      // Convert the file to a generative part
+      const filePart = await fileToGenerativePart(uploadResult.path, uploadResult.mimeType);
+      
+      // Create the generative model
+      const genModel = genAI.getGenerativeModel({ model });
+      
+      // Generate content
+      const result = await genModel.generateContent([
+        prompt,
+        filePart
+      ]);
+      
+      const response = result.response;
+      
+      return {
+        text: response.text(),
+        candidates: response.candidates,
+        feedback: response.promptFeedback
+      };
+    }
   } catch (error) {
     console.error("Error in promptVideo:", error);
     return {error: error.toString()};

@@ -1,0 +1,87 @@
+.Notes {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--primary-bg-color, #fff);
+  color: var(--editor-text-color, #333);
+}
+
+.Notes.dark {
+  background-color: var(--dark-bg-color, #1e1e1e);
+  color: var(--editor-text-color, #e0e0e0);
+}
+
+.Notes-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: var(--primary-bg-color, #fff);
+}
+
+.Notes.dark .Notes-tabs {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--dark-bg-color, #1e1e1e);
+}
+
+.Notes-tab {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+  position: relative;
+  text-align: center;
+}
+
+.Notes.dark .Notes-tab {
+  color: #aaa;
+}
+
+.Notes-tab:hover {
+  color: #333;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.Notes.dark .Notes-tab:hover {
+  color: #ddd;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.Notes-tab.active {
+  color: #7952b3;
+  font-weight: 600;
+}
+
+.Notes.dark .Notes-tab.active {
+  color: #9c6dde;
+}
+
+.Notes-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #7952b3;
+  animation: fadeIn 0.2s ease;
+}
+
+.Notes.dark .Notes-tab.active::after {
+  background-color: #9c6dde;
+}
+
+.Notes-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+} 

@@ -620,3 +620,108 @@
   background-color: var(--selection-background, #7952b3);
   color: var(--selection-color, #fff);
 }
+
+/* Canvas Tab Styling */
+.Tab.canvas-tab {
+  background-color: rgba(121, 82, 179, 0.1);
+}
+
+.Editor.dark .Tab.canvas-tab {
+  background-color: rgba(156, 109, 222, 0.1);
+}
+
+.Tab.canvas-tab.active {
+  background-color: rgba(121, 82, 179, 0.2);
+  border-bottom-color: #7952b3;
+}
+
+.Editor.dark .Tab.canvas-tab.active {
+  background-color: rgba(156, 109, 222, 0.2);
+  border-bottom-color: #9c6dde;
+}
+
+/* New Canvas Button */
+.NewCanvasButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: transparent;
+  border: 1px solid rgba(121, 82, 179, 0.3);
+  color: #7952b3;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.Editor.dark .NewCanvasButton {
+  color: #9c6dde;
+  border-color: rgba(156, 109, 222, 0.3);
+}
+
+.NewCanvasButton:hover {
+  background-color: rgba(121, 82, 179, 0.1);
+  border-color: rgba(121, 82, 179, 0.5);
+}
+
+.Editor.dark .NewCanvasButton:hover {
+  background-color: rgba(156, 109, 222, 0.1);
+  border-color: rgba(156, 109, 222, 0.5);
+}
+
+.EmptyStateButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.NewCanvasButton svg {
+  color: #7952b3;
+}
+
+.Editor.dark .NewCanvasButton svg {
+  color: #9c6dde;
+}
+
+/* Make FileButton and NewCanvasButton consistent */
+.NewFileButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 4px;
+  background-color: #7952b3;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border: none;
+}
+
+.EmptyStateButtons .NewFileButton,
+.EmptyStateButtons .NewCanvasButton {
+  flex: 1;
+  justify-content: center;
+  padding: 10px 16px;
+}
+
+.EmptyStateButtons .NewCanvasButton {
+  background-color: transparent;
+  border: 1px solid #7952b3;
+  color: #7952b3;
+}
+
+.Editor.dark .EmptyStateButtons .NewCanvasButton {
+  border-color: #9c6dde;
+  color: #9c6dde;
+}
+
+.EmptyStateButtons .NewCanvasButton:hover {
+  background-color: rgba(121, 82, 179, 0.1);
+}
+
+.Editor.dark .EmptyStateButtons .NewCanvasButton:hover {
+  background-color: rgba(156, 109, 222, 0.1);
+}

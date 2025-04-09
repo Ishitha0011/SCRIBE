@@ -68,24 +68,51 @@ app.post('/api/prompt', async (req, res) => {
   try {
     const reqData = req.body;
     
-    if (!reqData.uploadResult || !reqData.prompt || !reqData.model) {
-      return res.status(400).json({ 
-        error: 'Missing required parameters: uploadResult, prompt, or model' 
+    // Check for single file or multiple files mode
+    const isMultipleFiles = Array.isArray(reqData.uploadResults);
+    
+    if (isMultipleFiles) {
+      // Multiple files mode
+      if (!reqData.uploadResults || !reqData.uploadResults.length || !reqData.prompt || !reqData.model) {
+        return res.status(400).json({ 
+          error: 'Missing required parameters: uploadResults array, prompt, or model' 
+        });
+      }
+      
+      console.log("Prompt request with multiple files:", {
+        model: reqData.model,
+        fileCount: reqData.uploadResults.length,
+        prompt: reqData.prompt.substring(0, 50) + '...'
       });
+      
+      const videoResponse = await promptVideo(
+        reqData.uploadResults,
+        reqData.prompt,
+        reqData.model
+      );
+      
+      return res.json(videoResponse);
+    } else {
+      // Single file mode (backward compatibility)
+      if (!reqData.uploadResult || !reqData.prompt || !reqData.model) {
+        return res.status(400).json({ 
+          error: 'Missing required parameters: uploadResult, prompt, or model' 
+        });
+      }
+      
+      console.log("Prompt request:", {
+        model: reqData.model,
+        prompt: reqData.prompt.substring(0, 50) + '...'
+      });
+      
+      const videoResponse = await promptVideo(
+        reqData.uploadResult,
+        reqData.prompt,
+        reqData.model
+      );
+      
+      return res.json(videoResponse);
     }
-    
-    console.log("Prompt request:", {
-      model: reqData.model,
-      prompt: reqData.prompt.substring(0, 50) + '...'
-    });
-    
-    const videoResponse = await promptVideo(
-      reqData.uploadResult,
-      reqData.prompt,
-      reqData.model
-    );
-    
-    return res.json(videoResponse);
   } catch (error) {
     console.error("Prompt error:", error);
     return res.status(400).json({ error: error.toString() });

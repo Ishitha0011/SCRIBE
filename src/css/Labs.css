@@ -108,7 +108,7 @@
 /* === Section Card Styling === */
 .LabsSectionCard {
   background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  /* border: 1px solid var(--border-color); */
   border-radius: 10px;
   padding: 16px;
   display: flex;
@@ -125,7 +125,7 @@
   border: 2px dashed var(--border-color); border-radius: 10px; /* Use card radius */
   cursor: pointer; transition: background-color 0.2s, border-color 0.2s;
   background-color: var(--bg-secondary);
-  margin: 16px; /* Add margin since card padding removed */
+  margin: 6px; /* Add margin since card padding removed */
 }
 .VideoUploadArea:hover { background-color: var(--button-hover-bg); border-color: var(--text-accent); }
 .UploadPromptContent { text-align: center; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -222,21 +222,105 @@
 .TemplateActionsBar { display: flex; gap: 8px; justify-content: flex-end; }
 
 /* === Results Section === */
-.ResultsHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.ResultActionsGroup { display: flex; align-items: center; gap: 4px; }
-.ResultsContentArea { max-height: 500px; overflow-y: auto; padding-right: 10px; margin-right: -10px; /* Offset for scrollbar */ scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
-.ResultsContentArea::-webkit-scrollbar { width: 5px; }
-.ResultsContentArea::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb); border-radius: 3px; }
+.ResultsSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
-.ResultsParagraph { line-height: 1.6; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-.TimecodeInline { color: var(--text-accent); cursor: pointer; font-weight: 500; font-size: 0.9em; margin: 0 0.1em; transition: color 0.15s ease; }
-.TimecodeInline:hover { text-decoration: underline; color: color-mix(in srgb, var(--text-accent) 80%, black); }
+.ResultsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
 
-.ResultsList { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
-.ResultItem { border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; transition: background-color 0.15s ease; cursor: pointer; display: flex; gap: 12px; align-items: flex-start; }
-.ResultItem:hover { background-color: var(--button-hover-bg); }
-.ResultItemTimecode { font-family: monospace; font-size: 12px; color: var(--text-accent); white-space: nowrap; font-weight: 500; }
-.ResultItemText { line-height: 1.5; font-size: 14px; white-space: pre-wrap; word-break: break-word; flex: 1; }
+.ResultsContentArea {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 300px;
+    padding: 4px;
+}
+
+/* List View Styles */
+.ResultsList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ResultItem {
+    display: flex;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.ResultItem:hover {
+    background-color: var(--button-hover-bg);
+}
+
+.ResultItemTimecode {
+    color: var(--text-accent);
+    font-weight: 500;
+    min-width: 45px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.ResultItemText {
+    flex: 1;
+}
+
+/* Paragraph View Styles */
+.ResultsParagraph {
+    white-space: pre-line;
+    line-height: 1.6;
+    font-size: 13px;
+    padding: 4px 8px;
+}
+
+.TimecodeInline {
+    color: var(--text-accent);
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.15s ease;
+    user-select: none;
+}
+
+.TimecodeInline:hover {
+    background-color: var(--button-hover-bg);
+}
+
+/* Results Actions */
+.ResultActionsGroup {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.ResultActionsGroup .LabsIconButton {
+    opacity: 0.7;
+}
+
+.ResultActionsGroup .LabsIconButton:hover {
+    opacity: 1;
+}
+
+.ResultActionsGroup .LabsIconButton.active {
+    opacity: 1;
+    background-color: var(--button-hover-bg);
+    color: var(--text-accent);
+}
 
 /* === Overlay Panels (History, Templates) === */
 .LabsOverlayPanel {
@@ -317,3 +401,281 @@
 /* General Utility */
 .spinning { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* === Multi-Video List Styles === */
+.VideoListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+.VideoCounter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background-color: var(--bg-primary);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.VideoCounterText {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.VideoCountLimit {
+  font-weight: normal;
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+.MultiVideo-Controls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.VideoItemsList {
+  display: flex;
+  flex-direction: column;
+  max-height: 350px;
+  overflow-y: auto;
+  border-radius: 0 0 8px 8px;
+  border: 1px solid var(--border-color);
+  border-top: none;
+}
+
+.VideoListItem {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  overflow: hidden;
+}
+
+.VideoListItem:last-child {
+  border-bottom: none;
+}
+
+.VideoListItem:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.VideoListItem.error {
+  background-color: rgba(255, 59, 48, 0.05);
+}
+
+.VideoItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.VideoListItem.expanded .VideoItemHeader {
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+}
+
+.VideoItemThumbnail {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.VideoItemInfo {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.VideoItemName {
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.VideoExpandIcon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.VideoItemMeta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.VideoItemMeta .error {
+  color: var(--danger-color);
+}
+
+.VideoItemActions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* Upload Progress Bar */
+.UploadProgressBar {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 4px;
+}
+
+.UploadProgressBarFill {
+  height: 100%;
+  background-color: var(--text-accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.UploadProgressText {
+  position: absolute;
+  right: 0;
+  top: -14px;
+  font-size: 9px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.VideoPlayerContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 180px;
+  background-color: #000;
+}
+
+/* Add small button variant */
+.LabsIconButton.small {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+}
+
+/* Add compact button variant */
+.LabsTextButton.compact {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Improve upload area aesthetics */
+.VideoUploadArea {
+  min-height: 160px;
+  border-style: dashed;
+  border-width: 2px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.VideoUploadArea:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  border-color: var(--text-accent);
+}
+
+.UploadPromptContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.UploadPromptContent svg {
+  color: var(--text-secondary);
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.UploadPromptContent span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.UploadHintText {
+  font-size: 11px !important;
+  opacity: 0.8;
+}
+
+/* Modernize video controls */
+.VideoControlsBar {
+  height: 36px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.6) 80%, transparent);
+}
+
+.VideoScrubberInput {
+  height: 4px;
+}
+
+.VideoScrubberInput:hover {
+  height: 5px;
+}
+
+.VideoScrubberInput::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.VideoScrubberInput::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.VideoTimeDisplay {
+  font-size: 10px;
+  opacity: 0.9;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Make results section more compact */
+.ResultsSection {
+  padding: 12px;
+}
+
+.ResultItem {
+  padding: 10px;
+  gap: 8px;
+}
+
+.ResultItemText {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Make mode selection more compact */
+.ModesSection {
+  padding: 12px;
+}
+
+.SectionSubHeader {
+  margin-bottom: 6px;
+}

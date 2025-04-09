@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, MessageSquare, BookOpen, FlaskConical } from 'lucide-react';
-import AskAI from './AskAI'; // Make sure this path is correct
-import Labs from './Labs';   // Make sure this path is correct
-import '../css/RightSidebar.css'; // Make sure this path is correct
-import { useTheme } from '../ThemeContext'; // Make sure this path is correct
+import AskAI from './AskAI';
+import Notes from './Notes';  // Updated import to use new Notes component
+import Labs from './Labs';
+import '../css/RightSidebar.css';
+import { useTheme } from '../ThemeContext';
+import { useFileContext } from '../FileContext'; // Import useFileContext to interact with files
 
 // --- Configuration for Resizing ---
 const MIN_WIDTH = 200; // Minimum sidebar width in pixels
@@ -17,8 +19,10 @@ const RightSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [messages, setMessages] = useState([]); // Assuming AskAI uses this
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
+  const [isCanvasActive, setIsCanvasActive] = useState(false);
 
   const { theme } = useTheme();
+  const { openFile, openFiles, activeFileId, updateFileContent } = useFileContext();
   const dropdownRef = useRef(null);
   const sidebarRef = useRef(null);
   const resizeHandleRef = useRef(null);
@@ -32,6 +36,53 @@ const RightSidebar = () => {
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
     setIsOpen(false);
+  };
+
+  // Check if active file is a canvas
+  useEffect(() => {
+    if (activeFileId) {
+      const activeFile = openFiles.find(file => file.id === activeFileId);
+      setIsCanvasActive(activeFile && activeFile.type === 'canvas');
+    } else {
+      setIsCanvasActive(false);
+    }
+  }, [activeFileId, openFiles]);
+
+  // Handle creating a new canvas
+  const handleCreateCanvas = (canvasId) => {
+    console.log('RightSidebar: Creating canvas with ID:', canvasId);
+
+    // Create the canvas object with proper type
+    const newCanvas = {
+      id: canvasId,
+      name: 'Untitled Canvas',
+      type: 'canvas', // Ensure type is set to 'canvas'
+      isNew: true,
+    };
+
+    // Initialize empty canvas data
+    const initialCanvasData = JSON.stringify({ nodes: [], edges: [] });
+    
+    // Update file content first
+    updateFileContent(canvasId, initialCanvasData);
+    
+    // Then open the canvas in the editor
+    openFile(newCanvas);
+  };
+
+  // Handle opening an existing canvas
+  const handleOpenCanvas = (canvasId, canvasName) => {
+    console.log('RightSidebar: Opening canvas with ID:', canvasId);
+
+    // Create the canvas object with proper type
+    const canvas = {
+      id: canvasId,
+      name: canvasName || 'Canvas',
+      type: 'canvas', // Ensure type is set to 'canvas'
+    };
+
+    // Open the canvas in the editor
+    openFile(canvas);
   };
 
   const toggleCollapse = () => {
@@ -140,7 +191,11 @@ const RightSidebar = () => {
           <AskAI messages={messages} setMessages={setMessages} />
         </div>
         <div style={{ display: selectedOption === 'Notes' && !isCollapsed ? 'block' : 'none' }}>
-          <div className="ComingSoonPlaceholder">Notes feature coming soon</div>
+          <Notes 
+            onCreateCanvas={handleCreateCanvas} 
+            onOpenCanvas={handleOpenCanvas}
+            isCanvasActive={isCanvasActive}
+          />
         </div>
         <div style={{ display: selectedOption === 'Labs' && !isCollapsed ? 'block' : 'none' }}>
           {labsRef.current}

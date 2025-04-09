@@ -1,0 +1,225 @@
+.NotesManager {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px;
+  background-color: var(--primary-bg-color, #fff);
+  color: var(--editor-text-color, #333);
+}
+
+.NotesManager.dark {
+  background-color: var(--dark-bg-color, #1e1e1e);
+  color: var(--editor-text-color, #e0e0e0);
+}
+
+.NotesManager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.NotesManager-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--editor-text-color, #333);
+}
+
+.NotesManager.dark .NotesManager-header h2 {
+  color: var(--editor-text-color, #e0e0e0);
+}
+
+.create-canvas-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #7952b3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.create-canvas-btn:hover {
+  background-color: #6942a4;
+}
+
+.NotesManager-search {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #777;
+}
+
+.NotesManager.dark .search-icon {
+  color: #aaa;
+}
+
+.NotesManager-search input {
+  width: 100%;
+  padding: 10px 10px 10px 36px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+.NotesManager.dark .NotesManager-search input {
+  background-color: #2a2a2a;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+.NotesManager-search input:focus {
+  outline: none;
+  border-color: #7952b3;
+  box-shadow: 0 0 0 2px rgba(121, 82, 179, 0.2);
+}
+
+.NotesManager.dark .NotesManager-search input:focus {
+  border-color: #9c6dde;
+  box-shadow: 0 0 0 2px rgba(156, 109, 222, 0.2);
+}
+
+.NotesManager-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.canvas-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.NotesManager.dark .canvas-item {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+.canvas-item:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.NotesManager.dark .canvas-item:hover {
+  background-color: #333;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.canvas-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(121, 82, 179, 0.1);
+  border-radius: 8px;
+  color: #7952b3;
+}
+
+.NotesManager.dark .canvas-icon {
+  background-color: rgba(156, 109, 222, 0.1);
+  color: #9c6dde;
+}
+
+.canvas-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-name {
+  font-weight: 500;
+  font-size: 15px;
+  margin-bottom: 4px;
+  color: var(--editor-text-color, #333);
+}
+
+.NotesManager.dark .canvas-name {
+  color: var(--editor-text-color, #e0e0e0);
+}
+
+.canvas-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: #777;
+}
+
+.NotesManager.dark .canvas-meta {
+  color: #aaa;
+}
+
+.canvas-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.empty-state, .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  color: #777;
+}
+
+.NotesManager.dark .empty-state,
+.NotesManager.dark .loading-state {
+  color: #aaa;
+}
+
+.empty-state p, .loading-state p {
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.empty-create-btn {
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background-color 0.2s;
+}
+
+.empty-create-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.NotesManager.dark .empty-create-btn {
+  background-color: #333;
+  color: #e0e0e0;
+}
+
+.NotesManager.dark .empty-create-btn:hover {
+  background-color: #444;
+} 
