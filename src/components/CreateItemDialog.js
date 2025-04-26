@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Folder, FileText, File, FileCode, FileBox } from 'lucide-react';
+import { Folder, FileText, File, FileCode, FileBox, PenTool } from 'lucide-react';
 import '../css/CreateItemDialog.css';
 
 const CreateItemDialog = ({ onClose, onCreate, theme, parentFolderName = 'workspace' }) => {
   const [newItemType, setNewItemType] = useState('file');
   const [newItemName, setNewItemName] = useState('');
-  const [fileExtension, setFileExtension] = useState('');
+  const [fileExtension, setFileExtension] = useState('txt');
   const [error, setError] = useState('');
   const nameInputRef = useRef(null);
 
@@ -20,6 +20,13 @@ const CreateItemDialog = ({ onClose, onCreate, theme, parentFolderName = 'worksp
     return () => clearTimeout(timer);
   }, []);
 
+  // When item type changes, set a default name for the new item
+  useEffect(() => {
+    if (newItemType === 'canvas' && newItemName === '') {
+      setNewItemName('New Canvas');
+    }
+  }, [newItemType, newItemName]);
+
   const handleCreate = () => {
     // Validate input
     if (newItemName.trim() === '') {
@@ -31,6 +38,11 @@ const CreateItemDialog = ({ onClose, onCreate, theme, parentFolderName = 'worksp
     let finalName = newItemName;
     if (newItemType === 'file' && fileExtension && !newItemName.includes('.')) {
       finalName = `${newItemName}.${fileExtension}`;
+    }
+    
+    // For canvas, append .canvas extension if not already present
+    if (newItemType === 'canvas' && !newItemName.includes('.')) {
+      finalName = `${newItemName}.canvas`;
     }
 
     // Call the onCreate function passed from parent
@@ -92,6 +104,13 @@ const CreateItemDialog = ({ onClose, onCreate, theme, parentFolderName = 'worksp
               <Folder size={18} />
               <span>Folder</span>
             </button>
+            <button 
+              className={`TypeButton ${newItemType === 'canvas' ? 'active' : ''}`}
+              onClick={() => setNewItemType('canvas')}
+            >
+              <PenTool size={18} />
+              <span>Canvas</span>
+            </button>
           </div>
           
           {newItemType === 'file' && (
@@ -103,7 +122,6 @@ const CreateItemDialog = ({ onClose, onCreate, theme, parentFolderName = 'worksp
                 value={fileExtension} 
                 onChange={(e) => setFileExtension(e.target.value)}
               >
-                <option value="">No extension</option>
                 <option value="txt">Text (.txt)</option>
                 <option value="md">Markdown (.md)</option>
                 <option value="js">JavaScript (.js)</option>
@@ -124,7 +142,7 @@ const CreateItemDialog = ({ onClose, onCreate, theme, parentFolderName = 'worksp
               id="new-item-name"
               ref={nameInputRef}
               type="text"
-              placeholder={`Enter ${newItemType} name...`}
+              placeholder={newItemType === 'canvas' ? 'Enter canvas name...' : `Enter ${newItemType} name...`}
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
               onKeyDown={handleKeyDown}

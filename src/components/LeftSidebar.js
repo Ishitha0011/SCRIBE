@@ -61,7 +61,9 @@ const LeftSidebar = () => {
     error,
     searchInContent,
     searchResults,
-    isSearching
+    isSearching,
+    updateFileContent,
+    updateFileType,
   } = useFileContext();
 
   const menuRef = useRef(null);
@@ -193,26 +195,71 @@ const LeftSidebar = () => {
     const effectiveParentPath = parentPath ?? selectedParentFolder;
     
     try {
-      const result = await createItem(name, type, effectiveParentPath);
-      if (result) {
-        // Close the dialog
-        setIsDialogOpen(false);
+      if (type === 'canvas') {
+        // Make sure the file has .canvas extension
+        const fileName = name.includes('.') ? name : `${name}.canvas`;
         
-        // Clear selected parent folder
-        setSelectedParentFolder(null);
+        // Create the file in the file system
+        const result = await createItem(fileName, 'file', effectiveParentPath);
         
-        // If it's a file, automatically open it
-        if (type === 'file') {
+        if (result) {
+          // Create initial empty canvas data
+          const initialCanvasData = JSON.stringify({ 
+            nodes: [], 
+            edges: [], 
+            format: "canvas", 
+            version: "1.0",
+            created: new Date().toISOString(),
+            name: fileName
+          });
+          
+          // Update the file content to contain canvas data
+          await updateFileContent(result.id, initialCanvasData);
+          
+          // Set the canvas type
+          await updateFileType(result.id, 'canvas');
+          
+          // Open the canvas in the editor
           openFile({
             id: result.id,
             name: result.name,
-            type: 'file'
+            type: 'canvas'
           });
+          
+          // Close the dialog
+          setIsDialogOpen(false);
+          
+          // Clear selected parent folder
+          setSelectedParentFolder(null);
+          
+          // If the folder was previously collapsed, expand it to show the new item
+          if (effectiveParentPath && collapsedFolders[effectiveParentPath]) {
+            toggleFolder(effectiveParentPath);
+          }
         }
-        
-        // If the folder was previously collapsed, expand it to show the new item
-        if (effectiveParentPath && collapsedFolders[effectiveParentPath]) {
-          toggleFolder(effectiveParentPath);
+      } else {
+        // Handle regular file/folder creation
+        const result = await createItem(name, type, effectiveParentPath);
+        if (result) {
+          // Close the dialog
+          setIsDialogOpen(false);
+          
+          // Clear selected parent folder
+          setSelectedParentFolder(null);
+          
+          // If it's a file, automatically open it
+          if (type === 'file') {
+            openFile({
+              id: result.id,
+              name: result.name,
+              type: 'file'
+            });
+          }
+          
+          // If the folder was previously collapsed, expand it to show the new item
+          if (effectiveParentPath && collapsedFolders[effectiveParentPath]) {
+            toggleFolder(effectiveParentPath);
+          }
         }
       }
     } catch (error) {
@@ -246,16 +293,30 @@ const LeftSidebar = () => {
     if (item.type === 'folder') {
       setSelectedParentFolder(item.id);
     } else {
-      // If it's a file, open it in the editor
-      // Check if it's a supported file type (text, markdown, etc.)
-      const fileExtension = item.name.split('.').pop().toLowerCase();
-      const supportedExtensions = ['txt', 'md', 'markdown', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'json', 'csv', 'xml', 'yml', 'yaml', 'ini', 'config', 'sh', 'bat', 'ps1'];
-      
-      if (supportedExtensions.includes(fileExtension)) {
-        openFile(item);
+      // If it's a canvas type or has .canvas extension, open it as canvas
+      if (item.type === 'canvas' || (item.name && item.name.toLowerCase().endsWith('.canvas'))) {
+        if (item.type !== 'canvas') {
+          // If the file has .canvas extension but isn't marked as canvas type yet,
+          // update its type before opening
+          updateFileType(item.id, 'canvas');
+          openFile({
+            ...item,
+            type: 'canvas'
+          });
+        } else {
+          openFile(item);
+        }
       } else {
-        // Inform the user about unsupported file types without blocking alert
-        console.warn('This file type may not be fully supported for editing.');
+        // For regular files, check if they're supported
+        const fileExtension = item.name.split('.').pop().toLowerCase();
+        const supportedExtensions = ['txt', 'md', 'markdown', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'json', 'csv', 'xml', 'yml', 'yaml', 'ini', 'config', 'sh', 'bat', 'ps1', 'canvas'];
+        
+        if (supportedExtensions.includes(fileExtension)) {
+          openFile(item);
+        } else {
+          // Inform the user about unsupported file types without blocking alert
+          console.warn('This file type may not be fully supported for editing.');
+        }
       }
     }
   };
@@ -483,41 +544,17 @@ const LeftSidebar = () => {
           <Settings size={18} />
         </button>
         <div className="AddFileButton" ref={addMenuRef}>
-      <button
+          <button
             className="IconButton" 
             title="Add file or folder"
             id='Addbuttonfiles'
-            onClick={() => setAddMenuVisible(!addMenuVisible)}
-      >
-        <Plus size={18} />
-      </button>
-          
-          {addMenuVisible && (
-            <div className="AddMenu">
-              <button 
-                className="AddMenuItem" 
-                onClick={() => {
-                  setAddMenuVisible(false);
-                  setSelectedParentFolder(null);
-                  setIsDialogOpen(true);
-                }}
-              >
-                <FilePlus size={16} />
-                <span>New File</span>
-              </button>
-              <button 
-                className="AddMenuItem" 
-                onClick={() => {
-                  setAddMenuVisible(false);
-                  setSelectedParentFolder(null);
-                  setIsDialogOpen(true);
-                }}
-              >
-                <FolderPlus size={16} />
-                <span>New Folder</span>
-              </button>
-            </div>
-          )}
+            onClick={() => {
+              setSelectedParentFolder(null);
+              setIsDialogOpen(true);
+            }}
+          >
+            <Plus size={18} />
+          </button>
         </div>
       </div>
 

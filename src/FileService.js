@@ -1,6 +1,17 @@
 /* eslint-disable */
 
 import API_BASE_URL from './config';
+import { logEvent } from './logging'; 
+
+// Create a logger for file operations
+const logFileOperation = (operation, details = {}, level = 'INFO') => {
+  logEvent({
+    operation,
+    ...details,
+    level,
+    source: 'filesystem'
+  });
+};
 
 class FileService {
   // Get the last workspace directory
@@ -8,8 +19,13 @@ class FileService {
     try {
       const response = await fetch(`${API_BASE_URL}/workspace/get`);
       const data = await response.json();
+      logFileOperation('getWorkspace', { 
+        directory: data.directory || 'not set',
+        status: response.status
+      });
       return data.directory;
     } catch (error) {
+      logFileOperation('getWorkspace', { error: error.message }, 'ERROR');
       console.error('Error getting workspace:', error);
       return null;
     }
@@ -18,6 +34,8 @@ class FileService {
   // Set the workspace directory
   async setWorkspace(directory) {
     try {
+      logFileOperation('setWorkspace', { directory });
+      
       const response = await fetch(`${API_BASE_URL}/workspace/set`, {
         method: 'POST',
         headers: {
@@ -26,8 +44,21 @@ class FileService {
         body: JSON.stringify({ directory }),
       });
       const data = await response.json();
+      
+      if (!response.ok) {
+        logFileOperation('setWorkspace', { 
+          directory,
+          status: response.status,
+          error: data.detail || 'Failed to set workspace'
+        }, 'ERROR');
+      }
+      
       return data.directory;
     } catch (error) {
+      logFileOperation('setWorkspace', { 
+        directory, 
+        error: error.message 
+      }, 'ERROR');
       console.error('Error setting workspace:', error);
       throw error;
     }
@@ -36,14 +67,38 @@ class FileService {
   // List files in a directory
   async listFiles(directory = null) {
     try {
+      logFileOperation('listFiles', { directory });
+      
       let url = `${API_BASE_URL}/files/list`;
       if (directory) {
         url += `?directory=${encodeURIComponent(directory)}`;
       }
       const response = await fetch(url);
       const data = await response.json();
+      
+      // Process the file items to identify canvas files by extension
+      if (data.items) {
+        data.items = data.items.map(item => {
+          // If it's a file and has .canvas extension, set its type to 'canvas'
+          if (item.type === 'file' && item.name.toLowerCase().endsWith('.canvas')) {
+            return { ...item, type: 'canvas' };
+          }
+          return item;
+        });
+      }
+      
+      logFileOperation('listFiles', { 
+        directory, 
+        itemCount: data.items?.length || 0,
+        status: response.status
+      });
+      
       return data.items || [];
     } catch (error) {
+      logFileOperation('listFiles', { 
+        directory, 
+        error: error.message 
+      }, 'ERROR');
       console.error('Error listing files:', error);
       throw error;
     }
@@ -52,16 +107,84 @@ class FileService {
   // Read file content
   async readFile(path) {
     try {
+      logFileOperation('readFile', { path });
+      
       const response = await fetch(`${API_BASE_URL}/files/read?path=${encodeURIComponent(path)}`);
       const data = await response.json();
       
       if (data.error) {
+        logFileOperation('readFile', { 
+          path, 
+          error: data.error,
+          status: response.status 
+        }, 'WARNING');
         console.warn(`Warning reading file: ${data.error}`);
         return '';
       }
       
+      const fileSize = data.content ? data.content.length : 0;
+      logFileOperation('readFile', { 
+        path, 
+        fileSize,
+        status: response.status
+      });
+      
+      // Check if this is a canvas file based on extension and content
+      const isCanvasFile = path.toLowerCase().endsWith('.canvas');
+      
+      if (isCanvasFile && data.content) {
+        try {
+          // Try to parse as JSON to verify it's a valid canvas file
+          const contentObj = JSON.parse(data.content);
+          
+          // If it already has canvas format attributes, use as is
+          if (contentObj.format === 'canvas' || contentObj.nodes !== undefined) {
+            logFileOperation('readFile', { 
+              path, 
+              fileType: 'canvas',
+              valid: true
+            });
+            return data.content;
+          } else {
+            // Not properly formatted as canvas, initialize with empty canvas structure
+            logFileOperation('readFile', { 
+              path, 
+              fileType: 'canvas',
+              valid: false,
+              action: 'initializing empty canvas'
+            }, 'WARNING');
+            return JSON.stringify({ 
+              nodes: [], 
+              edges: [], 
+              format: "canvas", 
+              version: "1.0",
+              created: new Date().toISOString()
+            });
+          }
+        } catch (e) {
+          // Not valid JSON, initialize with empty canvas structure
+          logFileOperation('readFile', { 
+            path, 
+            fileType: 'canvas',
+            error: e.message,
+            action: 'initializing empty canvas'
+          }, 'WARNING');
+          return JSON.stringify({ 
+            nodes: [], 
+            edges: [], 
+            format: "canvas", 
+            version: "1.0",
+            created: new Date().toISOString()
+          });
+        }
+      }
+      
       return data.content;
     } catch (error) {
+      logFileOperation('readFile', { 
+        path, 
+        error: error.message 
+      }, 'ERROR');
       console.error('Error reading file:', error);
       throw error;
     }
@@ -70,8 +193,16 @@ class FileService {
   // Search within file contents
   async searchContent(searchTerm, maxResults = 50) {
     try {
+      logFileOperation('searchContent', { 
+        searchTerm, 
+        maxResults 
+      });
+      
       const allFiles = await this.getAllFiles();
       const results = [];
+      let filesChecked = 0;
+      let filesWithMatches = 0;
+      let totalMatches = 0;
       
       // Process files in parallel with a limit of 10 concurrent operations
       const batchSize = 10;
@@ -79,6 +210,7 @@ class FileService {
         const batch = allFiles.slice(i, i + batchSize);
         const batchPromises = batch.map(async (file) => {
           try {
+            filesChecked++;
             // Skip binary files and very large files
             const extension = file.name.split('.').pop().toLowerCase();
             const binaryExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'ico', 'pdf', 'zip', 'gz', 'tar', 'exe', 'dll', 'bin'];
@@ -117,10 +249,13 @@ class FileService {
                   content: lineContent,
                   preview: preview
                 });
+                
+                totalMatches++;
               }
             });
             
             if (matches.length > 0) {
+              filesWithMatches++;
               results.push({
                 file: file,
                 matches: matches
@@ -134,6 +269,11 @@ class FileService {
             
             return null;
           } catch (error) {
+            logFileOperation('searchContent', { 
+              searchTerm, 
+              file: file.name,
+              error: error.message 
+            }, 'WARNING');
             console.error(`Error searching file ${file.name}:`, error);
             return null;
           }
@@ -145,8 +285,20 @@ class FileService {
         }
       }
       
+      logFileOperation('searchContent', { 
+        searchTerm,
+        filesChecked,
+        filesWithMatches,
+        totalMatches,
+        resultsReturned: results.length
+      });
+      
       return results;
     } catch (error) {
+      logFileOperation('searchContent', { 
+        searchTerm, 
+        error: error.message 
+      }, 'ERROR');
       console.error('Error searching content:', error);
       throw error;
     }
@@ -169,6 +321,10 @@ class FileService {
       
       return files;
     } catch (error) {
+      logFileOperation('getAllFiles', { 
+        directory, 
+        error: error.message 
+      }, 'ERROR');
       console.error('Error getting all files:', error);
       return [];
     }
@@ -177,6 +333,12 @@ class FileService {
   // Write file content
   async writeFile(path, content) {
     try {
+      const contentLength = content ? content.length : 0;
+      logFileOperation('writeFile', { 
+        path, 
+        contentLength 
+      });
+      
       const response = await fetch(`${API_BASE_URL}/files/write`, {
         method: 'POST',
         headers: {
@@ -188,8 +350,27 @@ class FileService {
         }),
       });
       const data = await response.json();
+      
+      if (!response.ok) {
+        logFileOperation('writeFile', { 
+          path, 
+          status: response.status,
+          error: data.detail || 'Failed to write file'
+        }, 'ERROR');
+      } else {
+        logFileOperation('writeFile', { 
+          path, 
+          status: response.status,
+          success: true
+        });
+      }
+      
       return data;
     } catch (error) {
+      logFileOperation('writeFile', { 
+        path, 
+        error: error.message 
+      }, 'ERROR');
       console.error('Error writing file:', error);
       throw error;
     }
@@ -198,9 +379,22 @@ class FileService {
   // Create a new file or folder
   async createItem(name, type, parentPath = null) {
     try {
+      logFileOperation('createItem', { 
+        name, 
+        type, 
+        parentPath 
+      });
+      
       // Ensure we have a valid item type
       if (type !== 'file' && type !== 'folder') {
-        throw new Error('Invalid item type. Must be "file" or "folder".');
+        const error = 'Invalid item type. Must be "file" or "folder".';
+        logFileOperation('createItem', { 
+          name, 
+          type, 
+          parentPath,
+          error
+        }, 'ERROR');
+        throw new Error(error);
       }
 
       const response = await fetch(`${API_BASE_URL}/files/create`, {
@@ -218,12 +412,34 @@ class FileService {
       
       if (!response.ok) {
         const errorData = await response.json();
+        logFileOperation('createItem', { 
+          name, 
+          type, 
+          parentPath,
+          status: response.status,
+          error: errorData.detail || 'Failed to create item'
+        }, 'ERROR');
         throw new Error(errorData.detail || 'Failed to create item');
       }
       
       const data = await response.json();
+      logFileOperation('createItem', { 
+        name, 
+        type, 
+        parentPath,
+        status: response.status,
+        id: data.id || null,
+        success: true
+      });
+      
       return data;
     } catch (error) {
+      logFileOperation('createItem', { 
+        name, 
+        type, 
+        parentPath,
+        error: error.message 
+      }, 'ERROR');
       console.error('Error creating item:', error);
       throw error;
     }
@@ -232,12 +448,33 @@ class FileService {
   // Delete a file or folder
   async deleteItem(path) {
     try {
+      logFileOperation('deleteItem', { path });
+      
       const response = await fetch(`${API_BASE_URL}/files/delete?path=${encodeURIComponent(path)}`, {
         method: 'DELETE',
       });
       const data = await response.json();
+      
+      if (!response.ok) {
+        logFileOperation('deleteItem', { 
+          path,
+          status: response.status,
+          error: data.detail || 'Failed to delete item'
+        }, 'ERROR');
+      } else {
+        logFileOperation('deleteItem', { 
+          path,
+          status: response.status,
+          success: true
+        });
+      }
+      
       return data;
     } catch (error) {
+      logFileOperation('deleteItem', { 
+        path,
+        error: error.message 
+      }, 'ERROR');
       console.error('Error deleting item:', error);
       throw error;
     }
@@ -246,6 +483,8 @@ class FileService {
   // Rename a file or folder
   async renameItem(oldPath, newPath) {
     try {
+      logFileOperation('renameItem', { oldPath, newPath });
+      
       const response = await fetch(`${API_BASE_URL}/files/rename`, {
         method: 'POST',
         headers: {
@@ -257,8 +496,30 @@ class FileService {
         }),
       });
       const data = await response.json();
+      
+      if (!response.ok) {
+        logFileOperation('renameItem', { 
+          oldPath,
+          newPath,
+          status: response.status,
+          error: data.detail || 'Failed to rename item'
+        }, 'ERROR');
+      } else {
+        logFileOperation('renameItem', { 
+          oldPath,
+          newPath,
+          status: response.status,
+          success: true
+        });
+      }
+      
       return data;
     } catch (error) {
+      logFileOperation('renameItem', { 
+        oldPath,
+        newPath,
+        error: error.message 
+      }, 'ERROR');
       console.error('Error renaming item:', error);
       throw error;
     }

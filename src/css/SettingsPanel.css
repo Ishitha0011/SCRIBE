@@ -1,0 +1,146 @@
+/* Settings Panel Styles */
+.SettingsOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.SettingsPanel {
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #333;
+}
+
+.SettingsPanel.dark {
+  background-color: #222;
+  color: #eee;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.SettingsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.SettingsPanel.dark .SettingsHeader {
+  border-bottom-color: #444;
+}
+
+.SettingsHeader h2 {
+  margin: 0;
+  font-size: 1.4em;
+}
+
+.SettingsHeader .CloseButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #888;
+  line-height: 1;
+  border-radius: 50%;
+}
+
+.SettingsPanel.dark .SettingsHeader .CloseButton {
+  color: #aaa;
+}
+
+.SettingsHeader .CloseButton:hover {
+  background-color: #f0f0f0;
+}
+
+.SettingsPanel.dark .SettingsHeader .CloseButton:hover {
+  background-color: #444;
+}
+
+.SettingsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.SettingSection {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 20px;
+}
+
+.SettingsPanel.dark .SettingSection {
+  border-bottom-color: #444;
+}
+
+.SettingSection:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.SettingSection h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+  color: #555;
+}
+
+.SettingsPanel.dark .SettingSection h3 {
+  color: #bbb;
+}
+
+.SettingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.SettingItem label {
+  margin-right: 15px;
+  flex-shrink: 0;
+  font-size: 0.95em;
+}
+
+.SettingItem select,
+.SettingItem input[type="number"] {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9em;
+  background-color: #fff;
+  color: #333;
+  min-width: 150px; /* Ensure inputs don't get too small */
+}
+
+.SettingsPanel.dark .SettingItem select,
+.SettingsPanel.dark .SettingItem input[type="number"] {
+  background-color: #333;
+  color: #eee;
+  border-color: #555;
+}
+
+.SettingItem select:focus,
+.SettingItem input[type="number"]:focus {
+  outline: none;
+  border-color: #7952b3;
+  box-shadow: 0 0 0 2px rgba(121, 82, 179, 0.2);
+}
+
+.SettingsPanel.dark .SettingItem select:focus,
+.SettingsPanel.dark .SettingItem input[type="number"]:focus {
+  border-color: #9c6dde;
+  box-shadow: 0 0 0 2px rgba(156, 109, 222, 0.2);
+} 

@@ -70,14 +70,28 @@ export const FileProvider = ({ children }) => {
   // Open a file and set it as active, optionally with a search term to highlight
   const openFile = async (fileItem, searchTerm = null, lineNumber = null) => {
     try {
+      // Check if file is a canvas file by its extension before proceeding
+      let updatedFileItem = { ...fileItem };
+      
+      // Ensure canvas files are properly identified by their extension
+      if (fileItem.name && fileItem.name.toLowerCase().endsWith('.canvas') && fileItem.type !== 'canvas') {
+        updatedFileItem.type = 'canvas';
+        // Also update the file type in the open files array if it's already open
+        setOpenFiles(prev => prev.map(file => 
+          file.id === fileItem.id 
+            ? { ...file, type: 'canvas' } 
+            : file
+        ));
+      }
+      
       // Check if file is already open
-      const isOpen = openFiles.some(file => file.id === fileItem.id);
+      const isOpen = openFiles.some(file => file.id === updatedFileItem.id);
       
       if (!isOpen) {
         // Add to open files if not already open
         // Include searchTerm and lineNumber if provided
         const fileWithSearch = {
-          ...fileItem,
+          ...updatedFileItem,
           searchHighlight: searchTerm,
           scrollToLine: lineNumber
         };
@@ -85,37 +99,46 @@ export const FileProvider = ({ children }) => {
       } else if (searchTerm || lineNumber) {
         // Update existing open file with search highlight info
         setOpenFiles(prev => prev.map(file => 
-          file.id === fileItem.id 
-            ? { ...file, searchHighlight: searchTerm, scrollToLine: lineNumber } 
+          file.id === updatedFileItem.id 
+            ? { ...file, searchHighlight: searchTerm, scrollToLine: lineNumber, type: updatedFileItem.type } 
             : file
         ));
       }
       
       // Set as active
-      setActiveFileId(fileItem.id);
+      setActiveFileId(updatedFileItem.id);
       
       // Load file content if not already loaded
-      if (!fileContents[fileItem.id] && fileItem.type === 'file') {
-        if (fileItem.isNew) {
+      if (!fileContents[updatedFileItem.id] && (updatedFileItem.type === 'file' || updatedFileItem.type === 'canvas')) {
+        if (updatedFileItem.isNew) {
           // This is a new file, no need to load content
           setFileContents(prev => ({
             ...prev,
-            [fileItem.id]: ''
+            [updatedFileItem.id]: updatedFileItem.type === 'canvas' 
+              ? JSON.stringify({ nodes: [], edges: [], format: "canvas", version: "1.0" })
+              : ''
           }));
         } else {
           // Existing file, load from server
           try {
-            const content = await FileService.readFile(fileItem.id);
+            const content = await FileService.readFile(updatedFileItem.id);
             setFileContents(prev => ({
               ...prev,
-              [fileItem.id]: content
+              [updatedFileItem.id]: content
             }));
+            
+            // If this is a canvas file, also make sure the type is set correctly
+            if (updatedFileItem.name && updatedFileItem.name.toLowerCase().endsWith('.canvas')) {
+              updateFileType(updatedFileItem.id, 'canvas');
+            }
           } catch (error) {
             console.error('Error reading file content:', error);
             // Still create an entry to avoid repeated attempts
             setFileContents(prev => ({
               ...prev,
-              [fileItem.id]: ''
+              [updatedFileItem.id]: updatedFileItem.type === 'canvas'
+                ? JSON.stringify({ nodes: [], edges: [], format: "canvas", version: "1.0" })
+                : ''
             }));
           }
         }
@@ -332,6 +355,16 @@ export const FileProvider = ({ children }) => {
     }));
   };
 
+  // Update file type (used for canvas files)
+  const updateFileType = (fileId, newType) => {
+    setOpenFiles(prev => prev.map(file => 
+      file.id === fileId ? { ...file, type: newType } : file
+    ));
+    
+    // Also update the file structure to reflect this change
+    loadFileStructure();
+  };
+
   // Get active file content
   const getActiveFileContent = () => {
     return activeFileId ? fileContents[activeFileId] || '' : '';
@@ -380,6 +413,7 @@ export const FileProvider = ({ children }) => {
         saveFile,
         closeFile,
         updateFileContent,
+        updateFileType,
         getActiveFileContent,
         getActiveFile,
         createItem,

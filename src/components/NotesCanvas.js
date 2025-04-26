@@ -306,7 +306,16 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
   const handleSaveCanvas = () => {
     if (onSave && reactFlowInstance) {
       const flow = reactFlowInstance.toObject();
-      onSave(flow);
+      
+      // Add version and format information
+      const enhancedFlow = {
+        ...flow,
+        format: "canvas",
+        version: "1.0",
+        lastSaved: new Date().toISOString()
+      };
+      
+      onSave(enhancedFlow);
       setIsDirty(false);
     }
   };

@@ -4,9 +4,18 @@ import multer from 'multer'
 import {checkProgress, promptVideo, uploadVideo} from './upload.mjs'
 import path from 'path'
 import dotenv from 'dotenv'
+import fs from 'fs'
+import { fileURLToPath } from 'url'
+import { createLogger } from './logger.mjs'
+
+// Get the directory path of the current module
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Load environment variables
 dotenv.config()
+
+// Initialize logger
+const logger = createLogger('nodejs', 'server')
 
 const app = express()
 app.use(express.json())
@@ -25,27 +34,46 @@ const upload = multer({
 })
 
 // Create tmp directory if it doesn't exist
-import fs from 'fs'
 try {
   if (!fs.existsSync(path.join(process.cwd(), 'tmp'))) {
     fs.mkdirSync(path.join(process.cwd(), 'tmp'), { recursive: true });
-    console.log("Created tmp directory");
+    logger.info("Created tmp directory");
   }
 } catch (err) {
-  console.error("Error creating tmp directory:", err);
+  logger.error("Error creating tmp directory:", err);
 }
+
+// Middleware to log requests
+app.use((req, res, next) => {
+  const start = Date.now()
+  
+  // Log when request completes
+  res.on('finish', () => {
+    const duration = Date.now() - start
+    logger.info({
+      method: req.method,
+      url: req.originalUrl,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+      userAgent: req.get('User-Agent')
+    });
+  });
+  
+  next();
+});
 
 app.post('/api/upload', upload.single('video'), async (req, res) => {
   try {
     if (!req.file) {
+      logger.warn("No file uploaded in request");
       return res.status(400).json({ error: 'No file uploaded' });
     }
     
-    console.log("File received:", req.file);
+    logger.info(`File received: ${req.file.originalname}, size: ${req.file.size} bytes`);
     const resp = await uploadVideo(req.file);
     return res.json({ data: resp });
   } catch (error) {
-    console.error("Upload error:", error);
+    logger.error("Upload error:", error);
     return res.status(500).json({ error: error.toString() });
   }
 });
@@ -53,13 +81,14 @@ app.post('/api/upload', upload.single('video'), async (req, res) => {
 app.post('/api/progress', async (req, res) => {
   try {
     if (!req.body.fileId) {
+      logger.warn("No fileId provided in progress check");
       return res.status(400).json({ error: 'No fileId provided' });
     }
     
     const progress = await checkProgress(req.body.fileId);
     return res.json({ progress });
   } catch (error) {
-    console.error("Progress check error:", error);
+    logger.error("Progress check error:", error);
     return res.status(500).json({ error: error.toString() });
   }
 });
@@ -74,15 +103,17 @@ app.post('/api/prompt', async (req, res) => {
     if (isMultipleFiles) {
       // Multiple files mode
       if (!reqData.uploadResults || !reqData.uploadResults.length || !reqData.prompt || !reqData.model) {
+        logger.warn("Missing required parameters for prompt API with multiple files");
         return res.status(400).json({ 
           error: 'Missing required parameters: uploadResults array, prompt, or model' 
         });
       }
       
-      console.log("Prompt request with multiple files:", {
+      logger.info({
+        message: "Prompt request with multiple files",
         model: reqData.model,
         fileCount: reqData.uploadResults.length,
-        prompt: reqData.prompt.substring(0, 50) + '...'
+        promptPreview: reqData.prompt.substring(0, 50) + '...'
       });
       
       const videoResponse = await promptVideo(
@@ -95,14 +126,16 @@ app.post('/api/prompt', async (req, res) => {
     } else {
       // Single file mode (backward compatibility)
       if (!reqData.uploadResult || !reqData.prompt || !reqData.model) {
+        logger.warn("Missing required parameters for prompt API with single file");
         return res.status(400).json({ 
           error: 'Missing required parameters: uploadResult, prompt, or model' 
         });
       }
       
-      console.log("Prompt request:", {
+      logger.info({
+        message: "Prompt request",
         model: reqData.model,
-        prompt: reqData.prompt.substring(0, 50) + '...'
+        promptPreview: reqData.prompt.substring(0, 50) + '...'
       });
       
       const videoResponse = await promptVideo(
@@ -114,9 +147,14 @@ app.post('/api/prompt', async (req, res) => {
       return res.json(videoResponse);
     }
   } catch (error) {
-    console.error("Prompt error:", error);
+    logger.error("Prompt error:", error);
     return res.status(400).json({ error: error.toString() });
   }
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Serve the React app in production
@@ -127,17 +165,23 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  logger.error("Unhandled error:", err);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
 // Try to start server on multiple ports if needed
 const startServer = (portsToTry) => {
   if (portsToTry.length === 0) {
-    console.error("Failed to start server on any port");
+    logger.error("Failed to start server on any port");
     process.exit(1);
   }
 
   const port = portsToTry[0];
   const server = app.listen(port, () => {
-    console.log(`Server is listening on port ${port}`);
-    console.log(`API key configured: ${process.env.VITE_GEMINI_API_KEY ? 'Yes' : 'No - please set VITE_GEMINI_API_KEY'}`);
+    logger.info(`Server is listening on port ${port}`);
+    logger.info(`API key configured: ${process.env.VITE_GEMINI_API_KEY ? 'Yes' : 'No - please set VITE_GEMINI_API_KEY'}`);
     
     // Update the port in the .env file for the frontend
     const envPath = path.join(process.cwd(), '.env');
@@ -150,14 +194,14 @@ const startServer = (portsToTry) => {
         envContent += `\nSERVER_PORT=${port}\n`;
       }
       fs.writeFileSync(envPath, envContent);
-      console.log(`Updated .env file with SERVER_PORT=${port}`);
+      logger.info(`Updated .env file with SERVER_PORT=${port}`);
     }
   }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${port} is in use, trying next port...`);
+      logger.warn(`Port ${port} is in use, trying next port...`);
       startServer(portsToTry.slice(1));
     } else {
-      console.error("Error starting server:", err);
+      logger.error("Error starting server:", err);
       process.exit(1);
     }
   });
@@ -165,4 +209,24 @@ const startServer = (portsToTry) => {
 
 // Try these ports in order
 const portsToTry = [8001, 8002, 8003, 8004, 8005];
-startServer(portsToTry); 
+startServer(portsToTry);
+
+// Handle process termination
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
+
+// Log uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled rejection at:', promise, 'reason:', reason);
+}); 

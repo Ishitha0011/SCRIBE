@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Plus, X, Book, Pencil, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog } from 'lucide-react';
-import { marked } from 'marked';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog } from 'lucide-react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import CharacterCount from '@tiptap/extension-character-count';
 import { useTheme } from '../ThemeContext';
 import { useFileContext } from '../FileContext';
 import Switch from './ui/Switch';
@@ -8,15 +11,12 @@ import NotesCanvas from './NotesCanvas';
 import '../css/Editor.css';
 
 const Editor = () => {
-  const [viewMarkdown, setViewMarkdown] = useState(false);
   const [localContent, setLocalContent] = useState('');
   const [charCount, setCharCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
-  const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [lastSaved, setLastSaved] = useState(null);
   const [unsavedChanges, setUnsavedChanges] = useState({});
   
-  // Canvas state
   const [canvasData, setCanvasData] = useState({});
   const [canvasMode, setCanvasMode] = useState(false);
   
@@ -28,71 +28,261 @@ const Editor = () => {
     openFile,
     closeFile,
     saveFile,
-    updateFileContent
+    updateFileContent,
+    updateFileType
   } = useFileContext();
 
-  // Reference to tabs container for scroll shadow
   const tabsLeftRef = useRef(null);
-  const textAreaRef = useRef(null);
 
-  // Update local content when active file changes
-  useEffect(() => {
-    if (activeFileId && fileContents[activeFileId] !== undefined) {
-      setLocalContent(fileContents[activeFileId]);
-      
-      // Check if this is a canvas file
-      checkCanvasFile(openFiles.find(f => f.id === activeFileId));
-    } else {
-      setLocalContent('');
-      setCanvasMode(false);
-    }
-  }, [activeFileId, fileContents, openFiles]);
-
-  // Check if file is a canvas file
-  const checkCanvasFile = (file) => {
-    if (file.type === 'canvas') {
-      setCanvasMode(true);
-      try {
-        // Try to parse the canvas data
-        const canvasData = JSON.parse(file.content);
-        if (!canvasData.nodes || !canvasData.edges) {
-          // If the canvas data is not properly structured, initialize it
-          file.content = JSON.stringify({ nodes: [], edges: [] });
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+        paragraph: {
+          HTMLAttributes: {
+            class: 'editor-paragraph'
+          }
+        },
+        hardBreak: {
+          keepMarks: true
         }
-        setCanvasData(canvasData);
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: {
+          class: 'markdown-image',
+        },
+      }),
+      CharacterCount,
+    ],
+    content: '',
+    onUpdate: ({ editor }) => {
+      const htmlContent = editor.getHTML();
+      setLocalContent(htmlContent);
+      setCharCount(editor.storage.characterCount?.characters() || 0);
+      setWordCount(editor.storage.characterCount?.words() || 0);
+
+      if (activeFileId && htmlContent !== fileContents[activeFileId]) {
+        setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
+      } else if (activeFileId) {
+        setUnsavedChanges((prev) => {
+          const updated = { ...prev };
+          delete updated[activeFileId];
+          return updated;
+        });
+      }
+    },
+    editorProps: {
+      attributes: {
+        class: 'rich-text-editor',
+        spellcheck: 'true',
+      },
+      handlePaste: (view, event, slice) => {
+        const items = Array.from(event.clipboardData?.items || []);
+        let imagePasted = false;
+
+        items.forEach(item => {
+          if (item.type.startsWith('image/')) {
+            imagePasted = true;
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file) {
+              handleImageUpload(file);
+            }
+            return false;
+          }
+        });
+
+        if (imagePasted) {
+          return true;
+        }
+
+        return false;
+      },
+    },
+  });
+
+  const handleImageUpload = useCallback(async (file) => {
+    if (!editor || !activeFileId) return;
+
+    const activeFile = openFiles.find(f => f.id === activeFileId);
+
+    const timestamp = new Date().getTime();
+    const fileName = file.name || `image_${timestamp}.png`;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file, fileName);
+
+      const response = await fetch('http://localhost:8000/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to upload image: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const imageUrl = `http://localhost:8000${data.path}`;
+
+      editor.chain().focus().setImage({ src: imageUrl, alt: fileName }).run();
+
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert(`Failed to upload image: ${error.message}`);
+    }
+  }, [editor, activeFileId, openFiles]);
+
+  const checkCanvasFile = useCallback((file) => {
+    if (!file) return;
+    
+    const isCanvasType = file.type === 'canvas';
+    const hasCanvasExtension = file.name && file.name.toLowerCase().endsWith('.canvas');
+    
+    if (isCanvasType || hasCanvasExtension) {
+      setCanvasMode(true);
+      if (editor) editor.setEditable(false);
+      try {
+        const canvasContent = fileContents[file.id] || '{}';
+        const parsedData = JSON.parse(canvasContent);
+        
+        if (!parsedData.nodes || !parsedData.edges) {
+          const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
+          updateFileContent(file.id, JSON.stringify(initialData));
+          setCanvasData(initialData);
+        } else {
+          setCanvasData(parsedData);
+        }
+        
+        if (!isCanvasType) {
+          updateFileType(file.id, 'canvas');
+        }
       } catch (error) {
         console.error('Error parsing canvas data:', error);
-        // Initialize empty canvas data if parsing fails
-        file.content = JSON.stringify({ nodes: [], edges: [] });
-        setCanvasData({ nodes: [], edges: [] });
+        const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
+        updateFileContent(file.id, JSON.stringify(initialData));
+        setCanvasData(initialData);
       }
     } else {
       setCanvasMode(false);
+      if (editor) editor.setEditable(true);
     }
-  };
+  }, [editor, fileContents, updateFileContent, updateFileType]);
 
-  // Update character and word count when content changes
-  useEffect(() => {
-    if (!canvasMode) {
-      setCharCount(localContent.length);
-      const words = localContent.trim() ? localContent.trim().split(/\s+/).length : 0;
-      setWordCount(words);
+  const handleSaveFile = useCallback(async () => {
+    if (activeFileId && editor) {
+      let success = false;
+      if (canvasMode) {
+        const canvasContent = JSON.stringify(canvasData);
+        const activeFile = openFiles.find(f => f.id === activeFileId);
+        if (activeFile && activeFile.isNew && !activeFile.name.toLowerCase().endsWith('.canvas')) {
+          const newName = `${activeFile.name}.canvas`;
+          const updatedFile = {
+            ...activeFile,
+            name: newName
+          };
+          const updatedOpenFiles = openFiles.map(f => 
+            f.id === activeFileId ? updatedFile : f
+          );
+          openFiles.splice(0, openFiles.length, ...updatedOpenFiles);
+        }
+        
+        success = await saveFile(activeFileId, canvasContent);
+      } else {
+        const htmlContent = editor.getHTML();
+        success = await saveFile(activeFileId, htmlContent);
+      }
+
+      if (success) {
+        setUnsavedChanges((prev) => {
+           const updated = { ...prev };
+           delete updated[activeFileId];
+           return updated;
+         });
+        setLastSaved(new Date());
+      } else {
+         alert('Failed to save file.');
+      }
     }
-  }, [localContent, canvasMode]);
+  }, [activeFileId, editor, canvasMode, canvasData, saveFile, openFiles, fileContents]);
+
+  useEffect(() => {
+    if (editor) {
+      if (activeFileId && fileContents[activeFileId] !== undefined) {
+        const contentToLoad = fileContents[activeFileId];
+        const file = openFiles.find(f => f.id === activeFileId);
+        
+        if (file) {
+          const isCanvasFile = file.type === 'canvas' || 
+                            (file.name && file.name.toLowerCase().endsWith('.canvas'));
+          
+          if (isCanvasFile) {
+            console.log("Opening canvas file:", file.name);
+            setCanvasMode(true);
+            
+            if (file.type !== 'canvas') {
+              updateFileType(file.id, 'canvas');
+            }
+            
+            try {
+              const parsedData = typeof contentToLoad === 'string' && contentToLoad.trim()
+                ? JSON.parse(contentToLoad)
+                : { nodes: [], edges: [], format: "canvas", version: "1.0" };
+              
+              setCanvasData(parsedData);
+              if (editor) editor.setEditable(false);
+            } catch (error) {
+              console.error('Error parsing canvas data:', error);
+              const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
+              updateFileContent(file.id, JSON.stringify(initialData));
+              setCanvasData(initialData);
+            }
+          } else {
+            checkCanvasFile(file);
+            
+            if (!canvasMode && contentToLoad !== editor.getHTML()) {
+              editor.commands.setContent(contentToLoad, false);
+              setLocalContent(contentToLoad);
+            }
+          }
+          
+          setUnsavedChanges((prev) => {
+            const updated = { ...prev };
+            delete updated[activeFileId];
+            return updated;
+          });
+        }
+      } else {
+        editor.commands.setContent('', false);
+        setLocalContent('');
+        setCanvasMode(false);
+        setUnsavedChanges({});
+      }
+      
+      setCharCount(editor.storage.characterCount?.characters() || 0);
+      setWordCount(editor.storage.characterCount?.words() || 0);
+    }
+  }, [activeFileId, fileContents, editor, openFiles, checkCanvasFile, updateFileType, canvasMode, updateFileContent]);
+
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(!canvasMode);
+    }
+  }, [canvasMode, editor]);
   
-  // Scroll active tab into view when it changes
   useEffect(() => {
     if (activeFileId && tabsLeftRef.current) {
       const activeTab = tabsLeftRef.current.querySelector('.Tab.active');
       if (activeTab) {
-        // Scroll the active tab into view with some padding
         const tabsContainer = tabsLeftRef.current;
         const tabRect = activeTab.getBoundingClientRect();
         const containerRect = tabsContainer.getBoundingClientRect();
         
-        // Check if the tab is partially or fully out of view
         if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
-          // Calculate the scroll position to center the tab
           const scrollLeft = activeTab.offsetLeft - (tabsContainer.clientWidth / 2) + (activeTab.clientWidth / 2);
           tabsContainer.scrollTo({ left: scrollLeft, behavior: 'smooth' });
         }
@@ -100,20 +290,17 @@ const Editor = () => {
     }
   }, [activeFileId]);
 
-  // Handle scroll shadow indicators
   useEffect(() => {
     const tabsContainer = tabsLeftRef.current;
     if (!tabsContainer) return;
 
     const checkScroll = () => {
-      // Check if we can scroll left
       if (tabsContainer.scrollLeft > 0) {
         tabsContainer.classList.add('can-scroll-left');
       } else {
         tabsContainer.classList.remove('can-scroll-left');
       }
 
-      // Check if we can scroll right
       if (tabsContainer.scrollLeft + tabsContainer.clientWidth < tabsContainer.scrollWidth) {
         tabsContainer.classList.add('can-scroll-right');
       } else {
@@ -121,13 +308,10 @@ const Editor = () => {
       }
     };
 
-    // Initial check
     checkScroll();
 
-    // Add scroll event listener
     tabsContainer.addEventListener('scroll', checkScroll);
 
-    // Also check when tabs change
     const resizeObserver = new ResizeObserver(checkScroll);
     resizeObserver.observe(tabsContainer);
 
@@ -137,10 +321,8 @@ const Editor = () => {
     };
   }, [openFiles]);
   
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = async (e) => {
-      // Save file with Ctrl+S
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         if (activeFileId) {
@@ -148,15 +330,6 @@ const Editor = () => {
         }
       }
       
-      // Toggle markdown view with Ctrl+M
-      if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
-        e.preventDefault();
-        if (!canvasMode) {
-          toggleViewMarkdown();
-        }
-      }
-      
-      // Close current tab with Ctrl+W
       if ((e.ctrlKey || e.metaKey) && e.key === 'w') {
         e.preventDefault();
         if (activeFileId) {
@@ -164,7 +337,6 @@ const Editor = () => {
         }
       }
       
-      // New file with Ctrl+N
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
         handleNewFile();
@@ -176,121 +348,7 @@ const Editor = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeFileId, localContent, canvasMode]);
-
-  // Handle search highlighting and scrolling to line when opening a file with search results
-  useEffect(() => {
-    if (activeFileId && textAreaRef.current && !canvasMode) {
-      const activeFile = openFiles.find(file => file.id === activeFileId);
-      
-      if (activeFile && (activeFile.searchHighlight || activeFile.scrollToLine)) {
-        const textarea = textAreaRef.current;
-        const content = fileContents[activeFileId] || '';
-        
-        // Wait for the textarea to update with content
-        setTimeout(() => {
-          // If we have a specific line to scroll to
-          if (activeFile.scrollToLine) {
-            // Find position of the target line
-            const lines = content.split('\n');
-            const targetLineIdx = activeFile.scrollToLine - 1; // Convert to 0-based index
-            
-            if (targetLineIdx >= 0 && targetLineIdx < lines.length) {
-              // Calculate the character position at the start of the target line
-              let charPosition = 0;
-              for (let i = 0; i < targetLineIdx; i++) {
-                charPosition += lines[i].length + 1; // +1 for the newline character
-              }
-              
-              // Scroll to the target line
-              textarea.focus();
-              
-              // If we also have a search term to highlight
-              if (activeFile.searchHighlight) {
-                const searchTerm = activeFile.searchHighlight.toLowerCase();
-                const targetLine = lines[targetLineIdx].toLowerCase();
-                const matchIndex = targetLine.indexOf(searchTerm);
-                
-                if (matchIndex >= 0) {
-                  // Position at the start of the match
-                  const selectionStart = charPosition + matchIndex;
-                  const selectionEnd = selectionStart + searchTerm.length;
-                  
-                  // Apply custom highlight style for the selection
-                  textarea.setSelectionRange(selectionStart, selectionEnd);
-                  
-                  // Add custom style for text selection (handled in CSS)
-                  document.documentElement.style.setProperty('--selection-background', '#e8defd');
-                  document.documentElement.style.setProperty('--selection-color', '#000');
-                  
-                  if (theme === 'dark') {
-                    document.documentElement.style.setProperty('--selection-background', '#7952b3');
-                    document.documentElement.style.setProperty('--selection-color', '#fff');
-                  }
-                  
-                  // Ensure the selection is visible
-                  const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-                  const scrollTarget = targetLineIdx * lineHeight;
-                  textarea.scrollTop = scrollTarget - textarea.clientHeight / 2;
-                } else {
-                  // Just scroll to the line if search term is not found
-                  textarea.setSelectionRange(charPosition, charPosition);
-                  const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-                  const scrollTarget = targetLineIdx * lineHeight;
-                  textarea.scrollTop = scrollTarget - textarea.clientHeight / 2;
-                }
-              } else {
-                // Just scroll to the line without highlighting
-                textarea.setSelectionRange(charPosition, charPosition);
-                const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-                const scrollTarget = targetLineIdx * lineHeight;
-                textarea.scrollTop = scrollTarget - textarea.clientHeight / 2;
-              }
-            }
-          } 
-          // If we only have a search term without a specific line
-          else if (activeFile.searchHighlight) {
-            const searchTerm = activeFile.searchHighlight.toLowerCase();
-            const contentLower = content.toLowerCase();
-            const matchIndex = contentLower.indexOf(searchTerm);
-            
-            if (matchIndex >= 0) {
-              // Position at the start of the match
-              textarea.focus();
-              
-              // Apply custom highlight style for the selection
-              textarea.setSelectionRange(matchIndex, matchIndex + searchTerm.length);
-              
-              // Add custom style for text selection
-              document.documentElement.style.setProperty('--selection-background', '#e8defd');
-              document.documentElement.style.setProperty('--selection-color', '#000');
-              
-              if (theme === 'dark') {
-                document.documentElement.style.setProperty('--selection-background', '#7952b3');
-                document.documentElement.style.setProperty('--selection-color', '#fff');
-              }
-              
-              // Scroll to make the selection visible
-              // Calculate approximate line number
-              const textBeforeMatch = content.substring(0, matchIndex);
-              const lineNumber = textBeforeMatch.split('\n').length - 1;
-              const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-              const scrollTarget = lineNumber * lineHeight;
-              textarea.scrollTop = scrollTarget - textarea.clientHeight / 2;
-            }
-          }
-        }, 50);
-        
-        // Clear the search highlight and scroll info after handling
-        // to avoid re-highlighting on content changes
-        openFile({
-          ...activeFile,
-          searchHighlight: null,
-          scrollToLine: null
-        });
-      }
-    }
-  }, [activeFileId, fileContents, openFiles, theme, canvasMode]);
+  }, [activeFileId, editor, canvasMode, handleSaveFile]);
 
   const handleNewFile = () => {
     const newTab = {
@@ -303,140 +361,89 @@ const Editor = () => {
   };
 
   const handleNewCanvas = () => {
+    const canvasName = prompt('Enter a name for your new canvas:');
+    
+    if (!canvasName || canvasName.trim() === '') {
+      return;
+    }
+    
+    const formattedName = canvasName.toLowerCase().endsWith('.canvas') 
+      ? canvasName 
+      : `${canvasName}.canvas`;
+    
     const newCanvasId = `canvas-${Date.now()}`;
     console.log('Creating new canvas with ID:', newCanvasId);
     
-    // First set up our canvas data and mode
     setCanvasMode(true);
-    setCanvasData({ nodes: [], edges: [] });
+    const initialCanvasData = { 
+      nodes: [], 
+      edges: [], 
+      format: "canvas", 
+      version: "1.0",
+      created: new Date().toISOString()
+    };
+    setCanvasData(initialCanvasData);
     
-    // Then create the canvas file object
     const newCanvas = {
       id: newCanvasId,
-      name: 'Untitled Canvas',
+      name: formattedName,
       type: 'canvas',
       isNew: true,
     };
     
-    // Save initial empty canvas data to file contents
-    updateFileContent(newCanvasId, JSON.stringify({ nodes: [], edges: [] }));
+    updateFileContent(newCanvasId, JSON.stringify(initialCanvasData));
     
-    // Finally open the file
     openFile(newCanvas);
   };
 
   const handleTabClick = (id) => {
     if (id !== activeFileId) {
-      // Save current content before switching
       if (activeFileId) {
         if (canvasMode) {
-          // Save canvas data
           const canvasContent = JSON.stringify(canvasData);
           updateFileContent(activeFileId, canvasContent);
           if (canvasData.isDirty) {
             setUnsavedChanges({ ...unsavedChanges, [activeFileId]: true });
           }
-        } else if (localContent !== fileContents[activeFileId]) {
-          // Save text content
-          updateFileContent(activeFileId, localContent);
-          setUnsavedChanges({ ...unsavedChanges, [activeFileId]: true });
+        } else if (editor && unsavedChanges[activeFileId]) {
+          updateFileContent(activeFileId, editor.getHTML());
         }
       }
       
-      // Switch to the selected tab
       openFile(openFiles.find(file => file.id === id));
     }
   };
 
-  const handleCursorPositionChange = (e) => {
-    if (!e.target || canvasMode) return;
-    
-    const textarea = e.target;
-    const value = textarea.value;
-    
-    const start = textarea.selectionStart;
-    const lines = value.substr(0, start).split('\n');
-    const lineNumber = lines.length;
-    const columnNumber = lines[lines.length - 1].length + 1;
-    
-    setCursorPosition({ line: lineNumber, column: columnNumber });
-  };
-
-  const handleContentChange = (e) => {
-    const newContent = e.target.value;
-    setLocalContent(newContent);
-    
-    // Mark as unsaved if content changed
-    if (activeFileId && newContent !== fileContents[activeFileId]) {
-      setUnsavedChanges({ ...unsavedChanges, [activeFileId]: true });
-    } else {
-      const updatedUnsavedChanges = { ...unsavedChanges };
-      delete updatedUnsavedChanges[activeFileId];
-      setUnsavedChanges(updatedUnsavedChanges);
-    }
-  };
-
-  const handleTabClose = (id) => {
-    // Check for unsaved changes
+  const handleTabClose = async (id) => {
     if (unsavedChanges[id]) {
       if (window.confirm('You have unsaved changes. Do you want to save before closing?')) {
         const file = openFiles.find(f => f.id === id);
         if (file.type === 'canvas') {
           const canvasContent = JSON.stringify(canvasData);
-          saveFile(id, canvasContent);
-        } else {
-          saveFile(id, id === activeFileId ? localContent : fileContents[id]);
+          await saveFile(id, canvasContent);
+        } else if (editor) {
+          const contentToSave = (id === activeFileId) ? editor.getHTML() : fileContents[id];
+          await saveFile(id, contentToSave);
         }
       }
     }
-    
     closeFile(id);
   };
 
-  const handleSaveFile = async () => {
-    if (activeFileId) {
-      if (canvasMode) {
-        // Save canvas data
-        const canvasContent = JSON.stringify(canvasData);
-        await saveFile(activeFileId, canvasContent);
-      } else {
-        // Save regular text content
-        await saveFile(activeFileId, localContent);
-      }
-      
-      // Remove from unsaved changes
-      const updatedUnsavedChanges = { ...unsavedChanges };
-      delete updatedUnsavedChanges[activeFileId];
-      setUnsavedChanges(updatedUnsavedChanges);
-      
-      // Update last saved time
-      setLastSaved(new Date());
-    }
-  };
-
-  // Handle canvas save
   const handleCanvasSave = (canvasFlow) => {
     if (activeFileId) {
       setCanvasData(canvasFlow);
       const canvasContent = JSON.stringify(canvasFlow);
       updateFileContent(activeFileId, canvasContent);
       
-      // Mark as saved
       const updatedUnsavedChanges = { ...unsavedChanges };
       delete updatedUnsavedChanges[activeFileId];
       setUnsavedChanges(updatedUnsavedChanges);
       
-      // Update last saved time
       setLastSaved(new Date());
     }
   };
 
-  const toggleViewMarkdown = () => setViewMarkdown((prevView) => !prevView);
-
-  // Render markdown content if in markdown view mode
-  const renderMarkdown = marked(localContent || '', { breaks: true });
-
-  // Get file extension for the active file
   const getFileExtension = () => {
     if (!activeFileId) return '';
     const activeFile = openFiles.find(file => file.id === activeFileId);
@@ -446,12 +453,11 @@ const Editor = () => {
     return parts.length > 1 ? parts.pop().toUpperCase() : '';
   };
 
-  // Format the last saved time
   const getLastSavedTime = () => {
     if (!lastSaved) return 'Never';
     
     const now = new Date();
-    const diff = Math.floor((now - lastSaved) / 1000); // seconds
+    const diff = Math.floor((now - lastSaved) / 1000);
     
     if (diff < 60) return 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
@@ -459,9 +465,12 @@ const Editor = () => {
     return lastSaved.toLocaleTimeString();
   };
 
+  if (!editor) {
+    return <div>Loading Editor...</div>;
+  }
+
   return (
     <div className={`Editor ${theme === 'dark' ? 'dark' : ''}`}>
-      {/* Tabs */}
       <div className="Tabs">
         <div className="TabsLeft" ref={tabsLeftRef}>
           {openFiles.map((file) => (
@@ -500,15 +509,8 @@ const Editor = () => {
             </button>
           ) : (
             <>
-              <button className="SaveButton" onClick={handleSaveFile} disabled={!activeFileId} title="Save (Ctrl+S)">
+              <button className="SaveButton" onClick={handleSaveFile} disabled={!activeFileId || !unsavedChanges[activeFileId]} title="Save (Ctrl+S)">
                 <Save size={18} />
-              </button>
-              <button className="MarkdownButton" onClick={toggleViewMarkdown} title="Toggle Markdown (Ctrl+M)">
-                {viewMarkdown ? <Pencil size={18} /> : <Book size={18} />}
-              </button>
-              <button className="NewCanvasButton" onClick={handleNewCanvas} title="New Canvas">
-                <Plus size={14} />
-                <span>Canvas</span>
               </button>
             </>
           )}
@@ -516,36 +518,18 @@ const Editor = () => {
         </div>
       </div>
 
-      {/* Text Editor Canvas */}
       <div className="TextEditorCanvas">
         {activeFileId ? (
           canvasMode ? (
-            // Render the canvas editor
             <NotesCanvas 
               canvasData={canvasData} 
               onSave={handleCanvasSave}
               canvasId={activeFileId}
             />
-          ) : viewMarkdown ? (
-            // Render markdown preview
-            <div
-              className="MarkdownView markdown-content"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown }}
-            />
           ) : (
-            // Render text editor
-            <textarea
-              ref={textAreaRef}
-              value={localContent}
-              onChange={handleContentChange}
-              onKeyUp={handleCursorPositionChange}
-              onClick={handleCursorPositionChange}
-              placeholder="Start typing..."
-              className="TextArea"
-            />
+            <EditorContent editor={editor} className="TiptapEditor" />
           )
         ) : (
-          // Render empty state
           <div className="EmptyState">
             <p>No file selected. Open a file from the sidebar or create a new file or canvas.</p>
             <div className="EmptyStateButtons">
@@ -556,29 +540,18 @@ const Editor = () => {
         )}
       </div>
 
-      {/* Enhanced Footer with more useful information */}
       <div className="Footer">
         {activeFileId ? (
           <>
             <div className="FooterLeft">
               <div className="FooterItem">
                 <FileCog size={14} />
-                <span>{getFileExtension() || 'TXT'}</span>
+                <span>{getFileExtension() || 'FILE'}</span>
               </div>
-              {!canvasMode && (
-                <div className="FooterItem optional">
-                  <Type size={14} />
-                  <span>UTF-8</span>
-                </div>
-              )}
             </div>
             <div className="FooterRight">
               {!canvasMode && (
                 <>
-                  <div className="FooterItem">
-                    <Hash size={14} />
-                    <span>Ln {cursorPosition.line}, Col {cursorPosition.column}</span>
-                  </div>
                   <div className="FooterItem optional">
                     <Type size={14} />
                     <span>{wordCount} Words</span>

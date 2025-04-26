@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Response, Request
+from fastapi import FastAPI, HTTPException, Response, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv  # Import load_dotenv
 import google.generativeai as genai
@@ -13,6 +14,11 @@ import tkinter as tk
 from tkinter import filedialog
 from datetime import datetime
 import asyncio
+import logging
+import requests
+from threading import Thread
+import queue
+import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,6 +33,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files from the assets directory
+@app.on_event("startup")
+async def startup_event():
+    if not os.path.exists("assets"):
+        os.makedirs("assets", exist_ok=True)
+    app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 # Store chat sessions and their history in memory
 chat_sessions: Dict[str, dict] = {}
@@ -47,7 +60,7 @@ def load_config():
             with open(CONFIG_FILE, 'r') as f:
                 workspace_info = json.load(f)
     except Exception as e:
-        print(f"Error loading config: {e}")
+        logging.error(f"Error loading config: {e}", exc_info=True)
 
 
 # Save config
@@ -56,7 +69,7 @@ def save_config():
         with open(CONFIG_FILE, 'w') as f:
             json.dump(workspace_info, f)
     except Exception as e:
-        print(f"Error saving config: {e}")
+        logging.error(f"Error saving config: {e}", exc_info=True)
 
 
 # Load config at startup
@@ -127,14 +140,14 @@ class ScribeAIResponse:
         try:
             api_key = os.getenv("GEMINI_API_KEY")
             if not api_key:
-                print("Warning: GEMINI_API_KEY not found in environment variables")
+                logging.warning("Warning: GEMINI_API_KEY not found in environment variables")
                 return "New Chat"
 
             genai.configure(api_key=api_key)
 
             # Validate conversation history
             if not conversation_history or len(conversation_history) < 2:
-                print("Not enough messages for title generation")
+                logging.warning("Warning: Not enough messages for title generation")
                 return "New Chat"
 
             # Create a prompt for title generation
@@ -151,8 +164,8 @@ class ScribeAIResponse:
                     role = "User" if msg.sender == "user" else "Assistant"
                     title_prompt += f"\n{role}: {msg.text}"
                 except AttributeError as e:
-                    print(f"Error accessing message attributes: {e}")
-                    print(f"Problematic message: {msg}")
+                    logging.warning(f"Error accessing message attributes: {e}")
+                    logging.warning(f"Problematic message: {msg}")
                     continue
 
             title_prompt += "\n\nTitle (5 words max, no quotes):"
@@ -184,10 +197,10 @@ class ScribeAIResponse:
 
                 return title
             except Exception as e:
-                print(f"Error generating title with Gemini API: {e}")
+                logging.error(f"Error generating title with Gemini API: {e}")
                 return "New Chat"
         except Exception as e:
-            print(f"Unexpected error in generate_title: {e}")
+            logging.error(f"Unexpected error in generate_title: {e}")
             return "New Chat"
 
     @staticmethod
@@ -265,10 +278,10 @@ class ScribeAIResponse:
                 chat_sessions[session_id]["history"] = chat.history
                 return response.text
             else:
-                print("Warning: Gemini API returned a response with empty content.")
+                logging.warning("Warning: Gemini API returned a response with empty content.")
                 return ""
         except Exception as e:
-            print(f"Error calling Gemini API: {e}")
+            logging.error(f"Error calling Gemini API: {e}")
             if session_id in chat_sessions:
                 del chat_sessions[session_id]  # Clear problematic session
             return ""
@@ -289,7 +302,7 @@ async def set_workspace(request: WorkspaceRequest):
 
         return {"status": "success", "directory": directory}
     except Exception as e:
-        print(f"Error setting workspace: {e}")
+        logging.error(f"Error setting workspace: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -302,7 +315,7 @@ async def get_workspace():
             return {"directory": directory}
         return {"directory": None}
     except Exception as e:
-        print(f"Error getting workspace: {e}")
+        logging.error(f"Error getting workspace: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -322,7 +335,7 @@ async def list_files(directory: Optional[str] = None):
         structure = read_directory_structure(directory)
         return {"items": structure}
     except Exception as e:
-        print(f"Error listing files: {e}")
+        logging.error(f"Error listing files: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -351,7 +364,7 @@ def read_directory_structure(directory, base_path=None):
                 })
         return items
     except Exception as e:
-        print(f"Error reading directory structure: {e}")
+        logging.error(f"Error reading directory structure: {e}", exc_info=True)
         return []
 
 
@@ -378,7 +391,7 @@ async def read_file(path: str):
             # Return a message for binary files
             return {"content": "", "error": "Binary file cannot be displayed"}
     except Exception as e:
-        print(f"Error reading file: {e}")
+        logging.error(f"Error reading file: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -399,7 +412,7 @@ async def write_file(request: FileRequest):
 
         return {"status": "success"}
     except Exception as e:
-        print(f"Error writing file: {e}")
+        logging.error(f"Error writing file: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -441,7 +454,7 @@ async def create_file_or_folder(request: CreateFileRequest):
             "type": request.type
         }
     except Exception as e:
-        print(f"Error creating file/folder: {e}")
+        logging.error(f"Error creating file/folder: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -464,7 +477,7 @@ async def delete_file(path: str):
 
         return {"status": "success"}
     except Exception as e:
-        print(f"Error deleting file: {e}")
+        logging.error(f"Error deleting file: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -489,7 +502,7 @@ async def rename_file(request: RenameRequest):
 
         return {"status": "success"}
     except Exception as e:
-        print(f"Error renaming file: {e}")
+        logging.error(f"Error renaming file: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -503,12 +516,12 @@ async def create_session():
 async def generate_title(request: TitleRequest):
     try:
         # Debug logging
-        print(f"Received title request for session: {request.session_id}")
-        print(f"Conversation history length: {len(request.conversation_history)}")
+        logging.info(f"Received title request for session: {request.session_id}")
+        logging.info(f"Conversation history length: {len(request.conversation_history)}")
 
         # Validate conversation history
         if not request.conversation_history:
-            print("Warning: Empty conversation history received")
+            logging.warning("Warning: Empty conversation history received")
             return {"title": "New Chat"}
 
         # Convert dictionary messages to Message objects
@@ -519,20 +532,19 @@ async def generate_title(request: TitleRequest):
                 message = dict_to_message(msg_dict)
                 message_objects.append(message)
             except Exception as e:
-                print(f"Error converting message: {e}")
-                print(f"Problematic message: {msg_dict}")
+                logging.warning(f"Error converting message: {e} - Problematic: {msg_dict}")
                 # Skip invalid messages
                 continue
 
         if not message_objects:
-            print("No valid messages after conversion")
+            logging.warning("No valid messages after conversion")
             return {"title": "New Chat"}
 
         title = ScribeAIResponse.generate_title(message_objects)
-        print(f"Generated title: {title}")
+        logging.info(f"Generated title: {title}")
         return {"title": title}
     except Exception as e:
-        print(f"Error in generate_title endpoint: {str(e)}")
+        logging.error(f"Error in generate_title endpoint: {str(e)}", exc_info=True)
         # Return a default title instead of raising an exception
         return {"title": "New Chat"}
 
@@ -541,9 +553,9 @@ async def generate_title(request: TitleRequest):
 async def ask_ai(request: QuestionRequest):
     try:
         # Debug logging
-        print(f"Received question for session: {request.session_id}")
-        print(f"Question: {request.question}")
-        print(f"Conversation history length: {len(request.conversation_history)}")
+        logging.info(f"Received question for session: {request.session_id}")
+        logging.info(f"Question: {request.question}")
+        logging.info(f"Conversation history length: {len(request.conversation_history)}")
 
         # Convert dictionary messages to Message objects
         message_objects = []
@@ -552,7 +564,7 @@ async def ask_ai(request: QuestionRequest):
                 message = dict_to_message(msg_dict)
                 message_objects.append(message)
             except Exception as e:
-                print(f"Error converting message in ask-ai: {e}")
+                logging.warning(f"Error converting message in ask-ai: {e}")
                 # Skip invalid messages
                 continue
 
@@ -564,7 +576,7 @@ async def ask_ai(request: QuestionRequest):
         )
         return {"response": ai_response}
     except Exception as e:
-        print(f"Error in ask_ai endpoint: {str(e)}")
+        logging.error(f"Error in ask_ai endpoint: {str(e)}", exc_info=True)
         # Clean up session on error
         if request.session_id in chat_sessions:
             del chat_sessions[request.session_id]
@@ -604,7 +616,7 @@ async def select_directory():
             return {"status": "cancelled", "directory": None}
 
     except Exception as e:
-        print(f"Error selecting directory: {e}")
+        logging.error(f"Error selecting directory: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -627,7 +639,152 @@ async def write_log(log_entry: LogEntry):
         raise HTTPException(status_code=500, detail=f"Failed to write log: {str(e)}")
 
 
+@app.post("/api/files/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Upload a file (primarily for images)"""
+    try:
+        # Create an assets directory in the root folder if it doesn't exist
+        assets_dir = "assets"
+        os.makedirs(assets_dir, exist_ok=True)
+
+        # Generate unique filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        original_filename = file.filename
+        extension = os.path.splitext(original_filename)[1]
+        new_filename = f"image_{timestamp}{extension}"
+        
+        # Full path for the file
+        file_path = os.path.join(assets_dir, new_filename)
+        
+        # Save the file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Return the relative path for markdown with forward slashes
+        relative_path = f"/assets/{new_filename}"
+        
+        return {
+            "status": "success",
+            "path": relative_path,
+            "filename": new_filename
+        }
+    except Exception as e:
+        logging.error(f"Error uploading file: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Centralized Logging Setup ---
+LOG_SERVER_URL = "http://localhost:9999/log"
+log_queue = queue.Queue()
+
+def send_log_worker():
+    """Worker thread to send logs without blocking the main thread."""
+    while True:
+        try:
+            log_record = log_queue.get()
+            if log_record is None: # Sentinel to stop the worker
+                break
+            
+            log_entry = {
+                "timestamp": datetime.fromtimestamp(log_record.created).isoformat(),
+                "level": log_record.levelname,
+                "message": log_record.getMessage(),
+                "source": "python",
+                "application": "python",
+                "loggerName": log_record.name,
+                "fileName": log_record.filename,
+                "lineNumber": log_record.lineno
+            }
+            
+            # Add exception info if available
+            if log_record.exc_info:
+                exc_type, exc_value, exc_traceback = log_record.exc_info
+                if exc_type and exc_value:
+                    log_entry["error"] = {
+                        "type": exc_type.__name__,
+                        "message": str(exc_value),
+                        "traceback": format_traceback(exc_traceback) if exc_traceback else None
+                    }
+            
+            # Format as a single line of JSON text
+            log_string = json.dumps(log_entry) + '\n' 
+            
+            try:
+                requests.post(LOG_SERVER_URL, 
+                              json={"log": log_string, "type": "python", "application": "python"}, 
+                              timeout=1.0) # Slightly longer timeout
+            except requests.exceptions.RequestException as e:
+                # Fall back to stdout if log server is down
+                print(f"[LOG] {log_entry['level']} - {log_entry['message']}") 
+        except Exception as e:
+            print(f"Error in log sending worker: {e}")
+        finally:
+            log_queue.task_done()
+
+def format_traceback(tb):
+    """Format a traceback object into a list of strings"""
+    import traceback
+    if tb:
+        return traceback.format_tb(tb)
+    return []
+
+class HttpLogHandler(logging.Handler):
+    """A logging handler that sends records to the Node.js log server via a queue."""
+    def __init__(self, url):
+        super().__init__()
+        self.url = url
+
+    def emit(self, record):
+        try:
+            # Put the log record onto the queue for the worker to process
+            log_queue.put(record)
+        except Exception as e:
+            print(f"Error in HttpLogHandler.emit: {e}")
+
+# Configure root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# Remove existing handlers to avoid duplicates
+for handler in root_logger.handlers[:]:
+    root_logger.removeHandler(handler)
+
+# Add file handler for local logs
+logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'logs')
+os.makedirs(logs_dir, exist_ok=True)
+file_handler = logging.FileHandler(os.path.join(logs_dir, 'python.logs'))
+file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(file_formatter)
+root_logger.addHandler(file_handler)
+
+# Add HTTP handler for remote logging
+http_handler = HttpLogHandler(LOG_SERVER_URL)
+http_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+http_handler.setFormatter(http_formatter)
+root_logger.addHandler(http_handler)
+
+# Add console handler
+console_handler = logging.StreamHandler()
+console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(console_formatter)
+root_logger.addHandler(console_handler)
+
+# Start the log sending worker thread
+log_worker_thread = Thread(target=send_log_worker, daemon=True)
+log_worker_thread.start()
+
+# Set up module-specific loggers
+logger = logging.getLogger("scribe-backend")
+logger.info("Python backend logging initialized and configured to send to Node.js log server.")
+# --- End Centralized Logging Setup ---
+
+
 if __name__ == "__main__":
     import uvicorn
-
+    # Ensure logging setup happens before run
+    logger.info("Starting Uvicorn server...")
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Ensure worker thread stops cleanly on exit (though daemon=True helps)
+# You might add more sophisticated shutdown logic if needed
+# atexit.register(lambda: log_queue.put(None))

@@ -26,3 +26,6 @@ worker.logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+/assets
+/logs

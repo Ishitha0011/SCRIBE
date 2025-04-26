@@ -12,6 +12,7 @@ import {
   Edit,
   Trash2,
   Plus,
+  PenTool,
 } from 'lucide-react';
 import '../css/TreeNode.css';
 
@@ -63,8 +64,15 @@ const TreeNode = ({
 
   // Determine file icon based on file extension
   const getFileIcon = () => {
-    if (item.type !== 'file') return <Folder size={16} />;
+    // For canvas files (either by type or extension)
+    if (item.type === 'canvas' || (item.type === 'file' && item.name.toLowerCase().endsWith('.canvas'))) {
+      return <PenTool size={16} />;
+    }
     
+    // For folders
+    if (item.type === 'folder') return <Folder size={16} />;
+    
+    // For other file types
     const extension = item.name.split('.').pop().toLowerCase();
     
     switch (extension) {

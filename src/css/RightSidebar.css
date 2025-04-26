@@ -269,8 +269,7 @@
 /* You might need to adjust styles within AskAI.jsx/Labs.jsx and their CSS */
 .DynamicContent > * {
   flex-grow: 1; /* Allow the direct child (AskAI, Labs, Placeholder) to grow */
-  overflow-y: auto; /* Add scrollbar IF the component's content overflows */
-  overflow-x: hidden; /* Prevent horizontal scrolling usually */
+  overflow: hidden; /* Add scrollbar IF the component's content overflows */
   min-height: 0; /* Important for flex children that need to scroll */
   /* Add padding inside the component or here if needed */
   /* padding: 16px; */

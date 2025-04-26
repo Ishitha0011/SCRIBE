@@ -76,12 +76,14 @@ body {
   
   .ItemTypeSelection {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 15px;
   }
   
   .TypeButton {
     flex: 1;
+    min-width: 80px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -262,6 +264,17 @@ body {
     .Button {
       font-size: 0.85em;
       padding: 8px 12px;
+    }
+  }
+  
+  /* Ensure responsive layout for smaller screens */
+  @media (max-width: 380px) {
+    .ItemTypeSelection {
+      flex-direction: column;
+    }
+    
+    .TypeButton {
+      width: 100%;
     }
   }
   
