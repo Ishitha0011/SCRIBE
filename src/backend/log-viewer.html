@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>System Logs - SCRIBE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Core theme colors */
+      --bg-primary: #0A0A0A;
+      --bg-secondary: #141414;
+      --bg-tertiary: #1E1E1E;
+      --text-primary: #FFFFFF;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-tertiary: rgba(255, 255, 255, 0.5);
+      
+      /* Accent colors */
+      --accent-blue: #2196F3;
+      --accent-green: #4CAF50;
+      --accent-amber: #FFC107;
+      --accent-red: #F44336;
+      --accent-purple: #9C27B0;
+      
+      /* Source colors */
+      --source-worker: var(--accent-green);
+      --source-system: var(--accent-amber);
+      --source-backend: var(--accent-blue);
+      --source-python: var(--accent-purple);
+      --source-nodejs: var(--accent-green);
+      --source-filesystem: var(--accent-blue);
+      --source-supabase: #3ECF8E;
+      
+      /* Level colors */
+      --level-error: var(--accent-red);
+      --level-warning: var(--accent-amber);
+      --level-info: var(--accent-blue);
+      --level-debug: var(--accent-purple);
+      
+      /* UI elements */
+      --border-color: rgba(255, 255, 255, 0.1);
+      --hover-bg: rgba(255, 255, 255, 0.05);
+      --active-bg: rgba(255, 255, 255, 0.1);
+      --shadow-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    header {
+      background: var(--bg-secondary);
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .ascii-art {
+      color: var(--accent-blue);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      white-space: pre;
+    }
+    
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--level-error);
+    }
+    
+    .status-indicator.connected {
+      background: var(--accent-green);
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+    }
+    
+    .tabs {
+      background: var(--bg-secondary);
+      display: flex;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .tab {
+      padding: 0.75rem 1rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 2px solid transparent;
+    }
+    
+    .tab:hover {
+      color: var(--text-primary);
+      background: var(--hover-bg);
+    }
+    
+    .tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent-blue);
+    }
+    
+    .source-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    
+    .terminal {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+    
+    .log-entry {
+      padding: 0.5rem;
+      margin: 0.25rem 0;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      display: grid;
+      grid-template-columns: 160px 80px 120px 1fr;
+      gap: 12px;
+      border-left: 3px solid transparent;
+    }
+    
+    .log-entry:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .timestamp {
+      color: var(--text-secondary);
+    }
+    
+    .level {
+      text-transform: uppercase;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    
+    .level-ERROR { color: var(--level-error); background: rgba(244, 67, 54, 0.1); }
+    .level-WARNING { color: var(--level-warning); background: rgba(255, 193, 7, 0.1); }
+    .level-INFO { color: var(--level-info); background: rgba(33, 150, 243, 0.1); }
+    .level-DEBUG { color: var(--level-debug); background: rgba(156, 39, 176, 0.1); }
+    
+    .source {
+      color: var(--text-secondary);
+    }
+    
+    .message {
+      word-break: break-word;
+    }
+    
+    .message pre {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    
+    footer {
+      background: var(--bg-secondary);
+      padding: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .footer-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .search-container {
+      position: relative;
+      flex: 1;
+      max-width: 400px;
+    }
+    
+    input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--text-primary);
+    }
+    
+    button {
+      padding: 0.5rem 1rem;
+      background: var(--bg-tertiary);
+      border: none;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: var(--hover-bg);
+      color: var(--text-primary);
+    }
+    
+    button.active {
+      background: var(--active-bg);
+      color: var(--text-primary);
+    }
+    
+    .source-worker { border-left-color: var(--source-worker); }
+    .source-system { border-left-color: var(--source-system); }
+    .source-backend { border-left-color: var(--source-backend); }
+    .source-python { border-left-color: var(--source-python); }
+    .source-nodejs { border-left-color: var(--source-nodejs); }
+    .source-filesystem { border-left-color: var(--source-filesystem); }
+    .source-supabase { border-left-color: var(--source-supabase); }
+    
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div class="ascii-art" id="ascii-art"></div>
+      <div class="connection-status">
+        <span class="status-indicator"></span>
+        <span class="status-text">Connecting...</span>
+      </div>
+    </div>
+  </header>
+  
+  <div class="tabs">
+    <div class="tab active" data-source="all">All Logs</div>
+    <div class="tab" data-source="worker">
+      <span class="source-indicator"></span>
+      <span>⚙️ Worker</span>
+    </div>
+    <div class="tab" data-source="system">
+      <span class="source-indicator"></span>
+      <span>🖥️ System</span>
+    </div>
+    <div class="tab" data-source="backend">
+      <span class="source-indicator"></span>
+      <span>🔧 Backend</span>
+    </div>
+    <div class="tab" data-source="python">
+      <span class="source-indicator"></span>
+      <span>🐍 Python</span>
+    </div>
+    <div class="tab" data-source="nodejs">
+      <span class="source-indicator"></span>
+      <span>📦 Node.js</span>
+    </div>
+    <div class="tab" data-source="filesystem">
+      <span class="source-indicator"></span>
+      <span>📂 File System</span>
+    </div>
+    <div class="tab" data-source="supabase">
+      <span class="source-indicator"></span>
+      <span>📊 Supabase</span>
+    </div>
+  </div>
+  
+  <div class="terminal" id="terminal"></div>
+  
+  <footer>
+    <div class="footer-controls">
+      <div class="search-container">
+        <input type="text" id="filter-input" placeholder="Filter logs...">
+      </div>
+      
+      <div class="button-group">
+        <button class="level-filter active" data-level="all">All</button>
+        <button class="level-filter" data-level="ERROR">Errors</button>
+        <button class="level-filter" data-level="WARNING">Warnings</button>
+        <button class="level-filter" data-level="INFO">Info</button>
+        <button class="level-filter" data-level="DEBUG">Debug</button>
+      </div>
+      
+      <button id="clear-btn">Clear</button>
+      <button id="download-btn">Download</button>
+      <button id="scroll-lock-btn">Scroll Lock: OFF</button>
+    </div>
+  </footer>
+
+  <script>
+    // State management
+    let logs = [];
+    let isScrollLocked = false;
+    let currentFilter = '';
+    let currentSource = 'all';
+    let currentLevel = 'all';
+    let sseConnection = null;
+    
+    // DOM Elements
+    const terminal = document.getElementById('terminal');
+    const filterInput = document.getElementById('filter-input');
+    const clearBtn = document.getElementById('clear-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const scrollLockBtn = document.getElementById('scroll-lock-btn');
+    const statusIndicator = document.querySelector('.status-indicator');
+    const statusText = document.querySelector('.status-text');
+    const asciiArt = document.getElementById('ascii-art');
+    
+    // Initialize ASCII art
+    fetch('/ascii').then(response => response.text()).then(art => {
+      asciiArt.textContent = art;
+    });
+    
+    // Utility functions
+    function formatTimestamp(timestamp) {
+      return new Date(timestamp).toLocaleString();
+    }
+    
+    function formatMessage(message) {
+      if (typeof message === 'object') {
+        return '<pre>' + JSON.stringify(message, null, 2) + '</pre>';
+      }
+      return String(message);
+    }
+    
+    function scrollToBottom() {
+      if (!isScrollLocked) {
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+    }
+    
+    // Log filtering and rendering
+    function shouldShowLog(log) {
+      if (currentSource !== 'all' && log.source !== currentSource) return false;
+      if (currentLevel !== 'all' && log.level !== currentLevel) return false;
+      if (currentFilter) {
+        const searchText = JSON.stringify(log).toLowerCase();
+        return searchText.includes(currentFilter.toLowerCase());
+      }
+      return true;
+    }
+    
+    function renderLog(log) {
+      const logElement = document.createElement('div');
+      logElement.className = `log-entry source-${log.source}`;
+      
+      if (!shouldShowLog(log)) {
+        logElement.classList.add('hidden');
+      }
+      
+      logElement.innerHTML = `
+        <span class="timestamp">${formatTimestamp(log.timestamp)}</span>
+        <span class="level level-${log.level}">${log.level}</span>
+        <span class="source">[${log.source}]</span>
+        <span class="message">${formatMessage(log.message)}</span>
+      `;
+      
+      terminal.appendChild(logElement);
+      scrollToBottom();
+    }
+    
+    function renderLogs() {
+      terminal.innerHTML = '';
+      logs.forEach(renderLog);
+    }
+    
+    function applyFilters() {
+      document.querySelectorAll('.log-entry').forEach(entry => {
+        const log = {
+          source: entry.querySelector('.source').textContent.slice(1, -1),
+          level: entry.querySelector('.level').textContent,
+          message: entry.querySelector('.message').textContent
+        };
+        
+        entry.classList.toggle('hidden', !shouldShowLog(log));
+      });
+      
+      scrollToBottom();
+    }
+    
+    // Event handlers
+    function handleNewLog(log) {
+      logs.push(log);
+      renderLog(log);
+    }
+    
+    function handleClearLogs(source) {
+      if (source === 'all') {
+        logs = [];
+      } else {
+        logs = logs.filter(log => log.source !== source);
+      }
+      renderLogs();
+    }
+    
+    function downloadLogs() {
+      const format = confirm('Download as JSON? Click OK for JSON, Cancel for plain text.') ? 'json' : 'txt';
+      
+      const filteredLogs = logs.filter(shouldShowLog);
+      let content;
+      
+      if (format === 'json') {
+        content = JSON.stringify(filteredLogs, null, 2);
+      } else {
+        content = filteredLogs.map(log => {
+          return `[${formatTimestamp(log.timestamp)}] [${log.level}] [${log.source}] ${log.message}`;
+        }).join('\n');
+      }
+      
+      const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      
+      const date = new Date().toISOString().split('T')[0];
+      const sourceText = currentSource === 'all' ? 'all-sources' : currentSource;
+      const levelText = currentLevel === 'all' ? 'all-levels' : currentLevel;
+      
+      a.href = url;
+      a.download = `scribe-logs-${sourceText}-${levelText}-${date}.${format}`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+    }
+    
+    // Event listeners
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentSource = tab.dataset.source;
+        applyFilters();
+      });
+    });
+    
+    document.querySelectorAll('.level-filter').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.level-filter').forEach(b => b.classList.remove('active'));
+        button.classList.add('active');
+        currentLevel = button.dataset.level;
+        applyFilters();
+      });
+    });
+    
+    filterInput.addEventListener('input', () => {
+      currentFilter = filterInput.value;
+      applyFilters();
+    });
+    
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear the logs?')) {
+        fetch('/api/logs/clear' + (currentSource === 'all' ? '-all' : ''), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: currentSource === 'all' ? '' : JSON.stringify({ source: currentSource })
+        });
+      }
+    });
+    
+    downloadBtn.addEventListener('click', downloadLogs);
+    
+    scrollLockBtn.addEventListener('click', () => {
+      isScrollLocked = !isScrollLocked;
+      scrollLockBtn.textContent = `Scroll Lock: ${isScrollLocked ? 'ON' : 'OFF'}`;
+      scrollLockBtn.classList.toggle('active', isScrollLocked);
+      if (!isScrollLocked) {
+        scrollToBottom();
+      }
+    });
+    
+    // SSE Connection
+    function connectSSE() {
+      if (sseConnection) {
+        sseConnection.close();
+      }
+      
+      statusIndicator.classList.remove('connected');
+      statusText.textContent = 'Connecting...';
+      
+      sseConnection = new EventSource('/sse');
+      
+      sseConnection.onopen = () => {
+        statusIndicator.classList.add('connected');
+        statusText.textContent = 'Connected';
+      };
+      
+      sseConnection.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+          case 'initial':
+            logs = [];
+            Object.values(data.payload).forEach(sourceLogs => {
+              logs.push(...sourceLogs);
+            });
+            logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            renderLogs();
+            break;
+            
+          case 'log':
+            handleNewLog(data.payload);
+            break;
+            
+          case 'logs_cleared':
+            handleClearLogs(data.source);
+            break;
+            
+          case 'all_logs_cleared':
+            handleClearLogs('all');
+            break;
+        }
+      };
+      
+      sseConnection.onerror = () => {
+        statusIndicator.classList.remove('connected');
+        statusText.textContent = 'Disconnected. Retrying...';
+        setTimeout(connectSSE, 5000);
+      };
+    }
+    
+    // Start the application
+    connectSSE();
+  </script>
+</body>
+</html> 

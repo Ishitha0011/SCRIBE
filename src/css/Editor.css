@@ -642,17 +642,14 @@
 
 /* New Canvas Button */
 .NewCanvasButton {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background-color: transparent;
-  border: 1px solid rgba(121, 82, 179, 0.3);
-  color: #7952b3;
+  margin-top: 20px;
+  color: white;
+  border: none;
   border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 13px;
+  padding: 10px 20px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
 }
 
 .Editor.dark .NewCanvasButton {
