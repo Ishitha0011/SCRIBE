@@ -1,17 +1,19 @@
 /* eslint-disable */
 
 import API_BASE_URL from './config';
-import { logEvent } from './logging'; 
 
 // Create a logger for file operations
 const logFileOperation = (operation, details = {}, level = 'INFO') => {
-  logEvent({
+  const logEntry = {
+    timestamp: new Date().toISOString(),
     operation,
-    ...details,
-    level,
-    source: 'filesystem'
-  });
-};
+    level: level.toUpperCase(),
+    details,
+  };
+  
+  // Send log entry to the logging system (e.g., console, server)
+  console.log(`[${logEntry.timestamp}] [${logEntry.level}] [${logEntry.operation}]`, logEntry.details);
+}
 
 class FileService {
   // Get the last workspace directory

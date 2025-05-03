@@ -79,6 +79,30 @@ Object.keys(LOG_SOURCES).forEach(source => {
   memoryLogs[source] = [];
 });
 
+// Function to read and parse logs
+const readAndParseLogs = (filePath) => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    return content.split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return {
+            level: 'RAW',
+            message: line,
+            timestamp: new Date().toISOString(),
+            source: path.basename(filePath, '.logs')
+          };
+        }
+      });
+  } catch (error) {
+    console.error(`Error reading logs from ${filePath}:`, error);
+    return [];
+  }
+};
+
 // Load existing logs from files into memory on startup
 function loadLogsFromDisk() {
   console.log('Loading logs from disk into memory...');
@@ -169,30 +193,6 @@ const sendEventToClients = (data) => {
       clients = clients.filter(c => c.id !== client.id);
     }
   });
-};
-
-// Function to read and parse logs
-const readAndParseLogs = (filePath) => {
-  try {
-    const content = fs.readFileSync(filePath, 'utf8');
-    return content.split('\n')
-      .filter(line => line.trim())
-      .map(line => {
-        try {
-          return JSON.parse(line);
-        } catch {
-          return {
-            level: 'RAW',
-            message: line,
-            timestamp: new Date().toISOString(),
-            source: path.basename(filePath, '.logs')
-          };
-        }
-      });
-  } catch (error) {
-    console.error(`Error reading logs from ${filePath}:`, error);
-    return [];
-  }
 };
 
 // Endpoint to write logs
