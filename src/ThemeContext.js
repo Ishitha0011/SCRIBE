@@ -4,76 +4,85 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'light'; // Default theme is light
+    // Get theme from localStorage or default to 'light'
+    return localStorage.getItem('theme') || 'light'; 
   });
 
   useEffect(() => {
-    localStorage.setItem('theme', theme); // Save theme to localStorage
+    // Save theme choice to localStorage
+    localStorage.setItem('theme', theme);
 
-    // Add theme class to the root HTML element for global styling
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(theme);
+    const root = document.documentElement;
+    
+    // Remove previous theme class and add the current one
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
 
-    // Apply global theme-specific CSS variables
-    if (theme === 'dark') {
-      document.documentElement.style.setProperty('--sidebar-bg-color', '#1e1e1e'); // Dark sidebar background - updated to match
-      document.documentElement.style.setProperty('--editor-bg-color', '#1e1e1e'); // Dark editor background - updated to match
-      document.documentElement.style.setProperty('--editor-bg-color-rgb', '30, 30, 30'); // RGB values for dark background
-      document.documentElement.style.setProperty('--editor-text-color', '#fff'); // White text for dark theme
-      document.documentElement.style.setProperty('--editor-text-color-rgb', '255, 255, 255'); // RGB values for white
-      document.documentElement.style.setProperty('--textarea-bg-color', '#2a2a2a'); // Dark textarea background
-      document.documentElement.style.setProperty('--textarea-text-color', '#fff'); // White text for textarea in dark theme
-      document.documentElement.style.setProperty('--muted-text-color', '#a0a0a0'); // Muted text color for dark theme
-      document.documentElement.style.setProperty('--success-color', '#2a6b2a'); // Success color for dark theme
-      document.documentElement.style.setProperty('--success-border-color', '#3c8c3c'); // Success border color for dark theme
-      document.documentElement.style.setProperty('--dark-sidebar-bg-color', '#1a1a1a'); // Dark sidebar background for dark theme
-      document.documentElement.style.setProperty('--dark-sidebar-text-color', '#fff');
-      document.documentElement.style.setProperty('--dark-border-color', '#333'); // Dark border color for dark theme
+    // Centralized theme variable definitions
+    const themeVariables = {
+      light: {
+        '--background-primary': '#ffffff',
+        '--background-secondary': '#f7f7f7',
+        '--background-hover': '#eeeeee',
+        '--text-primary': '#222222',
+        '--text-secondary': '#555555',
+        '--border-color': '#e0e0e0',
+        '--accent-color': '#7952b3',      // Base Purple
+        '--accent-color-light': '#e8dff5', // Light Purple Tint
+        '--accent-color-hover': '#6841a0', // Darker Purple on Hover
+        '--accent-text-color': '#ffffff',  // White Text for Accent Bg
+        '--success-color': '#28a745',     // Green
+        '--warning-color': '#fd7e14',     // Orange
+        '--error-color': '#dc3545',      // Red
+        // -- You can add back other specific variables if needed --
+        // '--sidebar-bg-color': '#f9f9f9',
+        // '--editor-bg-color': '#ffffff',
+        // '--input-bg-color': '#f9f9f9', 
+      },
+      dark: {
+        '--background-primary': '#2d2d2d', // Dark Grey
+        '--background-secondary': '#383838', // Slightly Lighter Dark Grey
+        '--background-hover': '#4a4a4a',    // Hover Grey
+        '--text-primary': '#e0e0e0',       // Light Grey Text
+        '--text-secondary': '#aaaaaa',      // Medium Grey Text
+        '--border-color': '#555555',       // Dark Border
+        '--accent-color': '#9775ca',      // Lighter Purple
+        '--accent-color-light': '#4a3f5a', // Dark Purple Tint
+        '--accent-color-hover': '#ab8fd9', // Lighter Purple on Hover
+        '--accent-text-color': '#ffffff',
+        '--success-color': '#51cf66',     // Brighter Green
+        '--warning-color': '#ffc078',     // Lighter Orange
+        '--error-color': '#ff6b6b',      // Lighter Red
+        // -- You can add back other specific variables if needed --
+        // '--sidebar-bg-color': '#1e1e1e',
+        // '--editor-bg-color': '#1e1e1e',
+        // '--input-bg-color': '#2a2a2a',
+      }
+    };
 
-      // Dark Theme Popup Dialog Colors
-      document.documentElement.style.setProperty('--bg-color', '#1e1e1e'); // Updated to match
-      document.documentElement.style.setProperty('--text-color', '#ffffff');
-      document.documentElement.style.setProperty('--border-color', '#444');
-      document.documentElement.style.setProperty('--input-bg-color', '#2a2a2a'); // Updated to be slightly lighter than bg
-      document.documentElement.style.setProperty('--primary-color', '#7289da');
-      document.documentElement.style.setProperty('--primary-color-light', 'rgba(114, 137, 218, 0.2)');
-      document.documentElement.style.setProperty('--primary-hover-color', '#5865f2');
-      document.documentElement.style.setProperty('--cancel-bg-color', '#3a3f44');
-      document.documentElement.style.setProperty('--cancel-text-color', '#b3b3b3');
-      document.documentElement.style.setProperty('--cancel-hover-bg-color', '#4e555b');
-    } else {
-      document.documentElement.style.setProperty('--sidebar-bg-color', '#f9f9f9'); // Light sidebar background
-      document.documentElement.style.setProperty('--editor-bg-color', '#fff'); // Light editor background
-      document.documentElement.style.setProperty('--editor-bg-color-rgb', '255, 255, 255'); // RGB values for light background
-      document.documentElement.style.setProperty('--editor-text-color', '#000'); // Black text for light theme
-      document.documentElement.style.setProperty('--editor-text-color-rgb', '0, 0, 0'); // RGB values for black
-      document.documentElement.style.setProperty('--textarea-bg-color', '#fff'); // Light textarea background
-      document.documentElement.style.setProperty('--textarea-text-color', '#000'); // Black text for textarea in light theme
-      document.documentElement.style.setProperty('--muted-text-color', '#666666'); // Muted text color for light theme
-      document.documentElement.style.setProperty('--success-color', '#4caf50'); // Success color for light theme
-      document.documentElement.style.setProperty('--success-border-color', '#388e3c'); // Success border color for light theme
-      document.documentElement.style.setProperty('--dark-sidebar-bg-color', '#f9f9f9'); // Dark sidebar background for light theme
-      document.documentElement.style.setProperty('--dark-sidebar-text-color', '#000'); // Dark sidebar text for light theme
-      document.documentElement.style.setProperty('--dark-border-color', '#e0e0e0'); // Dark border color for light theme
-
-      // Light Theme Popup Dialog Colors
-      document.documentElement.style.setProperty('--bg-color', '#ffffff');
-      document.documentElement.style.setProperty('--text-color', '#333333');
-      document.documentElement.style.setProperty('--border-color', '#e0e0e0');
-      document.documentElement.style.setProperty('--input-bg-color', '#f9f9f9');
-      document.documentElement.style.setProperty('--primary-color', '#007bff');
-      document.documentElement.style.setProperty('--primary-color-light', 'rgba(0, 123, 255, 0.2)');
-      document.documentElement.style.setProperty('--primary-hover-color', '#0056b3');
-      document.documentElement.style.setProperty('--cancel-bg-color', '#f8f9fa');
-      document.documentElement.style.setProperty('--cancel-text-color', '#6c757d');
-      document.documentElement.style.setProperty('--cancel-hover-bg-color', '#e2e6ea');
+    // Get variables for the current theme
+    const currentThemeVars = themeVariables[theme];
+    
+    // Apply variables to the root element
+    for (const [key, value] of Object.entries(currentThemeVars)) {
+      root.style.setProperty(key, value);
     }
-  }, [theme]);
 
+    // Cleanup function (optional, might remove variables on unmount)
+    // return () => {
+    //   for (const key of Object.keys(currentThemeVars)) {
+    //     root.style.removeProperty(key);
+    //   }
+    // };
+
+  }, [theme]); // Rerun effect when theme changes
+
+  // Function to toggle the theme
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light')); // Toggle theme
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
+  // Provide theme and toggle function to children
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
@@ -81,4 +90,5 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
+// Hook to use the theme context
 export const useTheme = () => useContext(ThemeContext);

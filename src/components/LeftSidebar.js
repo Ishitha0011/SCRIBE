@@ -138,19 +138,37 @@ const LeftSidebar = () => {
 
   const openDirectory = async () => {
     try {
-      // We'll use a simple prompt for now since we're using server-side file handling
-      const directory = prompt('Enter the full path to your workspace directory:');
-      if (directory) {
-        const success = await setWorkspace(directory);
-        if (success) {
-          console.log('Workspace set successfully');
-        } else {
-          alert('Failed to set workspace. Check the path and try again.');
+      // Call the backend endpoint to open native file dialog with correct base URL
+      const response = await fetch('http://localhost:8000/api/workspace/select-directory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to open directory selector (Status: ${response.status})`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.status === 'success' && result.directory) {
+        const success = await setWorkspace(result.directory);
+        if (success) {
+          console.log('Workspace set successfully to:', result.directory);
+        } else {
+          console.error('Failed to set workspace:', result.directory);
+          alert('Failed to set workspace. Please try again.');
+        }
+      } else if (result.status === 'cancelled') {
+        // User cancelled the selection, do nothing
+        console.log('Workspace selection cancelled');
+      } else {
+        throw new Error('Invalid response from directory selector');
       }
     } catch (error) {
       console.error('Error opening directory:', error);
-      alert('Error opening directory');
+      alert('Error opening directory: ' + error.message);
     }
   };
 

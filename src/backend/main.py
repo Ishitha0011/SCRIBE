@@ -28,7 +28,7 @@ app = FastAPI()
 # Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],  # Add your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,6 +52,13 @@ workspace_info = {
 CONFIG_FILE = "workspace_config.json"
 
 
+# Path normalization function for cross-platform compatibility
+def normalize_path(path):
+    """Normalize path for cross-platform compatibility (Windows/macOS/Linux)"""
+    # Convert to Path object which handles different separators
+    return os.path.normpath(path)
+
+
 # Load config if it exists
 def load_config():
     global workspace_info
@@ -59,6 +66,9 @@ def load_config():
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, 'r') as f:
                 workspace_info = json.load(f)
+                # Normalize path if it exists
+                if workspace_info.get("last_directory"):
+                    workspace_info["last_directory"] = normalize_path(workspace_info["last_directory"])
     except Exception as e:
         logging.error(f"Error loading config: {e}", exc_info=True)
 
@@ -292,7 +302,7 @@ class ScribeAIResponse:
 async def set_workspace(request: WorkspaceRequest):
     """Set the current workspace directory"""
     try:
-        directory = request.directory
+        directory = normalize_path(request.directory)
         if not os.path.exists(directory):
             raise HTTPException(status_code=404, detail="Directory not found")
 
@@ -328,6 +338,7 @@ async def list_files(directory: Optional[str] = None):
             if not directory:
                 return {"items": [], "error": "No workspace set"}
 
+        directory = normalize_path(directory)
         if not os.path.exists(directory):
             raise HTTPException(status_code=404, detail="Directory not found")
 
@@ -340,7 +351,7 @@ async def list_files(directory: Optional[str] = None):
 
 
 def read_directory_structure(directory, base_path=None):
-    """Read directory structure recursively"""
+    """Read directory structure recursively with enhanced metadata"""
     items = []
     if base_path is None:
         base_path = directory
@@ -348,19 +359,29 @@ def read_directory_structure(directory, base_path=None):
     try:
         for entry in os.scandir(directory):
             relative_path = os.path.relpath(entry.path, base_path)
-
+            
+            # Get basic file stats
+            stats = entry.stat()
+            
             if entry.is_dir():
                 items.append({
                     "id": relative_path,
                     "name": entry.name,
                     "type": "folder",
+                    "modified": datetime.fromtimestamp(stats.st_mtime).isoformat(),
                     "children": read_directory_structure(entry.path, base_path)
                 })
             else:
+                # Get file extension
+                _, ext = os.path.splitext(entry.name)
+                
                 items.append({
                     "id": relative_path,
                     "name": entry.name,
-                    "type": "file"
+                    "type": "file",
+                    "size": stats.st_size,
+                    "extension": ext.lower()[1:] if ext else "",
+                    "modified": datetime.fromtimestamp(stats.st_mtime).isoformat()
                 })
         return items
     except Exception as e:
@@ -375,7 +396,9 @@ async def read_file(path: str):
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
 
-        full_path = os.path.join(workspace_info["last_directory"], path)
+        workspace_dir = normalize_path(workspace_info["last_directory"])
+        path = normalize_path(path)
+        full_path = os.path.join(workspace_dir, path)
 
         if not os.path.exists(full_path):
             raise HTTPException(status_code=404, detail="File not found")
@@ -402,7 +425,9 @@ async def write_file(request: FileRequest):
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
 
-        full_path = os.path.join(workspace_info["last_directory"], request.path)
+        workspace_dir = normalize_path(workspace_info["last_directory"])
+        path = normalize_path(request.path)
+        full_path = os.path.join(workspace_dir, path)
 
         # Create directories if they don't exist
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
@@ -423,11 +448,14 @@ async def create_file_or_folder(request: CreateFileRequest):
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
 
+        workspace_dir = normalize_path(workspace_info["last_directory"])
+        
         # Determine the parent directory
         if request.parent_path:
-            parent_dir = os.path.join(workspace_info["last_directory"], request.parent_path)
+            parent_path = normalize_path(request.parent_path)
+            parent_dir = os.path.join(workspace_dir, parent_path)
         else:
-            parent_dir = workspace_info["last_directory"]
+            parent_dir = workspace_dir
 
         # Create full path
         full_path = os.path.join(parent_dir, request.name)
@@ -445,7 +473,7 @@ async def create_file_or_folder(request: CreateFileRequest):
                 pass
 
         # Get relative path from workspace root
-        relative_path = os.path.relpath(full_path, workspace_info["last_directory"])
+        relative_path = os.path.relpath(full_path, workspace_dir)
 
         return {
             "status": "success",
@@ -465,7 +493,9 @@ async def delete_file(path: str):
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
 
-        full_path = os.path.join(workspace_info["last_directory"], path)
+        workspace_dir = normalize_path(workspace_info["last_directory"])
+        path = normalize_path(path)
+        full_path = os.path.join(workspace_dir, path)
 
         if not os.path.exists(full_path):
             raise HTTPException(status_code=404, detail="File not found")
@@ -488,8 +518,12 @@ async def rename_file(request: RenameRequest):
         if not workspace_info.get("last_directory"):
             raise HTTPException(status_code=400, detail="No workspace set")
 
-        old_full_path = os.path.join(workspace_info["last_directory"], request.old_path)
-        new_full_path = os.path.join(workspace_info["last_directory"], request.new_path)
+        workspace_dir = normalize_path(workspace_info["last_directory"])
+        old_path = normalize_path(request.old_path)
+        new_path = normalize_path(request.new_path)
+        
+        old_full_path = os.path.join(workspace_dir, old_path)
+        new_full_path = os.path.join(workspace_dir, new_path)
 
         if not os.path.exists(old_full_path):
             raise HTTPException(status_code=404, detail="File not found")
@@ -597,18 +631,23 @@ async def select_directory():
         # Create a root window but hide it
         root = tk.Tk()
         root.withdraw()  # Hide the main window
-
-        # Open the native file dialog
+        
+        # Force to the foreground on macOS
+        root.attributes("-topmost", True)
+        
+        # Open the native file dialog with improved UI handling
         selected_dir = filedialog.askdirectory(
             title='Select Workspace Directory',
-            mustexist=True  # Ensure the directory exists
+            mustexist=True,  # Ensure the directory exists
+            parent=root  # Explicitly set parent to ensure proper modal behavior
         )
-
-        # Destroy the root window
+        
+        # Immediately kill the window to prevent hanging
         root.destroy()
 
         if selected_dir:
-            # Update workspace info
+            # Normalize path and update workspace info
+            selected_dir = normalize_path(selected_dir)
             workspace_info["last_directory"] = selected_dir
             save_config()
             return {"status": "success", "directory": selected_dir}
@@ -617,6 +656,68 @@ async def select_directory():
 
     except Exception as e:
         logging.error(f"Error selecting directory: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/files/select-file")
+async def select_file(multiple: bool = False):
+    """Open native file dialog to select file(s)"""
+    try:
+        # Create a root window but hide it
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        
+        # Force to the foreground on macOS
+        root.attributes("-topmost", True)
+        
+        # Open the native file dialog
+        if multiple:
+            selected_files = filedialog.askopenfilenames(
+                title='Select Files',
+                parent=root  # Explicitly set parent
+            )
+            files = list(selected_files)  # Convert to list
+        else:
+            selected_file = filedialog.askopenfilename(
+                title='Select File',
+                parent=root  # Explicitly set parent
+            )
+            files = [selected_file] if selected_file else []
+        
+        # Immediately destroy the window
+        root.destroy()
+        
+        # Normalize paths
+        normalized_files = [normalize_path(f) for f in files if f]
+        
+        return {"status": "success" if normalized_files else "cancelled", "files": normalized_files}
+    
+    except Exception as e:
+        logging.error(f"Error selecting file(s): {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/workspace/browse")
+async def browse_workspace():
+    """Get the file structure from the current workspace"""
+    try:
+        directory = workspace_info.get("last_directory")
+        if not directory:
+            return {"items": [], "error": "No workspace set"}
+            
+        directory = normalize_path(directory)
+        if not os.path.exists(directory):
+            raise HTTPException(status_code=404, detail="Directory not found")
+            
+        # Get file structure recursively with more details
+        structure = read_directory_structure(directory)
+        return {
+            "status": "success",
+            "directory": directory,
+            "items": structure
+        }
+    except Exception as e:
+        logging.error(f"Error browsing workspace: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -777,6 +878,53 @@ log_worker_thread.start()
 logger = logging.getLogger("scribe-backend")
 logger.info("Python backend logging initialized and configured to send to Node.js log server.")
 # --- End Centralized Logging Setup ---
+
+
+class AIChatRequest(BaseModel):
+    system_prompt: str
+    user_prompt: str
+
+@app.post("/api/ai-chat")
+async def handle_ai_chat(request: AIChatRequest):
+    """Handle AI chat requests from the AIChatNode"""
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="GEMINI_API_KEY not found in environment variables")
+        
+        genai.configure(api_key=api_key)
+        
+        generation_config = {
+            "temperature": 1,
+            "top_p": 0.95,
+            "top_k": 40,
+            "max_output_tokens": 8192,
+        }
+        
+        try:
+            model = genai.GenerativeModel(
+                model_name="gemini-2.0-flash",
+                generation_config=generation_config
+            )
+            
+            # Combine system prompt and user prompt
+            full_prompt = f"{request.system_prompt}\n\nUser: {request.user_prompt}"
+            
+            # Send the prompt
+            response = model.generate_content(full_prompt)
+            
+            if not response.text:
+                raise HTTPException(status_code=500, detail="Empty response from Gemini API")
+                
+            return {"response": response.text}
+            
+        except Exception as e:
+            logging.error(f"Error calling Gemini API: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+            
+    except Exception as e:
+        logging.error(f"Error in AI chat endpoint: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

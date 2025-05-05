@@ -25,16 +25,25 @@ import FileNode from './nodes/FileNode';
 import NoteNode from './nodes/NoteNode';
 import StartNode from './nodes/StartNode';
 
-// Map of node types to their components
+// Function to create node component wrappers that pass the ID properly
+const createNodeWrapper = (NodeComponent) => {
+  return (props) => {
+    // Extract the id from props which comes from ReactFlow
+    const { id } = props;
+    return <NodeComponent {...props} id={id} />;
+  };
+};
+
+// Map of node types to their components, with proper ID passing
 const nodeTypes = {
-  textNode: TextNode,
-  pdfNode: PDFNode,
-  youtubeNode: YouTubeNode,
-  aiChatNode: AIChatNode,
-  aiOutputNode: AIOutputNode,
-  fileNode: FileNode,
-  noteNode: NoteNode,
-  startNode: StartNode,
+  textNode: createNodeWrapper(TextNode),
+  pdfNode: createNodeWrapper(PDFNode),
+  youtubeNode: createNodeWrapper(YouTubeNode),
+  aiChatNode: createNodeWrapper(AIChatNode),
+  aiOutputNode: createNodeWrapper(AIOutputNode),
+  fileNode: createNodeWrapper(FileNode),
+  noteNode: createNodeWrapper(NoteNode),
+  startNode: createNodeWrapper(StartNode),
 };
 
 const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
@@ -50,16 +59,35 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
   
   // Store node execution handlers
   const nodeExecutionHandlers = useRef(new Map());
+  const nodeRegistrationLog = useRef(new Set());
 
   // Register a node for flow execution
   const registerNodeForFlow = useCallback((nodeId, executionHandler) => {
+    if (!nodeId) {
+      console.error('Cannot register node: undefined node ID');
+      return () => {};
+    }
+    
+    if (typeof executionHandler !== 'function') {
+      console.error(`Cannot register node ${nodeId}: execution handler is not a function`);
+      return () => {};
+    }
+    
+    if (!nodeRegistrationLog.current.has(nodeId)) {
+      console.log(`Registering node ${nodeId} for flow execution`);
+      nodeRegistrationLog.current.add(nodeId);
+    }
+    
+    // Set the execution handler
     nodeExecutionHandlers.current.set(nodeId, executionHandler);
     
     // Update node connections status for start nodes
     updateStartNodeConnections();
     
     return () => {
+      console.log(`Unregistering node ${nodeId} from flow execution`);
       nodeExecutionHandlers.current.delete(nodeId);
+      nodeRegistrationLog.current.delete(nodeId);
     };
   }, []);
   
@@ -91,11 +119,16 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
 
   // Calculate execution path from a start node
   const calculateExecutionPath = useCallback((startNodeId) => {
+    if (!startNodeId) {
+      console.error('Cannot calculate execution path: undefined start node ID');
+      return [];
+    }
+    
     const path = new Set();
     const visited = new Set();
     
     const traverse = (nodeId) => {
-      if (visited.has(nodeId)) return;
+      if (!nodeId || visited.has(nodeId)) return;
       visited.add(nodeId);
       path.add(nodeId);
       
@@ -104,22 +137,40 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
       
       // Process each outgoing edge
       outgoingEdges.forEach(edge => {
+        if (edge.target) {
         traverse(edge.target);
+        }
       });
     };
     
     traverse(startNodeId);
-    return Array.from(path);
+    const executionPath = Array.from(path);
+    
+    console.log(`Calculated execution path from ${startNodeId}:`, executionPath);
+    return executionPath;
   }, [edges]);
 
   // Execute the flow starting from a node
   const executeFlow = useCallback(async (startNodeId) => {
-    if (isExecutingFlow) return;
+    if (isExecutingFlow || !startNodeId) {
+      console.warn('Cannot execute flow: flow already executing or invalid start node ID');
+      return;
+    }
     
     try {
       setIsExecutingFlow(true);
       const executionPath = calculateExecutionPath(startNodeId);
+      
+      // Validate execution path contains valid node IDs
+      if (!executionPath || executionPath.length === 0 || !executionPath[0]) {
+        console.error('Invalid execution path:', executionPath);
+        setIsExecutingFlow(false);
+        return;
+      }
+      
       setExecutionPath(executionPath);
+      
+      console.log('Execution path:', executionPath);
       
       // Mark nodes in execution path
       setNodes(currentNodes => 
@@ -135,12 +186,21 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
         }))
       );
       
-      // Execute nodes in sequence with debounced updates
+      // Execute nodes in sequence
+      let previousNodeOutput = null;
       for (let i = 0; i < executionPath.length; i++) {
         const nodeId = executionPath[i];
+        if (!nodeId) {
+          console.error(`Invalid node ID at position ${i} in execution path`);
+          continue;
+        }
+        
         const node = nodes.find(n => n.id === nodeId);
         
-        if (!node) continue;
+        if (!node) {
+          console.error(`Node with ID ${nodeId} not found`);
+          continue;
+        }
         
         // Mark current node as executing
         setNodes(currentNodes => 
@@ -154,10 +214,14 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
           }))
         );
         
-        // Execute the node
-        if (node.data?.onNodeRun) {
+        // Execute the node with the output from the previous node
+        if (nodeExecutionHandlers.current.has(nodeId)) {
           try {
-            await node.data.onNodeRun(nodeId);
+            console.log(`Executing node ${nodeId} (${node.type})`);
+            const handlerFn = nodeExecutionHandlers.current.get(nodeId);
+            
+            // Pass the output from the previous node to the current node
+            previousNodeOutput = await handlerFn(previousNodeOutput);
             
             // Mark node as complete
             setNodes(currentNodes => 
@@ -186,9 +250,11 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
             );
             break;
           }
+        } else {
+          console.warn(`No execution handler registered for node ${nodeId}`);
         }
         
-        // Add a small delay between node executions to prevent ResizeObserver issues
+        // Add a small delay between node executions to prevent UI issues
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
@@ -203,7 +269,7 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
         }))
       );
       
-      console.log('Flow execution completed');
+      console.log('Flow execution completed successfully');
     } catch (error) {
       console.error('Error executing flow:', error);
     } finally {
@@ -232,14 +298,31 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
   useEffect(() => {
     const debounceTimeout = setTimeout(() => {
       setNodes(nds => 
-        nds.map(node => ({
+        nds.map(node => {
+          if (!node.id) {
+            console.warn('Found node without ID during registration');
+            return node;
+          }
+          
+          return {
           ...node,
           data: {
             ...node.data,
             registerNodeForFlow,
-            onNodeRun: node.type === 'startNode' ? executeFlow : undefined
+              onNodeRun: node.type === 'startNode' ? 
+                (startNodeId) => {
+                  // Ensure we have a valid start node ID, fall back to the node's own ID
+                  const validStartNodeId = (startNodeId && startNodeId !== 'undefined') 
+                    ? startNodeId 
+                    : node.id;
+                    
+                  console.log(`Executing flow using start node ID: ${validStartNodeId}`);
+                  return executeFlow(validStartNodeId);
+                } : 
+                undefined
           }
-        }))
+          };
+        })
       );
     }, 100);
     
@@ -262,20 +345,124 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
     setIsDirty(false);
   }, [canvasId]);
 
+  // Update start nodes and connection info after edges change
+  useEffect(() => {
+    // Only run this effect when edges actually change
+    const edgeCount = edges.length;
+    
+    // Log all edges for debugging but limit verbosity
+    if (edgeCount > 0) {
+      console.log(`Current edges (${edgeCount}):`);
+    }
+    
+    // Count outgoing connections for each node
+    const connectionCounts = {};
+    const targetCounts = {};
+    
+    edges.forEach(edge => {
+      // Update source connections
+      connectionCounts[edge.source] = (connectionCounts[edge.source] || 0) + 1;
+      
+      // Update target connections
+      targetCounts[edge.target] = (targetCounts[edge.target] || 0) + 1;
+    });
+    
+    // Only log if there are actually counts to report
+    if (Object.keys(connectionCounts).length > 0) {
+      console.log("Connection counts:", connectionCounts);
+    }
+    
+    // Update all nodes with connection information, but only if we have nodes
+    setNodes(currentNodes => {
+      // Find any start nodes that need updating
+      const startNodes = currentNodes.filter(node => node.type === 'startNode');
+      
+      if (startNodes.length === 0) return currentNodes;
+      
+      // Only log once per update
+      let hasLoggedUpdate = false;
+      
+      const updatedNodes = currentNodes.map(node => {
+        const hasOutgoingConnections = connectionCounts[node.id] > 0;
+        const hasIncomingConnections = targetCounts[node.id] > 0;
+        const connectionCount = connectionCounts[node.id] || 0;
+        
+        // Only update start nodes with hasConnections property
+        if (node.type === 'startNode') {
+          // Check if the connection status has actually changed
+          const currentHasConnections = node.data?.hasConnections || false;
+          const currentConnectionCount = node.data?.connectionCount || 0;
+          
+          if (currentHasConnections !== hasOutgoingConnections || currentConnectionCount !== connectionCount) {
+            if (!hasLoggedUpdate) {
+              console.log(`Updating start node ${node.id} - connections: ${connectionCount}`);
+              hasLoggedUpdate = true;
+            }
+            
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                hasConnections: hasOutgoingConnections,
+                connectionCount
+              }
+            };
+          }
+        }
+        return node;
+      });
+      
+      return updatedNodes;
+    });
+  }, [edges, setNodes]);
+
   // Handle connections between nodes
   const onConnect = useCallback((params) => {
+    if (!params.source || !params.target) {
+      console.warn('Invalid connection: missing source or target node ID');
+      return;
+    }
+    
     console.log('Creating edge connection:', params);
-    setEdges((eds) => addEdge({ ...params, animated: true }, eds));
+    
+    // Create a unique edge ID
+    const edgeId = `edge-${params.source}-${params.target}-${Date.now()}`;
+    const newEdge = { 
+      ...params, 
+      id: edgeId,
+      animated: true,
+      // Add visual styling based on types
+      style: { stroke: '#7952b3', strokeWidth: 2 }
+    };
+    
+    // Get current nodes and edges before adding the new edge
+    const currentEdges = [...edges];
+    
+    // Add the new edge using functional update to ensure we get the latest state
+    setEdges(edgeList => {
+      const updatedEdges = addEdge(newEdge, edgeList);
+      return updatedEdges;
+    });
+    
     setIsDirty(true);
     
-    // If connecting AI Chat to AI Output, set up data flow
-    if (params.source && params.target) {
+    // Configure data flow between nodes based on their types
       const sourceNode = nodes.find(node => node.id === params.source);
       const targetNode = nodes.find(node => node.id === params.target);
       
-      if (sourceNode?.type === 'aiChatNode' && targetNode?.type === 'aiOutputNode') {
-        // Set up the output change handler
-        const updatedNodes = nodes.map(node => {
+    if (!sourceNode || !targetNode) {
+      console.warn('Could not find source or target node');
+      return;
+    }
+    
+    console.log(`Connected ${sourceNode.type} to ${targetNode.type}`);
+    
+    // Only update nodes if we have a specific data flow to configure
+    // (like aiChatNode to aiOutputNode)
+    // Otherwise, rely on the edges effect to update connection counts
+    if (sourceNode.type === 'aiChatNode' && targetNode.type === 'aiOutputNode') {
+      setNodes(currentNodes => {
+        return currentNodes.map(node => {
           if (node.id === sourceNode.id) {
             return {
               ...node,
@@ -296,11 +483,12 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
           }
           return node;
         });
-        
-        setNodes(updatedNodes);
-      }
+      });
     }
-  }, [setEdges, nodes, setNodes]);
+    
+    // The rest of the connection tracking will be handled by the useEffect
+    // that watches the edges array and updates the nodes accordingly
+  }, [setEdges, nodes, edges, setNodes]);
 
   // Save the current canvas state
   const handleSaveCanvas = () => {
@@ -355,15 +543,24 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
       const newNodeId = `${nodeData.type}_${Date.now()}`;
       console.log('Creating new node with ID:', newNodeId);
       
+      const initialData = {
+        ...nodeData.data,
+        label: `New ${nodeData.type}`,
+        registerNodeForFlow, // Add flow registration to all nodes
+      };
+      
+      // Add specific properties for start nodes
+      if (nodeData.type === 'startNode') {
+        initialData.hasConnections = false;
+        initialData.connectionCount = 0;
+        initialData.workflowName = 'My Workflow';
+      }
+      
       const newNode = {
         id: newNodeId,
         type: nodeData.type,
         position,
-        data: {
-          ...nodeData.data,
-          label: `New ${nodeData.type}`,
-          registerNodeForFlow // Add flow registration to all nodes
-        },
+        data: initialData,
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -404,6 +601,38 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
       
       // Clear selection
       setSelectedNode(null);
+      
+      // Update connection statuses after deletion
+      setTimeout(() => {
+        const remainingEdges = edges.filter(edge => 
+          !connectedEdges.some(ce => ce.id === edge.id)
+        );
+        
+        // Count connections again
+        const connectionCounts = {};
+        remainingEdges.forEach(edge => {
+          connectionCounts[edge.source] = (connectionCounts[edge.source] || 0) + 1;
+        });
+        
+        // Update start nodes
+        setNodes(currentNodes => 
+          currentNodes.map(node => {
+            if (node.type === 'startNode') {
+              const hasConnections = connectionCounts[node.id] > 0;
+              const connectionCount = connectionCounts[node.id] || 0;
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  hasConnections,
+                  connectionCount
+                }
+              };
+            }
+            return node;
+          })
+        );
+      }, 0);
       
       // Mark as dirty since we made changes
       setIsDirty(true);
