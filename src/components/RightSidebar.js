@@ -269,7 +269,7 @@ const RightSidebar = () => {
              onClick={toggleCollapse}
              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
            >
-            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {isCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
           </div>
         </div>
       </div>

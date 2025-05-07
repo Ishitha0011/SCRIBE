@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive } from 'lucide-react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -23,6 +23,16 @@ import { useFileContext } from '../FileContext';
 import Switch from './ui/Switch';
 import NotesCanvas from './NotesCanvas';
 import '../css/Editor.css';
+
+// New Extensions
+import TextStyle from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import FontFamily from '@tiptap/extension-font-family';
+import Strike from '@tiptap/extension-strike';
+import SubscriptExtension from '@tiptap/extension-subscript';
+import SuperscriptExtension from '@tiptap/extension-superscript';
+import MathExtension from '@aarkue/tiptap-math-extension'; // Community Math Extension
+import 'katex/dist/katex.min.css'; // Import KaTeX CSS
 
 // Create a lowlight instance with common languages
 const lowlight = createLowlight();
@@ -62,6 +72,9 @@ const Editor = () => {
   const [canvasData, setCanvasData] = useState({});
   const [canvasMode, setCanvasMode] = useState(false);
   
+  const [fontFamily, setFontFamily] = useState('');
+  const [fontSize, setFontSize] = useState('');
+  
   const { theme } = useTheme();
   const {
     openFiles,
@@ -76,6 +89,79 @@ const Editor = () => {
 
   const tabsLeftRef = useRef(null);
   const editorContainerRef = useRef(null);
+  const editorInstanceRef = useRef(null);
+
+  // Memoized handleImageUpload using editorInstanceRef
+  const handleImageUpload = useCallback(async (file) => {
+    const currentEditor = editorInstanceRef.current;
+    if (!currentEditor || !activeFileId) return;
+
+    const activeFile = openFiles.find(f => f.id === activeFileId);
+    const timestamp = new Date().getTime();
+    const fileName = file.name || `image_${timestamp}.png`;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file, fileName);
+      const response = await fetch('http://localhost:8000/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) throw new Error(`Failed to upload image: ${response.statusText}`);
+      const data = await response.json();
+      const imageUrl = `http://localhost:8000${data.path}`;
+      currentEditor.chain().focus().setImage({ src: imageUrl, alt: fileName }).run();
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert(`Failed to upload image: ${error.message}`);
+    }
+  }, [activeFileId, openFiles]);
+
+  // Memoized onUpdate callback
+  const onUpdate = useCallback(({ editor: tiptapEditor }) => {
+    if (!tiptapEditor) return;
+    const htmlContent = tiptapEditor.getHTML();
+    setLocalContent(htmlContent);
+    setCharCount(tiptapEditor.storage.characterCount.characters());
+    setWordCount(tiptapEditor.storage.characterCount.words());
+
+    if (activeFileId && htmlContent !== fileContents[activeFileId]) {
+      setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
+    } else if (activeFileId) {
+      setUnsavedChanges((prev) => {
+        const updated = { ...prev };
+        delete updated[activeFileId];
+        return updated;
+      });
+    }
+    setFontFamily(tiptapEditor.getAttributes('textStyle').fontFamily || '');
+    setFontSize(tiptapEditor.getAttributes('textStyle').fontSize || '');
+  }, [activeFileId, fileContents, setLocalContent, setCharCount, setWordCount, setUnsavedChanges, setFontFamily, setFontSize]);
+
+  // Memoized editorProps
+  const editorProps = useMemo(() => ({
+    attributes: {
+      class: 'rich-text-editor',
+      spellcheck: 'true',
+    },
+    handlePaste: (view, event, slice) => {
+      const items = Array.from(event.clipboardData?.items || []);
+      let imagePasted = false;
+      items.forEach(item => {
+        if (item.type.startsWith('image/')) {
+          imagePasted = true;
+          event.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            handleImageUpload(file);
+          }
+          return false;
+        }
+      });
+      if (imagePasted) return true;
+      return false;
+    },
+  }), [handleImageUpload]);
 
   const editor = useEditor({
     extensions: [
@@ -92,6 +178,9 @@ const Editor = () => {
           keepMarks: true
         },
         codeBlock: false, // We'll use CodeBlockLowlight instead
+        strike: false, // Use Strike extension separately
+        bold: { HTMLAttributes: { class: 'font-bold' } }, // Optional: add classes for Tailwind/utility CSS
+        italic: { HTMLAttributes: { class: 'italic' } },
       }),
       Image.configure({
         inline: false,
@@ -109,7 +198,7 @@ const Editor = () => {
         },
       }),
       Placeholder.configure({
-        placeholder: 'Type something or use "/" for commands...',
+        placeholder: 'Type \'/\' for commands...',
         emptyEditorClass: 'is-editor-empty',
       }),
       TextAlign.configure({
@@ -121,7 +210,7 @@ const Editor = () => {
         multicolor: true,
       }),
       TableExtension.configure({
-        resizable: true,
+        resizable: false,
         HTMLAttributes: {
           class: 'tiptap-table',
         },
@@ -147,87 +236,53 @@ const Editor = () => {
         },
       }),
       CharacterCount,
+      
+      // Added Extensions
+      TextStyle,
+      Color.configure({ types: ['textStyle'] }),
+      FontFamily.configure({ types: ['textStyle'] }),
+      Strike,
+      SubscriptExtension,
+      SuperscriptExtension,
+      MathExtension.configure({}),
     ],
     content: '',
-    onUpdate: ({ editor }) => {
-      if (!editor) return;
-      
-      const htmlContent = editor.getHTML();
-      setLocalContent(htmlContent);
-      setCharCount(editor?.storage.characterCount?.characters() || 0);
-      setWordCount(editor?.storage.characterCount?.words() || 0);
-
-      if (activeFileId && htmlContent !== fileContents[activeFileId]) {
-        setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
-      } else if (activeFileId) {
-        setUnsavedChanges((prev) => {
-          const updated = { ...prev };
-          delete updated[activeFileId];
-          return updated;
-        });
-      }
-    },
-    editorProps: {
-      attributes: {
-        class: 'rich-text-editor',
-        spellcheck: 'true',
-      },
-      handlePaste: (view, event, slice) => {
-        const items = Array.from(event.clipboardData?.items || []);
-        let imagePasted = false;
-
-        items.forEach(item => {
-          if (item.type.startsWith('image/')) {
-            imagePasted = true;
-            event.preventDefault();
-            const file = item.getAsFile();
-            if (file) {
-              handleImageUpload(file);
-            }
-            return false;
-          }
-        });
-
-        if (imagePasted) {
-          return true;
-        }
-
-        return false;
-      },
-    },
+    onUpdate,    // Pass memoized onUpdate
+    editorProps, // Pass memoized editorProps
   });
 
-  const handleImageUpload = useCallback(async (file) => {
-    if (!editor || !activeFileId) return;
-
-    const activeFile = openFiles.find(f => f.id === activeFileId);
-
-    const timestamp = new Date().getTime();
-    const fileName = file.name || `image_${timestamp}.png`;
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file, fileName);
-
-      const response = await fetch('http://localhost:8000/api/files/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to upload image: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      const imageUrl = `http://localhost:8000${data.path}`;
-
-      editor.chain().focus().setImage({ src: imageUrl, alt: fileName }).run();
-
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert(`Failed to upload image: ${error.message}`);
+  // Effect to keep editorInstanceRef updated with the editor from useEditor
+  useEffect(() => {
+    if (editor) {
+      editorInstanceRef.current = editor;
     }
-  }, [editor, activeFileId, openFiles]);
+  }, [editor]);
+
+  // Helper function to execute a command and then remove the triggering slash
+  const executeCommandAndRemoveSlash = useCallback((commandFn) => {
+    if (!editor) return;
+
+    const { state, view } = editor;
+    const { selection } = state;
+    const { $from } = selection;
+
+    // Position of the slash. Assumes cursor is right after the slash.
+    const slashPos = $from.pos - 1;
+
+    // Execute the primary command (e.g., toggle heading, insert table)
+    commandFn();
+
+    // After the command, get the latest state and try to delete the slash
+    // We need to ensure the editor is still focused and the document hasn't changed too drastically
+    // such that the original slashPos is no longer valid or the character isn't a slash.
+    editor.view.focus(); // Re-focus just in case the command changed it
+    const latestState = editor.state;
+    const charAtOriginalSlashPos = latestState.doc.textBetween(slashPos, slashPos + 1, '\0');
+
+    if (charAtOriginalSlashPos === '/') {
+      editor.chain().deleteRange({ from: slashPos, to: slashPos + 1 }).run();
+    }
+  }, [editor]);
 
   const addYoutubeVideo = useCallback(() => {
     if (!editor) return;
@@ -249,49 +304,50 @@ const Editor = () => {
   }, [editor]);
 
   const createTable = useCallback(() => {
+    // This function will be wrapped by executeCommandAndRemoveSlash
     if (!editor) return;
-    
-    editor.chain()
-      .focus()
-      .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-      .run();
+    editor.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run();
   }, [editor]);
 
   const checkCanvasFile = useCallback((file) => {
     if (!file) return;
     
+    // If editor is not available or destroyed, default to not canvas mode and exit.
+    if (!editor || editor.isDestroyed) {
+      setCanvasMode(false);
+      return;
+    }
+
     const isCanvasType = file.type === 'canvas';
     const hasCanvasExtension = file.name && file.name.toLowerCase().endsWith('.canvas');
     
     if (isCanvasType || hasCanvasExtension) {
       setCanvasMode(true);
-      if (editor) editor.setEditable(false);
+      editor.setEditable(false); // Safe due to the guard above
       try {
         const canvasContent = fileContents[file.id] || '{}';
         const parsedData = JSON.parse(canvasContent);
-        
         if (!parsedData.nodes || !parsedData.edges) {
           const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
           updateFileContent(file.id, JSON.stringify(initialData));
-          setCanvasData(initialData);
+          setCanvasData(initialData); // Ensure canvasData state is updated
         } else {
-          setCanvasData(parsedData);
+          setCanvasData(parsedData); // Ensure canvasData state is updated
         }
-        
         if (!isCanvasType) {
           updateFileType(file.id, 'canvas');
         }
       } catch (error) {
-        console.error('Error parsing canvas data:', error);
+        console.error('Error parsing canvas data in checkCanvasFile:', error);
         const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
         updateFileContent(file.id, JSON.stringify(initialData));
-        setCanvasData(initialData);
+        setCanvasData(initialData); // Ensure canvasData state is updated on error
       }
     } else {
       setCanvasMode(false);
-      if (editor) editor.setEditable(true);
+      editor.setEditable(true); // Safe due to the guard above
     }
-  }, [editor, fileContents, updateFileContent, updateFileType]);
+  }, [editor, fileContents, updateFileContent, updateFileType, setCanvasMode, setCanvasData]);
 
   const handleSaveFile = useCallback(async () => {
     if (activeFileId && editor) {
@@ -331,76 +387,107 @@ const Editor = () => {
   }, [activeFileId, editor, canvasMode, canvasData, saveFile, openFiles, fileContents]);
 
   useEffect(() => {
-    if (editor) {
-      if (activeFileId && fileContents[activeFileId] !== undefined) {
-        const contentToLoad = fileContents[activeFileId];
-        const file = openFiles.find(f => f.id === activeFileId);
-        
-        if (file) {
-          const isCanvasFile = file.type === 'canvas' || 
+    if (!editor) {
+      // Editor instance from useEditor might not be available on initial renders.
+      return;
+    }
+
+    // If the editor instance has been destroyed (e.g., by closing the last tab),
+    // reset relevant states and do not attempt further editor operations.
+    if (editor.isDestroyed) {
+      setLocalContent('');
+      setCharCount(0);
+      setWordCount(0);
+      setUnsavedChanges(prev => {
+        const newState = {...prev};
+        if(activeFileId) delete newState[activeFileId]; // Clear unsaved for current if any
+        return newState;
+      });
+      if (canvasMode) setCanvasMode(false); // Ensure canvas mode is also reset
+      return;
+    }
+
+    // Editor is valid and not destroyed, proceed with normal logic.
+    if (activeFileId && fileContents[activeFileId] !== undefined) {
+      const contentToLoad = fileContents[activeFileId];
+      const file = openFiles.find(f => f.id === activeFileId);
+
+      if (file) {
+        const isCanvasFile = file.type === 'canvas' ||
                             (file.name && file.name.toLowerCase().endsWith('.canvas'));
-          
-          if (isCanvasFile) {
-            console.log("Opening canvas file:", file.name);
-            setCanvasMode(true);
-            
-            if (file.type !== 'canvas') {
-              updateFileType(file.id, 'canvas');
-            }
-            
-            try {
-              const parsedData = typeof contentToLoad === 'string' && contentToLoad.trim()
-                ? JSON.parse(contentToLoad)
-                : { nodes: [], edges: [], format: "canvas", version: "1.0" };
-              
-              setCanvasData(parsedData);
-              if (editor) editor.setEditable(false);
-            } catch (error) {
-              console.error('Error parsing canvas data:', error);
-              const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
-              updateFileContent(file.id, JSON.stringify(initialData));
-              setCanvasData(initialData);
-            }
-          } else {
-            checkCanvasFile(file);
-            
-            if (!canvasMode && contentToLoad !== editor.getHTML()) {
-              try {
-                editor.commands.setContent(contentToLoad || '', false);
-                setLocalContent(contentToLoad || '');
-              } catch (error) {
-                console.error('Error setting editor content:', error);
-              }
-            }
+
+        if (isCanvasFile) {
+          console.log("Opening canvas file:", file.name);
+          setCanvasMode(true);
+          if (file.type !== 'canvas') {
+            updateFileType(file.id, 'canvas');
           }
-          
-          setUnsavedChanges((prev) => {
-            const updated = { ...prev };
-            delete updated[activeFileId];
-            return updated;
-          });
+          try {
+            const parsedData = typeof contentToLoad === 'string' && contentToLoad.trim()
+              ? JSON.parse(contentToLoad)
+              : { nodes: [], edges: [], format: "canvas", version: "1.0" };
+            setCanvasData(parsedData);
+            editor.setEditable(false); 
+          } catch (error) {
+            console.error('Error parsing canvas data:', error);
+            const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
+            updateFileContent(file.id, JSON.stringify(initialData));
+            setCanvasData(initialData);
+          }
+        } else {
+          // Ensure we are not in canvasMode if it's not a canvas file before calling checkCanvasFile
+          if (canvasMode) setCanvasMode(false); 
+          editor.setEditable(true); // Set editable before checkCanvasFile if not canvas
+          checkCanvasFile(file); // checkCanvasFile might alter canvasMode or editable status further
+
+          // Re-check canvasMode as checkCanvasFile might have changed it
+          // This effect will re-run if canvasMode changes and is in deps.
+          // The primary purpose here is to set content if not in canvas mode.
+          if (!isCanvasFile && !canvasMode) { // Double check it's not canvas & not in canvas mode
+              if (contentToLoad !== editor.getHTML()) { 
+                  try {
+                      editor.commands.setContent(contentToLoad || '', false); 
+                      setLocalContent(contentToLoad || '');
+                  } catch (error) {
+                      console.error('Error setting editor content:', error);
+                  }
+              }
+          }
         }
-      } else {
-        try {
-        editor.commands.setContent('', false);
-        setLocalContent('');
-        } catch (error) {
-          console.error('Error clearing editor content:', error);
-        }
-        setCanvasMode(false);
-        setUnsavedChanges({});
+        setUnsavedChanges((prev) => {
+          const updated = { ...prev };
+          delete updated[activeFileId];
+          return updated;
+        });
       }
-      
+    } else {
+      // No active file (activeFileId is null or content is undefined).
       try {
-      setCharCount(editor.storage.characterCount?.characters() || 0);
-      setWordCount(editor.storage.characterCount?.words() || 0);
+        if (!editor.isDestroyed) { // Guard again, though top-level guard should catch it
+            editor.commands.setContent('', false);
+        }
+        setLocalContent('');
       } catch (error) {
-        console.error('Error updating character count:', error);
+        console.error('Error clearing editor content (no active file):', error);
+      }
+      if (canvasMode) setCanvasMode(false);
+      setUnsavedChanges({}); 
+    }
+
+    try {
+      if (!editor.isDestroyed) {
+        setCharCount(editor.storage.characterCount?.characters() || 0);
+        setWordCount(editor.storage.characterCount?.words() || 0);
+      } else {
         setCharCount(0);
         setWordCount(0);
       }
+    } catch (error) {
+      console.error('Error updating character/word count:', error);
+      setCharCount(0);
+      setWordCount(0);
     }
-  }, [activeFileId, fileContents, editor, openFiles, checkCanvasFile, updateFileType, canvasMode, updateFileContent]);
+  }, [activeFileId, fileContents, editor, openFiles, checkCanvasFile, updateFileType, canvasMode, updateFileContent, setCanvasData, setLocalContent, setCharCount, setWordCount, setUnsavedChanges]);
 
   useEffect(() => {
     if (editor) {
@@ -555,26 +642,29 @@ const Editor = () => {
         if (file.type === 'canvas') {
           const canvasContent = JSON.stringify(canvasData);
           await saveFile(id, canvasContent);
-        } else if (editor) {
+        } else if (editor && !editor.isDestroyed) { // Guard editor access
           const contentToSave = (id === activeFileId) ? editor.getHTML() : fileContents[id];
           await saveFile(id, contentToSave);
+        } else if (editor && editor.isDestroyed && fileContents[id]) {
+          // If editor is destroyed but we have cached content, save that.
+          await saveFile(id, fileContents[id]);
         }
       }
     }
-    
-    // If we're closing the active file and it's the last one
-    if (id === activeFileId && openFiles.length === 1) {
-      // Clear the editor first to prevent DOM errors
-      if (editor) {
+
+    const isLastTab = openFiles.length === 1 && activeFileId === id;
+
+    if (isLastTab) {
+      if (editor && !editor.isDestroyed) {
         try {
-          editor.commands.clearContent(false);
+          editor.destroy();
         } catch (error) {
-          console.error('Error clearing editor content:', error);
+          console.error('Error destroying Tiptap editor instance on last tab close:', error);
         }
       }
     }
     
-    closeFile(id);
+    closeFile(id); // This triggers state update and potential DOM unmounting
   };
 
   const handleCanvasSave = (canvasFlow) => {
@@ -628,30 +718,52 @@ const Editor = () => {
     }
   }, [editor]);
 
+  const addMathBlock = useCallback(() => {
+    if (!editor) return;
+    // Note: The community extension @aarkue/tiptap-math-extension primarily focuses on *inline* math with $...$.
+    // Creating a dedicated math *block* might require a custom node or different configuration.
+    // For now, let's insert an empty paragraph and instruct the user to type $...$.
+    editor.chain().focus().insertContent('<p>Type math here using $...$</p>').run();
+  }, [editor]);
+
   // Add a cleanup effect to destroy editor on unmount
   useEffect(() => {
+    const currentEditorInstance = editor; // Capture the editor instance from this render
     return () => {
-      // Clean up the editor properly when component unmounts
-      if (editor) {
-        editor.destroy();
+      // Clean up the editor properly when component unmounts or editor instance changes
+      if (currentEditorInstance && !currentEditorInstance.isDestroyed) {
+        currentEditorInstance.destroy();
       }
     };
-  }, [editor]);
+  }, [editor]); // Dependency on editor instance from useEditor
 
   // Add a handler for empty workspace
   useEffect(() => {
-    if (openFiles.length === 0 && editor) {
-      try {
-        // Clear content when no files are open
-        editor.commands.setContent('', false);
-        setLocalContent('');
-        setCharCount(0);
-        setWordCount(0);
-      } catch (error) {
-        console.error('Error clearing editor on empty workspace:', error);
-      }
+    if (openFiles.length === 0) {
+      if (editor && !editor.isDestroyed) {
+        // If editor exists and is not destroyed, ensure it's clean and states are reset.
+        // Content clearing would ideally happen in handleTabClose or the main activeFileId effect.
+        // Here, primarily focus on resetting React state.
+      } 
+      // Always reset these states if no files are open, regardless of editor status.
+      setLocalContent('');
+      setCharCount(0);
+      setWordCount(0);
+      if (canvasMode) setCanvasMode(false);
+      setUnsavedChanges({}); // Clear all unsaved changes
     }
-  }, [openFiles, editor]);
+  }, [openFiles, editor, canvasMode, setLocalContent, setCharCount, setWordCount, setCanvasMode, setUnsavedChanges]);
+
+  // --- Bubble Menu Additions ---
+  // Predefined font families and sizes (customize as needed)
+  const fontFamilies = [
+    { name: 'Inter', value: 'Inter, sans-serif' },
+    { name: 'Mono', value: 'JetBrains Mono, monospace' },
+    { name: 'Serif', value: 'Georgia, serif' },
+  ];
+  const fontSizes = ['12px', '14px', '16px', '18px', '24px', '30px'];
+  const textColors = ['#000000', '#e03131', '#2f9e44', '#1971c2', '#f08c00', '#862e9c', '#adb5bd', '#ffffff']; // Example palette
+  const highlightColors = ['#fff59d', '#a7ffeb', '#ffccbc', '#cfd8dc', 'transparent']; // Example palette
 
   if (!editor) {
     return <div>Loading Editor...</div>;
@@ -716,156 +828,303 @@ const Editor = () => {
             />
           ) : (
             <div ref={editorContainerRef} className="EditorContainer">
-              {editor && (
-                <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className={`EditorBubbleMenu ${theme === 'dark' ? 'dark' : ''}`}>
-                  <div className="MenuButtons">
-                    <button
-                      onClick={() => editor.chain().focus().toggleBold().run()}
-                      className={editor.isActive('bold') ? 'is-active' : ''}
-                      title="Bold"
-                    >
-                      <Bold size={16} />
+              {/* General BubbleMenu - controlled by shouldShow */}
+              <BubbleMenu 
+                editor={editor} 
+                tippyOptions={{ duration: 100 }}
+                className={`EditorBubbleMenu GeneralBubbleMenu ${theme === 'dark' ? 'dark' : ''}`}
+                pluginKey="generalBubbleMenu"
+                shouldShow={({ editor, view, state, oldState, from, to }) => {
+                  const { selection } = state;
+                  // Only show if editor exists, is not in a table, has focus, AND text is selected
+                  return !!editor && !editor.isActive('table') && view.hasFocus() && !selection.empty;
+                }}
+              >
+                <div className="MenuButtons">
+                  <button
+                    onClick={() => editor.chain().focus().toggleBold().run()}
+                    className={editor.isActive('bold') ? 'is-active' : ''}
+                    title="Bold"
+                  >
+                    <Bold size={16} />
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                    className={editor.isActive('italic') ? 'is-active' : ''}
+                    title="Italic"
+                  >
+                    <Italic size={16} />
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().toggleUnderline().run()}
+                    className={editor.isActive('underline') ? 'is-active' : ''}
+                    title="Underline"
+                  >
+                    <Underline size={16} />
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().toggleCode().run()}
+                    className={editor.isActive('code') ? 'is-active' : ''}
+                    title="Inline Code"
+                  >
+                    <Code size={16} />
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().toggleStrike().run()}
+                    className={editor.isActive('strike') ? 'is-active' : ''}
+                    title="Strikethrough"
+                  >
+                    <Strikethrough size={16} />
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().toggleSubscript().run()}
+                    className={editor.isActive('subscript') ? 'is-active' : ''}
+                    title="Subscript"
+                  >
+                    <Subscript size={16} />
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().toggleSuperscript().run()}
+                    className={editor.isActive('superscript') ? 'is-active' : ''}
+                    title="Superscript"
+                  >
+                    <Superscript size={16} />
+                  </button>
+                  <button
+                    onClick={addLink}
+                    className={editor.isActive('link') ? 'is-active' : ''}
+                    title="Add Link"
+                  >
+                    <LinkIcon size={16} />
+                  </button>
+                  <div className="MenuDivider"></div>
+                  <div className="MenuDropdown">
+                    <button className="DropdownToggle">
+                      <CaseSensitive size={16} />
+                      <span>{fontFamily || 'Default'}</span>
+                      <ChevronDown size={14} />
                     </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleItalic().run()}
-                      className={editor.isActive('italic') ? 'is-active' : ''}
-                      title="Italic"
-                    >
-                      <Italic size={16} />
+                    <div className="DropdownContent">
+                      <button onClick={() => editor.chain().focus().unsetFontFamily().run()}>Default</button>
+                      {fontFamilies.map(font => (
+                        <button key={font.value} onClick={() => editor.chain().focus().setFontFamily(font.value).run()} style={{ fontFamily: font.value }}>{font.name}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="MenuDivider"></div>
+                  <div className="MenuDropdown">
+                    <button className="DropdownToggle">
+                      <CaseUpper size={16} />
+                      <span>{fontSize || 'Size'}</span>
+                      <ChevronDown size={14} />
                     </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleUnderline().run()}
-                      className={editor.isActive('underline') ? 'is-active' : ''}
-                      title="Underline"
-                    >
-                      <Underline size={16} />
+                    <div className="DropdownContent">
+                      <button onClick={() => editor.chain().focus().unsetFontSize().run()}>Default</button>
+                      {fontSizes.map(size => (
+                        <button key={size} onClick={() => editor.chain().focus().setFontSize(size).run()} style={{ fontSize: size }}>{size}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="MenuDivider"></div>
+                  <div className="MenuDropdown">
+                    <button className="DropdownToggle">
+                      <Palette size={16} />
+                      <span style={{ color: editor.getAttributes('textStyle').color || 'inherit' }}>A</span>
+                      <ChevronDown size={14} />
                     </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleCode().run()}
-                      className={editor.isActive('code') ? 'is-active' : ''}
-                      title="Code"
-                    >
-                      <Code size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleHighlight().run()}
-                      className={editor.isActive('highlight') ? 'is-active' : ''}
-                      title="Highlight"
-                    >
+                    <div className="DropdownContent ColorPalette">
+                      <button onClick={() => editor.chain().focus().unsetColor().run()}>Default</button>
+                      {textColors.map(color => (
+                        <button key={color} onClick={() => editor.chain().focus().setColor(color).run()} title={color}>
+                          <div className="ColorSwatch" style={{ backgroundColor: color }}></div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="MenuDivider"></div>
+                  <div className="MenuDropdown">
+                    <button className="DropdownToggle">
                       <Highlighter size={16} />
+                      <span style={{ backgroundColor: editor.getAttributes('highlight').color || 'transparent', padding: '0 2px' }}>A</span>
+                      <ChevronDown size={14} />
                     </button>
-                    <button
-                      onClick={addLink}
-                      className={editor.isActive('link') ? 'is-active' : ''}
-                      title="Add Link"
-                    >
-                      <LinkIcon size={16} />
-                    </button>
-                    <div className="MenuDivider"></div>
-                    <button
-                      onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                      className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
-                      title="Align Left"
-                    >
-                      <AlignLeft size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                      className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
-                      title="Align Center"
-                    >
-                      <AlignCenter size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                      className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
-                      title="Align Right"
-                    >
-                      <AlignRight size={16} />
-                    </button>
+                    <div className="DropdownContent ColorPalette">
+                      <button onClick={() => editor.chain().focus().unsetHighlight().run()}>None</button>
+                      {highlightColors.map(color => (
+                        <button key={color} onClick={() => editor.chain().focus().toggleHighlight({ color: color === 'transparent' ? undefined : color }).run()} title={color}>
+                          <div className="ColorSwatch" style={{ backgroundColor: color, border: color === 'transparent' ? '1px dashed #ccc' : 'none' }}></div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </BubbleMenu>
-              )}
+                  <div className="MenuDivider"></div>
+                  <button
+                    onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                    className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
+                    title="Align Left"
+                  >
+                    <AlignLeft size={16} />
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                    className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
+                    title="Align Center"
+                  >
+                    <AlignCenter size={16} />
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                    className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
+                    title="Align Right"
+                  >
+                    <AlignRight size={16} />
+                  </button>
+                </div>
+              </BubbleMenu>
+
+              {/* Table BubbleMenu - controlled by shouldShow */}
+              <BubbleMenu
+                editor={editor}
+                tippyOptions={{ duration: 100, placement: 'bottom-start' }}
+                className={`EditorBubbleMenu TableBubbleMenu ${theme === 'dark' ? 'dark' : ''}`}
+                pluginKey="tableBubbleMenu"
+                shouldShow={({ editor }) => {
+                  // Only show if editor exists and is in a table
+                  return !!editor && editor.isActive('table');
+                }}
+              >
+                 <div className="MenuButtons">
+                  <button onClick={() => editor.chain().focus().addColumnBefore().run()} title="Add Column Before">
+                    <ArrowLeftToLine size={16} />
+                  </button>
+                  <button onClick={() => editor.chain().focus().addColumnAfter().run()} title="Add Column After">
+                    <ArrowRightToLine size={16} />
+                  </button>
+                  <button onClick={() => editor.chain().focus().deleteColumn().run()} title="Delete Column">
+                    <Trash2 size={16} /> <span style={{marginLeft: '4px', fontSize: '0.8em'}}>Col</span>
+                  </button>
+                  <div className="MenuDivider"></div>
+                  <button onClick={() => editor.chain().focus().addRowBefore().run()} title="Add Row Before">
+                    <ArrowUpToLine size={16} />
+                  </button>
+                  <button onClick={() => editor.chain().focus().addRowAfter().run()} title="Add Row After">
+                    <ArrowDownToLine size={16} />
+                  </button>
+                  <button onClick={() => editor.chain().focus().deleteRow().run()} title="Delete Row">
+                     <Trash2 size={16} /> <span style={{marginLeft: '4px', fontSize: '0.8em'}}>Row</span>
+                  </button>
+                  <div className="MenuDivider"></div>
+                  <button onClick={() => editor.chain().focus().toggleHeaderRow().run()} title="Toggle Header Row">
+                    <Pilcrow size={16} /> H-Row
+                  </button>
+                   <button onClick={() => editor.chain().focus().toggleHeaderColumn().run()} title="Toggle Header Column">
+                    <Pilcrow size={16} style={{transform: 'rotate(90deg)'}}/> H-Col
+                  </button>
+                  <div className="MenuDivider"></div>
+                  <button onClick={() => editor.chain().focus().deleteTable().run()} title="Delete Table">
+                    <Trash2 size={16} /> Table
+                  </button>
+                 </div>
+              </BubbleMenu>
               
-              {editor && (
-                <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }} className={`EditorFloatingMenu ${theme === 'dark' ? 'dark' : ''}`}>
-                  <div className="MenuButtons">
-                    <button
-                      onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                      className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
-                      title="Heading 1"
-                    >
-                      <Heading1 size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                      className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
-                      title="Heading 2"
-                    >
-                      <Heading2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                      className={editor.isActive('heading', { level: 3 }) ? 'is-active' : ''}
-                      title="Heading 3"
-                    >
-                      <Heading3 size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleBulletList().run()}
-                      className={editor.isActive('bulletList') ? 'is-active' : ''}
-                      title="Bullet List"
-                    >
-                      <List size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                      className={editor.isActive('orderedList') ? 'is-active' : ''}
-                      title="Ordered List"
-                    >
-                      <ListOrdered size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleTaskList().run()}
-                      className={editor.isActive('taskList') ? 'is-active' : ''}
-                      title="Task List"
-                    >
-                      <CheckSquare size={16} />
-                    </button>
-                    <button
-                      onClick={createTable}
-                      title="Insert Table"
-                    >
-                      <TableIcon size={16} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                      className={editor.isActive('codeBlock') ? 'is-active' : ''}
-                      title="Code Block"
-                    >
-                      <Code size={16} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.onchange = e => {
-                          if (e.target.files?.length) {
-                            handleImageUpload(e.target.files[0]);
-                          }
-                        };
-                        input.click();
-                      }}
-                      title="Insert Image"
-                    >
-                      <ImageIcon size={16} />
-                    </button>
-                  </div>
-                </FloatingMenu>
-              )}
+              {/* Floating Menu - controlled by shouldShow */}
+              <FloatingMenu 
+                editor={editor} 
+                tippyOptions={{ duration: 100, placement: 'bottom' }} 
+                className={`EditorFloatingMenu ${theme === 'dark' ? 'dark' : ''}`}
+                pluginKey="floatingMenu"
+                shouldShow={({ editor, view, state }) => {
+                   // Only show if editor exists, conditions met, and char before is '/'
+                   if (!editor || !view.hasFocus() || !state.selection.empty || editor.isActive('table')) {
+                     return false;
+                   }
+                   const { $from } = state.selection;
+                   const charBefore = state.doc.textBetween($from.pos - 1, $from.pos, '\0');
+                   return charBefore === '/';
+                }}
+              >
+                 <div className="MenuButtons">
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}
+                    className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
+                    title="Heading 1"
+                  >
+                    <Heading1 size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+                    className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
+                    title="Heading 2"
+                  >
+                    <Heading2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(() => editor.chain().focus().toggleHeading({ level: 3 }).run())}
+                    className={editor.isActive('heading', { level: 3 }) ? 'is-active' : ''}
+                    title="Heading 3"
+                  >
+                    <Heading3 size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(() => editor.chain().focus().toggleBulletList().run())}
+                    className={editor.isActive('bulletList') ? 'is-active' : ''}
+                    title="Bullet List"
+                  >
+                    <List size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(() => editor.chain().focus().toggleOrderedList().run())}
+                    className={editor.isActive('orderedList') ? 'is-active' : ''}
+                    title="Ordered List"
+                  >
+                    <ListOrdered size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(() => editor.chain().focus().toggleTaskList().run())}
+                    className={editor.isActive('taskList') ? 'is-active' : ''}
+                    title="Task List"
+                  >
+                    <CheckSquare size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(createTable)}
+                    title="Insert Table"
+                  >
+                    <TableIcon size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(() => editor.chain().focus().toggleCodeBlock().run())}
+                    className={editor.isActive('codeBlock') ? 'is-active' : ''}
+                    title="Code Block"
+                  >
+                    <Code size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(addMathBlock)}
+                    title="Math Block (Inline)"
+                  >
+                    <Sigma size={16} />
+                  </button>
+                  <button
+                    onClick={() => executeCommandAndRemoveSlash(() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = e => {
+                        if (e.target.files?.length) {
+                          handleImageUpload(e.target.files[0]);
+                        }
+                      };
+                      input.click();
+                    })}
+                    title="Insert Image"
+                  >
+                    <ImageIcon size={16} />
+                  </button>
+                 </div>
+              </FloatingMenu>
               
-            <EditorContent editor={editor} className="TiptapEditor" />
+              <EditorContent editor={editor} className="TiptapEditor" />
             </div>
           )
         ) : (

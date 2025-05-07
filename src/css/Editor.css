@@ -1,3 +1,10 @@
+:root {
+  --selection-background-light: #e1d9ff; /* Pastel Lavender */
+  --selection-text-light: #000000;
+  --selection-background-dark: #a899e0; /* Slightly darker Lavender for dark mode contrast */
+  --selection-text-dark: #ffffff;
+}
+
 /* Editor component styles */
 .Editor {
   display: flex;
@@ -624,13 +631,13 @@
 
 /* Add custom selection styles */
 .TextArea::selection {
-  background-color: var(--selection-background, #e8defd);
-  color: var(--selection-color, #000);
+  background-color: var(--selection-background-light);
+  color: var(--selection-text-light);
 }
 
 .dark .TextArea::selection {
-  background-color: var(--selection-background, #7952b3);
-  color: var(--selection-color, #fff);
+  background-color: var(--selection-background-dark);
+  color: var(--selection-text-dark);
 }
 
 /* Canvas Tab Styling */
@@ -833,7 +840,7 @@
   outline: none;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   /* overflow-y: auto; Removed, parent .TiptapEditor handles scroll */
-  background-color: #fff;
+  /* background-color: #fff; */
   color: #333;
   line-height: 1.6;
   max-width: 900px;
@@ -985,6 +992,9 @@
   border: 1px solid rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
+  /* Add max-width to allow wrapping */
+  max-width: 90vw; /* Example: max 90% of viewport width */
+  /* Or a fixed max-width: e.g., max-width: 500px; */
 }
 
 .Editor.dark .EditorBubbleMenu {
@@ -995,8 +1005,11 @@
 
 .EditorBubbleMenu .MenuButtons {
   display: flex;
-  gap: 4px;
+  gap: 2px; /* Tighter button gap */
   align-items: center;
+  flex-wrap: wrap; /* Allow buttons to wrap to the next line */
+  /* Remove any fixed width if present */
+  width: auto; /* Ensure it sizes based on content */
 }
 
 .EditorBubbleMenu button {
@@ -1004,12 +1017,14 @@
   border: none;
   color: #333;
   border-radius: 4px;
-  padding: 6px;
+  padding: 5px; /* Slightly smaller padding */
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  min-width: 28px; /* Ensure buttons have minimum width */
+  min-height: 28px;
 }
 
 .Editor.dark .EditorBubbleMenu button {
@@ -1372,37 +1387,63 @@
   margin-left: 0 !important;
   margin-right: 0 !important;
   width: 100% !important;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
-  margin-top: 1em;
-  margin-bottom: 1em;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
   overflow: hidden;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
 }
 
 .tiptap-table td,
 .tiptap-table th {
-  border: 1px solid #eee;
-  padding: 0.75em;
+  border: none;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0.8em 1em;
   position: relative;
-  min-width: 100px;
+  min-width: 80px;
   vertical-align: top;
   transition: background-color 0.2s ease;
+  text-align: left;
+}
+
+.tiptap-table th {
+  border-right: 1px solid #e0e0e0;
+}
+.tiptap-table td:not(:last-child),
+.tiptap-table th:not(:last-child) {
+  border-right: 1px solid #e0e0e0;
+}
+
+.tiptap-table tr:last-child td {
+  border-bottom: none;
 }
 
 .Editor.dark .tiptap-table td,
 .Editor.dark .tiptap-table th {
-  border-color: #333;
-}
-
-.tiptap-table th {
-  background-color: #f9f9f9;
-  font-weight: 600;
+  border-bottom-color: #3a3a3a;
 }
 
 .Editor.dark .tiptap-table th {
-  background-color: #222;
+  border-right-color: #3a3a3a;
+}
+.Editor.dark .tiptap-table td:not(:last-child),
+.Editor.dark .tiptap-table th:not(:last-child) {
+  border-right-color: #3a3a3a;
+}
+
+.tiptap-table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.Editor.dark .tiptap-table th {
+  background-color: #2a2a2e;
+  color: #e0e0e0;
 }
 
 .tiptap-table td:hover,
@@ -1415,77 +1456,299 @@
   background-color: rgba(255, 255, 255, 0.05);
 }
 
+/* Selected cell styling */
+.tiptap-table .selectedCell {
+  background-color: rgba(37, 99, 235, 0.1) !important;
+  outline: 2px solid #2563eb;
+  outline-offset: -1px;
+}
+
+.Editor.dark .tiptap-table .selectedCell {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  outline-color: #3b82f6;
+}
+
 .tiptap-table .tableWrapper {
   overflow-x: auto;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
+/* Column resize handles */
 .tiptap-table .column-resize-handle {
   position: absolute;
-  right: -2px;
+  right: -3px;
   top: 0;
   bottom: 0;
-  width: 4px;
+  width: 6px;
   background-color: #2563eb;
   cursor: col-resize;
-  z-index: 10;
+  z-index: 20;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease;
 }
 
-.tiptap-table .column-resize-handle:hover,
+.tiptap-table th:hover .column-resize-handle,
+.tiptap-table td:hover .column-resize-handle,
 .tiptap-table .column-resize-handle.dragging {
   opacity: 1;
 }
 
-/* Iframe (YouTube) styling - enhanced */
-.TiptapEditor .ProseMirror iframe {
-  max-width: 100%;
-  border-radius: 8px;
+/* Table grip styling - top-left table selection handle */
+.grip-table {
+    width: 18px;
+    height: 18px;
+    background-color: #f1f3f5;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: grab;
+    position: absolute;
+    top: -24px;
+    left: -24px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.grip-table:hover {
+    opacity: 1;
+}
+
+.grip-table::before {
+    content: "⠿";
+    font-size: 12px;
+    color: #495057;
+}
+
+.Editor.dark .grip-table {
+    background-color: #3a3a3e;
+    border-color: #555;
+}
+
+.Editor.dark .grip-table::before {
+    color: #ccc;
+}
+
+/* Table Bubble Menu - specific styling */
+.TableBubbleMenu {
+  padding: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+.TableBubbleMenu .MenuButtons {
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: none;
+}
+
+.TableBubbleMenu button {
+  padding: 8px;
+  font-size: 0.85em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.Editor.dark .TableBubbleMenu button {
+  color: #ccc;
+}
+
+.Editor.dark .TableBubbleMenu button:hover {
+  color: #fff;
+}
+
+/* Enhance Bubble Menu Button Styles */
+.EditorBubbleMenu button {
+  padding: 5px; /* Slightly smaller padding */
+  min-width: 28px; /* Ensure buttons have minimum width */
+  min-height: 28px;
+}
+
+.EditorBubbleMenu .MenuButtons {
+  gap: 2px; /* Tighter button gap */
+}
+
+/* Styling for Dropdowns in Bubble Menu */
+.MenuDropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.DropdownToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background-color: transparent;
   border: none;
-  margin: 1em 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: inherit;
 }
 
-.TiptapEditor .ProseMirror iframe:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+.DropdownToggle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
-.Editor.dark .TiptapEditor .ProseMirror iframe {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.Editor.dark .DropdownToggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-.Editor.dark .TiptapEditor .ProseMirror iframe:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+.DropdownToggle span {
+  font-size: 0.9em;
+  max-width: 80px; /* Prevent long font names from breaking layout */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Additional spacing adjustments */
-.TiptapEditor .ProseMirror h1 + p,
-.TiptapEditor .ProseMirror h2 + p,
-.TiptapEditor .ProseMirror h3 + p {
-  margin-top: 0.5em;
+.DropdownContent {
+  /* display: none; Will be controlled by :hover */
+  visibility: hidden; /* Use visibility for better transition/state handling */
+  opacity: 0;
+  position: absolute;
+  background-color: #ffffff; /* Solid white background */
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 100; /* Ensure dropdown is on top */
+  border-radius: 6px;
+  padding: 8px 0;
+  margin-top: 6px; /* Slightly more space */
+  border: 1px solid #eee;
+  max-height: 200px;
+  overflow-y: auto;
+  transition: opacity 0.2s ease, visibility 0s linear 0.2s; /* Delay visibility change */
 }
 
-.TiptapEditor .ProseMirror p + p {
-  margin-top: 0.3em;
+.Editor.dark .DropdownContent {
+  background-color: #2a2a2e; /* Solid dark background */
+  border-color: #444;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-/* BlockQuote enhanced styling */
-.TiptapEditor .ProseMirror blockquote {
-  padding-left: 1em;
-  border-left: 3px solid #2563eb;
-  font-style: italic;
-  color: #555;
-  margin: 1.2em 0;
-  background-color: rgba(37, 99, 235, 0.05);
-  padding: 0.8em 1em 0.8em 1.5em;
-  border-radius: 0 6px 6px 0;
+.MenuDropdown:hover .DropdownContent {
+  /* display: block; */
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.2s ease, visibility 0s linear 0s; /* Show immediately */
 }
 
-.Editor.dark .TiptapEditor .ProseMirror blockquote {
-  border-left-color: #3b82f6;
-  color: #bbb;
-  background-color: rgba(59, 130, 246, 0.1);
+.DropdownContent button {
+  color: #333;
+  padding: 8px 16px;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.Editor.dark .DropdownContent button {
+  color: #eee;
+}
+
+.DropdownContent button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.Editor.dark .DropdownContent button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Color Palette Specific Styles */
+.ColorPalette {
+  min-width: auto;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.ColorPalette button {
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+}
+
+.ColorPalette button:hover {
+  transform: scale(1.1);
+  border-color: #aaa;
+}
+
+.ColorSwatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.Editor.dark .ColorSwatch {
+   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* --- Text Selection Color --- */
+
+/* Apply selection style to the editor content area */
+.TiptapEditor .ProseMirror::selection {
+  background-color: var(--selection-background-light);
+  color: var(--selection-text-light);
+}
+
+.Editor.dark .TiptapEditor .ProseMirror::selection {
+  background-color: var(--selection-background-dark);
+  color: var(--selection-text-dark);
+}
+
+/* Also apply to regular text areas if you have any */
+textarea::selection {
+  background-color: var(--selection-background-light);
+  color: var(--selection-text-light);
+}
+
+.Editor.dark textarea::selection {
+  background-color: var(--selection-background-dark);
+  color: var(--selection-text-dark);
+}
+
+/* --- End Text Selection Color --- */
+
+/* KaTeX Math Styling */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1em 0;
+}
+
+/* Ensure inline math doesn't mess up line height too much */
+.ProseMirror .katex {
+  display: inline-block;
+  vertical-align: middle; /* Or adjust as needed */
+  line-height: 1; 
+}
+
+.ProseMirror .math-node.ProseMirror-selectednode {
+  outline: 2px solid #2563eb;
+  border-radius: 4px;
+}
+
+/* Styling for Sub/Superscript */
+.ProseMirror sub {
+  vertical-align: sub;
+  font-size: smaller;
+}
+
+.ProseMirror sup {
+  vertical-align: super;
+  font-size: smaller;
 }

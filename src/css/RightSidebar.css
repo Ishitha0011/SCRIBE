@@ -50,12 +50,6 @@
   /* background-color: rgba(0, 123, 255, 0.05); */ /* For debugging visibility */
 }
 
-/* Optional: Dark theme style for resize handle visual */
-.RightSidebar.dark .ResizeHandle {
-   /* border-left: 1px dashed rgba(255,255,255,0.2); */
-}
-
-
 /* Top section */
 .TopSection {
   display: flex;

@@ -224,9 +224,32 @@ const AskAI = ({ messages, setMessages }) => {
                 }),
             });
 
-            if (!response.ok) throw new Error(`Failed to get AI response: ${response.statusText}`);
+            if (!response.ok) {
+                let errorDetail = response.statusText;
+                try {
+                    // Try to parse JSON error detail from backend
+                    const errorData = await response.json();
+                    if (errorData && errorData.detail) {
+                        errorDetail = errorData.detail;
+                    }
+                } catch (jsonError) {
+                    // If parsing JSON fails, log it and stick with statusText or a generic message
+                    console.warn("Could not parse error response JSON:", jsonError);
+                    // Attempt to read response as text for more clues if JSON parsing failed
+                    const textError = await response.text();
+                    if (textError) {
+                        errorDetail = textError;
+                    }
+                }
+                throw new Error(`AI interaction failed: ${errorDetail}`);
+            }
 
             const data = await response.json();
+            // Ensure data.response exists, otherwise it's an unexpected successful response format
+            if (typeof data.response !== 'string') {
+                console.error("Unexpected AI response format:", data);
+                throw new Error("Received an unexpected format from the AI.");
+            }
             const aiMessage = { text: data.response, sender: 'ai', session_id: sessionId, timestamp: new Date().toISOString() };
 
             const finalMessages = [...updatedMessages, aiMessage];
@@ -238,7 +261,9 @@ const AskAI = ({ messages, setMessages }) => {
 
         } catch (error) {
             console.error('Error in chat interaction:', error);
-            setMessages((prev) => [...prev, { text: "Sorry, an error occurred. Please try again.", sender: 'ai', session_id: sessionId || 'error', timestamp: new Date().toISOString() }]);
+            // Use error.message for a more specific error in the UI
+            const displayErrorMessage = error.message || "Sorry, an error occurred. Please try again.";
+            setMessages((prev) => [...prev, { text: displayErrorMessage, sender: 'ai', session_id: sessionId || 'error', timestamp: new Date().toISOString() }]);
             // Consider more robust error handling - maybe revert optimistic updates?
         } finally {
             setIsSubmitting(false);
