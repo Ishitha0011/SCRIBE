@@ -226,24 +226,36 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Text editor canvas */
+/* Improved TextEditorCanvas to support proper padding and scrollbar position */
 .TextEditorCanvas {
-  flex-grow: 1; /* Ensure the editor canvas takes up all available space */
+  flex-grow: 1;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  background-color: #fafafa;
+  background-color: #f9f9f9; /* Lighter background to match Notion */
   width: 100%;
-  height: 100%; /* Ensure full height */
-  overflow: hidden; /* Prevent scrolling issues */
+  height: 100%;
+  overflow: hidden;
+  position: relative;
 }
 
 .Editor.dark .TextEditorCanvas {
-  background-color: #000;
+  background-color: #121212; /* Darker background for dark mode */
+}
+
+/* Better container structure to handle scrolling correctly */
+.EditorContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1 1 auto;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
 }
 
 /* Empty state for when no file is selected */
 .EmptyState {
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -773,131 +785,707 @@
   background-color: rgba(220, 53, 69, 0.2);
 }
 
-/* Styles for the Tiptap Editor */
+/* Configure the Tiptap editor for proper width and padding */
+.TiptapEditor {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow-y: auto; /* Scrollbar will be here */
+  position: relative;
+  background-color: transparent;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.TiptapEditor::-webkit-scrollbar {
+  width: 8px; /* Slightly wider for better grab */
+}
+
+.TiptapEditor::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.TiptapEditor::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.Editor.dark .TiptapEditor {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.Editor.dark .TiptapEditor::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Style the text editing area with comfortable padding */
 .TiptapEditor .ProseMirror {
-  width: 100%; /* Take full width */
-  height: 100%; /* Take full height */
-  padding: 20px;
-  font-size: 17px; /* Increased font size */
-  border: 1px solid #ddd;
-  box-sizing: border-box; /* Include padding and border in width/height */
+  width: 100%;
+  /* height: 100%; Removed to let content flow */
+  min-height: 100%; /* Ensure it can fill if content is short */
+  padding: 2rem 1.5rem; /* Reduced horizontal padding from 3rem to 1.5rem */
+  font-size: 16px;
+  border: none;
+  box-sizing: border-box;
   outline: none;
-  font-family: 'JetBrains Mono', monospace; /* Changed font family */
-  overflow-y: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  /* overflow-y: auto; Removed, parent .TiptapEditor handles scroll */
   background-color: #fff;
-  color: #000;
-  line-height: 1.6; /* Added line-height for better readability */
+  color: #333;
+  line-height: 1.6;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
 }
 
 .Editor.dark .TiptapEditor .ProseMirror {
-  background-color: #000;
+  background-color: #121212;
+  color: #eee;
+}
+
+/* Remove padding from direct children, as .ProseMirror now has it */
+.TiptapEditor .ProseMirror > * {
+  padding-left: 0;
+  padding-right: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Typography & Block Elements - padding is now handled by .ProseMirror */
+.TiptapEditor .ProseMirror h1,
+.TiptapEditor .ProseMirror h2,
+.TiptapEditor .ProseMirror h3 {
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+  padding-left: 0; /* Reset */
+  padding-right: 0; /* Reset */
+}
+.TiptapEditor .ProseMirror h1 { font-size: 2.2em; color: #000; }
+.TiptapEditor .ProseMirror h2 { font-size: 1.8em; color: #000; }
+.TiptapEditor .ProseMirror h3 { font-size: 1.4em; color: #000; }
+
+.Editor.dark .TiptapEditor .ProseMirror h1,
+.Editor.dark .TiptapEditor .ProseMirror h2,
+.Editor.dark .TiptapEditor .ProseMirror h3 {
   color: #fff;
-  border-color: #333;
+}
+
+.TiptapEditor .ProseMirror p {
+  margin: 0.7em 0;
+  line-height: 1.6;
+  padding-left: 0; /* Reset */
+  padding-right: 0; /* Reset */
+}
+
+/* Lists Styling - rely on browser default indent within the padded .ProseMirror */
+.TiptapEditor .ProseMirror ul,
+.TiptapEditor .ProseMirror ol {
+  margin: 0.7em 0;
+  padding-left: 1.5em; /* Standard list indent */
+  padding-right: 0;
+}
+
+.TiptapEditor .ProseMirror li p {
+  margin: 0; /* Paragraphs in list items shouldn't have extra vertical margin */
+}
+
+/* Task List Styling - Notion style */
+.tiptap-task-list {
+  list-style-type: none;
+  padding-left: 0 !important; /* Reset, checkbox provides indent */
+  padding-right: 0 !important;
+}
+
+/* Blockquote Styling - internal padding is fine, margins are not needed for side spacing */
+.TiptapEditor .ProseMirror blockquote {
+  margin-left: 0; /* Reset */
+  margin-right: 0; /* Reset */
+  padding-left: 1em; /* Internal padding from border */
+  border-left: 3px solid #ddd;
+  font-style: italic;
+  color: #666;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+/* Table Styling - should take 100% width of the padded .ProseMirror */
+.tiptap-table {
+  margin-left: 0 !important; /* Reset */
+  margin-right: 0 !important; /* Reset */
+  width: 100% !important; /* Full width of parent content area */
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  overflow: hidden;
+}
+
+/* Code Block Styling - should take 100% width of the padded .ProseMirror */
+.tiptap-code-block {
+  margin-left: 0 !important; /* Reset */
+  margin-right: 0 !important; /* Reset */
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  padding: 1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  overflow-x: auto;
+  position: relative;
+}
+
+/* Image styling in the editor - max width 100% of padded .ProseMirror */
+.TiptapEditor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  margin-left: 0; /* Reset */
+  margin-right: 0; /* Reset */
+}
+
+/* Iframe (YouTube) styling - max width 100% of padded .ProseMirror */
+.TiptapEditor .ProseMirror iframe {
+  max-width: 100%;
+  border-radius: 6px;
+  border: none;
+  margin: 1em 0; /* Vertical margin only */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Remove the generic padding override for specific elements */
+.TiptapEditor .ProseMirror > *.tiptap-task-list,
+.TiptapEditor .ProseMirror > *.tiptap-code-block,
+.TiptapEditor .ProseMirror > *.tiptap-table {
+  padding-left: 0; /* Already handled or not needed if .ProseMirror has padding */
+  padding-right: 0; /* Already handled or not needed if .ProseMirror has padding */
+}
+
+/* Scrollbar styling (Main scrollbar is now on .TiptapEditor) */
+/* Remove scrollbar styles from .ProseMirror as it no longer scrolls */
+/* .TiptapEditor .ProseMirror { scrollbar-width: thin; ... } */
+/* .TiptapEditor .ProseMirror::-webkit-scrollbar { ... } */
+/* .Editor.dark .TiptapEditor .ProseMirror::-webkit-scrollbar-thumb { ... } */
+
+/* Tiptap Editor Bubble Menu */
+.EditorBubbleMenu {
+  display: flex;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+  margin-bottom: 8px;
+  z-index: 20;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.Editor.dark .EditorBubbleMenu {
+  background-color: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.EditorBubbleMenu .MenuButtons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.EditorBubbleMenu button {
+  background-color: transparent;
+  border: none;
+  color: #333;
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.Editor.dark .EditorBubbleMenu button {
+  color: #eee;
+}
+
+.EditorBubbleMenu button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.Editor.dark .EditorBubbleMenu button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.EditorBubbleMenu button.is-active {
+  background-color: rgba(0, 0, 0, 0.07);
+  color: #000;
+}
+
+.Editor.dark .EditorBubbleMenu button.is-active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.MenuDivider {
+  width: 1px;
+  height: 20px;
+  background-color: rgba(0, 0, 0, 0.1);
+  margin: 0 4px;
+}
+
+.Editor.dark .MenuDivider {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Tiptap Editor Floating Menu */
+.EditorFloatingMenu {
+  display: flex;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+  margin-bottom: 8px;
+  z-index: 20;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.Editor.dark .EditorFloatingMenu {
+  background-color: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.EditorFloatingMenu .MenuButtons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 280px;
+}
+
+.EditorFloatingMenu button {
+  background-color: transparent;
+  border: none;
+  color: #333;
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.Editor.dark .EditorFloatingMenu button {
+  color: #eee;
+}
+
+.EditorFloatingMenu button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.Editor.dark .EditorFloatingMenu button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.EditorFloatingMenu button.is-active {
+  background-color: rgba(0, 0, 0, 0.07);
+  color: #000;
+}
+
+.Editor.dark .EditorFloatingMenu button.is-active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Task List Styling - Modern Notion-style */
+.tiptap-task-list {
+  list-style-type: none;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.tiptap-task-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5em;
+  position: relative;
+}
+
+.tiptap-task-item > label {
+  margin-right: 0.75em;
+  user-select: none;
+}
+
+.tiptap-task-item > div {
+  flex: 1;
+}
+
+.tiptap-task-item > label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  margin: 0;
+  position: relative;
+  top: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.Editor.dark .tiptap-task-item > label input[type="checkbox"] {
+  border-color: #555;
+  background-color: #333;
+}
+
+.tiptap-task-item > label input[type="checkbox"]:hover {
+  border-color: #2563eb;
+  transform: scale(1.05);
+}
+
+.tiptap-task-item > label input[type="checkbox"]:checked {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.tiptap-task-item > label input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.tiptap-task-item[data-checked="true"] > div p {
+  color: #aaa;
+  text-decoration: line-through;
+  transition: all 0.2s ease;
+}
+
+.Editor.dark .tiptap-task-item[data-checked="true"] > div p {
+  color: #666;
 }
 
 /* Style the focus state */
 .TiptapEditor .ProseMirror:focus {
-  border-color: #d3d3ff;
+  outline: none;
 }
 
-.Editor.dark .TiptapEditor .ProseMirror:focus {
-  border-color: #555;
-}
-
-/* Ensure the editor container fills the space */
-.TiptapEditor {
-  width: 100%;
-  height: 100%;
-  overflow: hidden; /* Contain the ProseMirror scrolling */
-}
-
-/* Placeholder styling (optional, if you add Placeholder extension) */
+/* Placeholder styling */
 .TiptapEditor .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
   color: #adb5bd;
   pointer-events: none;
   height: 0;
+  font-style: italic;
 }
 
 .Editor.dark .TiptapEditor .ProseMirror p.is-editor-empty:first-child::before {
   color: #666;
 }
 
-/* Styles for paragraph formatting and spacing in Tiptap */
-.TiptapEditor .ProseMirror p {
-  margin: 1em 0;
-  line-height: 1.6;
-}
-
-.TiptapEditor .ProseMirror > *:first-child {
-  margin-top: 0;
-}
-
-/* Block spacing for other elements */
-.TiptapEditor .ProseMirror h1,
-.TiptapEditor .ProseMirror h2,
-.TiptapEditor .ProseMirror h3,
-.TiptapEditor .ProseMirror h4,
-.TiptapEditor .ProseMirror h5,
-.TiptapEditor .ProseMirror h6 {
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  line-height: 1.3;
-}
-
-.TiptapEditor .ProseMirror ul,
-.TiptapEditor .ProseMirror ol {
-  padding-left: 1.5em;
-  margin: 1em 0;
-}
-
-.TiptapEditor .ProseMirror li {
-  margin-bottom: 0.5em;
-}
-
-.TiptapEditor .ProseMirror blockquote {
-  border-left: 3px solid #ddd;
-  margin-left: 0;
-  margin-right: 0;
-  padding-left: 1em;
-  font-style: italic;
-  color: #666;
-}
-
-.Editor.dark .TiptapEditor .ProseMirror blockquote {
-  border-left-color: #555;
-  color: #aaa;
-}
-
-/* Code blocks */
-.TiptapEditor .ProseMirror pre {
-  background: #f4f4f4;
-  border-radius: 4px;
-  padding: 0.75em 1em;
-  margin: 1em 0;
-  font-family: 'JetBrains Mono', monospace;
-  overflow-x: auto;
-}
-
-.Editor.dark .TiptapEditor .ProseMirror pre {
-  background: #333;
-}
-
-/* Inline code */
+/* Inline code styling - modern look */
 .TiptapEditor .ProseMirror code {
-  font-family: 'JetBrains Mono', monospace;
-  background: #f4f4f4;
-  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
   padding: 0.2em 0.4em;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.9em;
+  color: #e0234e;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .Editor.dark .TiptapEditor .ProseMirror code {
-  background: #333;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ff7b72;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* Ensure proper whitespace handling */
-.TiptapEditor .ProseMirror {
-  white-space: pre-wrap;
+/* Link styling - modern look */
+.tiptap-link {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.3);
+  transition: all 0.2s ease;
+  padding: 0 1px;
+}
+
+.tiptap-link:hover {
+  border-bottom-color: rgba(37, 99, 235, 1);
+  background-color: rgba(37, 99, 235, 0.05);
+  border-radius: 2px;
+}
+
+.Editor.dark .tiptap-link {
+  color: #3b82f6;
+  border-bottom-color: rgba(59, 130, 246, 0.3);
+}
+
+.Editor.dark .tiptap-link:hover {
+  border-bottom-color: rgba(59, 130, 246, 1);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Text highlight styling */
+.TiptapEditor .ProseMirror mark {
+  background-color: rgba(255, 235, 59, 0.4);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.Editor.dark .TiptapEditor .ProseMirror mark {
+  background-color: rgba(255, 235, 59, 0.3);
+}
+
+/* Text alignment */
+.TiptapEditor .ProseMirror .text-left {
+  text-align: left;
+}
+
+.TiptapEditor .ProseMirror .text-center {
+  text-align: center;
+}
+
+.TiptapEditor .ProseMirror .text-right {
+  text-align: right;
+}
+
+/* Image styling in the editor - modern look */
+.TiptapEditor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 0;
+  margin-right: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.TiptapEditor .ProseMirror img:hover {
+  transform: scale(1.01);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.Editor.dark .TiptapEditor .ProseMirror img {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.Editor.dark .TiptapEditor .ProseMirror img:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Code Block Styling - enhanced */
+.tiptap-code-block {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  padding: 1.25em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  overflow-x: auto;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.Editor.dark .tiptap-code-block {
+  background-color: #1e1e1e;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tiptap-code-block pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 0.9em;
+  tab-size: 2;
+  color: #333;
+  line-height: 1.6;
+}
+
+.Editor.dark .tiptap-code-block pre {
+  color: #eee;
+}
+
+/* Syntax highlighting - enhanced */
+.tiptap-code-block .hljs-comment,
+.tiptap-code-block .hljs-quote {
+  color: #636e7b;
+  font-style: italic;
+}
+
+.tiptap-code-block .hljs-keyword,
+.tiptap-code-block .hljs-selector-tag,
+.tiptap-code-block .hljs-subst {
+  color: #d73a49;
+}
+
+.tiptap-code-block .hljs-string,
+.tiptap-code-block .hljs-doctag,
+.tiptap-code-block .hljs-template-variable {
+  color: #22863a;
+}
+
+.Editor.dark .tiptap-code-block .hljs-string,
+.Editor.dark .tiptap-code-block .hljs-doctag,
+.Editor.dark .tiptap-code-block .hljs-template-variable {
+  color: #85c366;
+}
+
+.tiptap-code-block .hljs-title,
+.tiptap-code-block .hljs-function,
+.tiptap-code-block .hljs-params {
+  color: #6f42c1;
+}
+
+.Editor.dark .tiptap-code-block .hljs-title,
+.Editor.dark .tiptap-code-block .hljs-function,
+.Editor.dark .tiptap-code-block .hljs-params {
+  color: #b392f0;
+}
+
+/* Table Styling - enhanced */
+.tiptap-table {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tiptap-table td,
+.tiptap-table th {
+  border: 1px solid #eee;
+  padding: 0.75em;
+  position: relative;
+  min-width: 100px;
+  vertical-align: top;
+  transition: background-color 0.2s ease;
+}
+
+.Editor.dark .tiptap-table td,
+.Editor.dark .tiptap-table th {
+  border-color: #333;
+}
+
+.tiptap-table th {
+  background-color: #f9f9f9;
+  font-weight: 600;
+}
+
+.Editor.dark .tiptap-table th {
+  background-color: #222;
+}
+
+.tiptap-table td:hover,
+.tiptap-table th:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.Editor.dark .tiptap-table td:hover,
+.Editor.dark .tiptap-table th:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tiptap-table .tableWrapper {
+  overflow-x: auto;
+  border-radius: 6px;
+}
+
+.tiptap-table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #2563eb;
+  cursor: col-resize;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.tiptap-table .column-resize-handle:hover,
+.tiptap-table .column-resize-handle.dragging {
+  opacity: 1;
+}
+
+/* Iframe (YouTube) styling - enhanced */
+.TiptapEditor .ProseMirror iframe {
+  max-width: 100%;
+  border-radius: 8px;
+  border: none;
+  margin: 1em 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.TiptapEditor .ProseMirror iframe:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.Editor.dark .TiptapEditor .ProseMirror iframe {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.Editor.dark .TiptapEditor .ProseMirror iframe:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Additional spacing adjustments */
+.TiptapEditor .ProseMirror h1 + p,
+.TiptapEditor .ProseMirror h2 + p,
+.TiptapEditor .ProseMirror h3 + p {
+  margin-top: 0.5em;
+}
+
+.TiptapEditor .ProseMirror p + p {
+  margin-top: 0.3em;
+}
+
+/* BlockQuote enhanced styling */
+.TiptapEditor .ProseMirror blockquote {
+  padding-left: 1em;
+  border-left: 3px solid #2563eb;
+  font-style: italic;
+  color: #555;
+  margin: 1.2em 0;
+  background-color: rgba(37, 99, 235, 0.05);
+  padding: 0.8em 1em 0.8em 1.5em;
+  border-radius: 0 6px 6px 0;
+}
+
+.Editor.dark .TiptapEditor .ProseMirror blockquote {
+  border-left-color: #3b82f6;
+  color: #bbb;
+  background-color: rgba(59, 130, 246, 0.1);
 }

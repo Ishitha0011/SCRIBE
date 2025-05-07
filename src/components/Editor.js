@@ -1,14 +1,56 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog } from 'lucide-react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter } from 'lucide-react';
+import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import CharacterCount from '@tiptap/extension-character-count';
+import UnderlineExtension from '@tiptap/extension-underline';
+import LinkExtension from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import TableExtension from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { createLowlight } from 'lowlight';
+import { common, createStarryNight } from '@wooorm/starry-night';
 import { useTheme } from '../ThemeContext';
 import { useFileContext } from '../FileContext';
 import Switch from './ui/Switch';
 import NotesCanvas from './NotesCanvas';
 import '../css/Editor.css';
+
+// Create a lowlight instance with common languages
+const lowlight = createLowlight();
+
+// Register common languages for syntax highlighting
+async function loadLanguages() {
+  try {
+    const starryNight = await createStarryNight(common);
+    const grammars = starryNight.grammars;
+    
+    // Add grammars to lowlight
+    for (const grammar of grammars) {
+      const languageName = grammar.scopeName.split('.').pop();
+      if (languageName) {
+        lowlight.register(languageName, {
+          grammar,
+          names: [languageName],
+        });
+      }
+    }
+    console.log('Loaded syntax highlighting for common languages');
+  } catch (error) {
+    console.error('Failed to load syntax highlighting:', error);
+  }
+}
+
+// Initialize language support
+loadLanguages();
 
 const Editor = () => {
   const [localContent, setLocalContent] = useState('');
@@ -33,6 +75,7 @@ const Editor = () => {
   } = useFileContext();
 
   const tabsLeftRef = useRef(null);
+  const editorContainerRef = useRef(null);
 
   const editor = useEditor({
     extensions: [
@@ -47,7 +90,8 @@ const Editor = () => {
         },
         hardBreak: {
           keepMarks: true
-        }
+        },
+        codeBlock: false, // We'll use CodeBlockLowlight instead
       }),
       Image.configure({
         inline: false,
@@ -56,14 +100,62 @@ const Editor = () => {
           class: 'markdown-image',
         },
       }),
+      UnderlineExtension,
+      LinkExtension.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'tiptap-link',
+          rel: 'noopener noreferrer',
+        },
+      }),
+      Placeholder.configure({
+        placeholder: 'Type something or use "/" for commands...',
+        emptyEditorClass: 'is-editor-empty',
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+        alignments: ['left', 'center', 'right'],
+        defaultAlignment: 'left',
+      }),
+      Highlight.configure({
+        multicolor: true,
+      }),
+      TableExtension.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: 'tiptap-table',
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TaskList.configure({
+        HTMLAttributes: {
+          class: 'tiptap-task-list',
+        },
+      }),
+      TaskItem.configure({
+        nested: true,
+        HTMLAttributes: {
+          class: 'tiptap-task-item',
+        },
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        HTMLAttributes: {
+          class: 'tiptap-code-block',
+        },
+      }),
       CharacterCount,
     ],
     content: '',
     onUpdate: ({ editor }) => {
+      if (!editor) return;
+      
       const htmlContent = editor.getHTML();
       setLocalContent(htmlContent);
-      setCharCount(editor.storage.characterCount?.characters() || 0);
-      setWordCount(editor.storage.characterCount?.words() || 0);
+      setCharCount(editor?.storage.characterCount?.characters() || 0);
+      setWordCount(editor?.storage.characterCount?.words() || 0);
 
       if (activeFileId && htmlContent !== fileContents[activeFileId]) {
         setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
@@ -136,6 +228,34 @@ const Editor = () => {
       alert(`Failed to upload image: ${error.message}`);
     }
   }, [editor, activeFileId, openFiles]);
+
+  const addYoutubeVideo = useCallback(() => {
+    if (!editor) return;
+    
+    const url = prompt('Enter YouTube URL:');
+    if (!url) return;
+    
+    // Extract video ID from URL
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    
+    if (match && match[2].length === 11) {
+      const videoId = match[2];
+      const embedHTML = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+      editor.chain().focus().setContent(embedHTML, { parseOptions: { preserveWhitespace: false } }).run();
+    } else {
+      alert('Invalid YouTube URL');
+    }
+  }, [editor]);
+
+  const createTable = useCallback(() => {
+    if (!editor) return;
+    
+    editor.chain()
+      .focus()
+      .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+      .run();
+  }, [editor]);
 
   const checkCanvasFile = useCallback((file) => {
     if (!file) return;
@@ -245,8 +365,12 @@ const Editor = () => {
             checkCanvasFile(file);
             
             if (!canvasMode && contentToLoad !== editor.getHTML()) {
-              editor.commands.setContent(contentToLoad, false);
-              setLocalContent(contentToLoad);
+              try {
+                editor.commands.setContent(contentToLoad || '', false);
+                setLocalContent(contentToLoad || '');
+              } catch (error) {
+                console.error('Error setting editor content:', error);
+              }
             }
           }
           
@@ -257,14 +381,24 @@ const Editor = () => {
           });
         }
       } else {
+        try {
         editor.commands.setContent('', false);
         setLocalContent('');
+        } catch (error) {
+          console.error('Error clearing editor content:', error);
+        }
         setCanvasMode(false);
         setUnsavedChanges({});
       }
       
+      try {
       setCharCount(editor.storage.characterCount?.characters() || 0);
       setWordCount(editor.storage.characterCount?.words() || 0);
+      } catch (error) {
+        console.error('Error updating character count:', error);
+        setCharCount(0);
+        setWordCount(0);
+      }
     }
   }, [activeFileId, fileContents, editor, openFiles, checkCanvasFile, updateFileType, canvasMode, updateFileContent]);
 
@@ -427,6 +561,19 @@ const Editor = () => {
         }
       }
     }
+    
+    // If we're closing the active file and it's the last one
+    if (id === activeFileId && openFiles.length === 1) {
+      // Clear the editor first to prevent DOM errors
+      if (editor) {
+        try {
+          editor.commands.clearContent(false);
+        } catch (error) {
+          console.error('Error clearing editor content:', error);
+        }
+      }
+    }
+    
     closeFile(id);
   };
 
@@ -464,6 +611,47 @@ const Editor = () => {
     if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
     return lastSaved.toLocaleTimeString();
   };
+
+  const addLink = useCallback(() => {
+    if (!editor) return;
+    
+    const url = prompt('Enter URL:');
+    if (!url) return;
+    
+    // Check if there's text selected
+    if (editor.view.state.selection.empty) {
+      // If no selection, insert the URL as a link
+      editor.chain().focus().insertContent(`<a href="${url}" target="_blank">${url}</a>`).run();
+    } else {
+      // If there's a selection, turn the selected text into a link
+      editor.chain().focus().setLink({ href: url, target: '_blank' }).run();
+    }
+  }, [editor]);
+
+  // Add a cleanup effect to destroy editor on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up the editor properly when component unmounts
+      if (editor) {
+        editor.destroy();
+      }
+    };
+  }, [editor]);
+
+  // Add a handler for empty workspace
+  useEffect(() => {
+    if (openFiles.length === 0 && editor) {
+      try {
+        // Clear content when no files are open
+        editor.commands.setContent('', false);
+        setLocalContent('');
+        setCharCount(0);
+        setWordCount(0);
+      } catch (error) {
+        console.error('Error clearing editor on empty workspace:', error);
+      }
+    }
+  }, [openFiles, editor]);
 
   if (!editor) {
     return <div>Loading Editor...</div>;
@@ -527,7 +715,158 @@ const Editor = () => {
               canvasId={activeFileId}
             />
           ) : (
+            <div ref={editorContainerRef} className="EditorContainer">
+              {editor && (
+                <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className={`EditorBubbleMenu ${theme === 'dark' ? 'dark' : ''}`}>
+                  <div className="MenuButtons">
+                    <button
+                      onClick={() => editor.chain().focus().toggleBold().run()}
+                      className={editor.isActive('bold') ? 'is-active' : ''}
+                      title="Bold"
+                    >
+                      <Bold size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleItalic().run()}
+                      className={editor.isActive('italic') ? 'is-active' : ''}
+                      title="Italic"
+                    >
+                      <Italic size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleUnderline().run()}
+                      className={editor.isActive('underline') ? 'is-active' : ''}
+                      title="Underline"
+                    >
+                      <Underline size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleCode().run()}
+                      className={editor.isActive('code') ? 'is-active' : ''}
+                      title="Code"
+                    >
+                      <Code size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleHighlight().run()}
+                      className={editor.isActive('highlight') ? 'is-active' : ''}
+                      title="Highlight"
+                    >
+                      <Highlighter size={16} />
+                    </button>
+                    <button
+                      onClick={addLink}
+                      className={editor.isActive('link') ? 'is-active' : ''}
+                      title="Add Link"
+                    >
+                      <LinkIcon size={16} />
+                    </button>
+                    <div className="MenuDivider"></div>
+                    <button
+                      onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                      className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
+                      title="Align Left"
+                    >
+                      <AlignLeft size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                      className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
+                      title="Align Center"
+                    >
+                      <AlignCenter size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                      className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
+                      title="Align Right"
+                    >
+                      <AlignRight size={16} />
+                    </button>
+                  </div>
+                </BubbleMenu>
+              )}
+              
+              {editor && (
+                <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }} className={`EditorFloatingMenu ${theme === 'dark' ? 'dark' : ''}`}>
+                  <div className="MenuButtons">
+                    <button
+                      onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                      className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
+                      title="Heading 1"
+                    >
+                      <Heading1 size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                      className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
+                      title="Heading 2"
+                    >
+                      <Heading2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                      className={editor.isActive('heading', { level: 3 }) ? 'is-active' : ''}
+                      title="Heading 3"
+                    >
+                      <Heading3 size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleBulletList().run()}
+                      className={editor.isActive('bulletList') ? 'is-active' : ''}
+                      title="Bullet List"
+                    >
+                      <List size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                      className={editor.isActive('orderedList') ? 'is-active' : ''}
+                      title="Ordered List"
+                    >
+                      <ListOrdered size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleTaskList().run()}
+                      className={editor.isActive('taskList') ? 'is-active' : ''}
+                      title="Task List"
+                    >
+                      <CheckSquare size={16} />
+                    </button>
+                    <button
+                      onClick={createTable}
+                      title="Insert Table"
+                    >
+                      <TableIcon size={16} />
+                    </button>
+                    <button
+                      onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                      className={editor.isActive('codeBlock') ? 'is-active' : ''}
+                      title="Code Block"
+                    >
+                      <Code size={16} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = e => {
+                          if (e.target.files?.length) {
+                            handleImageUpload(e.target.files[0]);
+                          }
+                        };
+                        input.click();
+                      }}
+                      title="Insert Image"
+                    >
+                      <ImageIcon size={16} />
+                    </button>
+                  </div>
+                </FloatingMenu>
+              )}
+              
             <EditorContent editor={editor} className="TiptapEditor" />
+            </div>
           )
         ) : (
           <div className="EmptyState">
