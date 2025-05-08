@@ -1,36 +1,45 @@
-/* Global styles for the App */
-html, body, #root {
-  height: 100%;
+/* Global Reset */
+* {
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Prevents unwanted scrollbars */
+  box-sizing: border-box;
 }
 
+/* Body and HTML should fill the full screen */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* App container */
 .App {
   display: flex;
-  height: 100vh; /* Ensure full viewport height */
-  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
   background-color: var(--editor-bg-color);
   color: var(--editor-text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode specific styles */
+/* Dark mode */
 .dark .App,
 .dark {
   background-color: var(--editor-bg-color);
   color: var(--editor-text-color);
 }
 
-/* Flexbox layout for sidebars and the main editor */
+/* Layout for sidebars */
 .LeftSidebar,
 .RightSidebar {
   width: 250px;
   background-color: var(--sidebar-bg-color);
   color: var(--editor-text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
+  flex-shrink: 0;
 }
 
+/* Editor takes up remaining space */
 .Editor {
   flex: 1;
   display: flex;
@@ -38,29 +47,26 @@ html, body, #root {
   background-color: var(--editor-bg-color);
   color: var(--editor-text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-  overflow: hidden; /* Prevents content from overflowing */
+  overflow: auto;
 }
 
-/* Textarea styles */
+/* Text areas and inputs */
 .TextArea,
-.textarea {
-  background-color: var(--textarea-bg-color);
-  color: var(--textarea-text-color);
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Ensure input elements respect the theme */
-input, 
-textarea, 
-select, 
+.textarea,
+input,
+textarea,
+select,
 button {
   background-color: var(--textarea-bg-color);
   color: var(--textarea-text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-  border-color: var(--editor-text-color);
+  border: 1px solid var(--editor-text-color);
+  padding: 8px;
+  font-family: inherit;
+  font-size: 14px;
 }
 
-/* Optional: Add some theme-specific styling for better contrast */
+/* Selection colors */
 .dark *::selection {
   background-color: rgba(255, 255, 255, 0.2);
   color: #fff;
@@ -71,9 +77,7 @@ button {
   color: #000;
 }
 
-/* === Modern Tooltip Styles === */
-
-/* Define tooltip colors using theme variables */
+/* Tooltip Variables */
 :root {
   --tooltip-bg: #333333;
   --tooltip-text: #ffffff;
@@ -86,13 +90,12 @@ button {
   --tooltip-shadow: rgba(0, 0, 0, 0.3);
 }
 
-/* Tooltip Container */
+/* Tooltip base */
 .tooltip {
   position: relative;
   display: inline-block;
 }
 
-/* Tooltip Text Bubble */
 .tooltip .tooltiptext {
   visibility: hidden;
   opacity: 0;
@@ -117,7 +120,6 @@ button {
   transition-delay: 0.1s;
 }
 
-/* Tooltip Arrow */
 .tooltip .tooltiptext::after {
   content: "";
   position: absolute;
@@ -129,7 +131,7 @@ button {
   border-color: var(--tooltip-bg) transparent transparent transparent;
 }
 
-/* Show Tooltip on Hover/Focus */
+/* Show tooltip */
 .tooltip:hover .tooltiptext,
 .tooltip:focus-within .tooltiptext {
   visibility: visible;
@@ -138,17 +140,19 @@ button {
   transition-delay: 0.1s;
 }
 
-/* Specific Adjustments */
+/* Rightmost tooltip fix */
 .HeaderActions .tooltip:last-child .tooltiptext {
   left: auto;
   right: 0;
   transform: translateX(0) translateY(4px);
 }
+
 .HeaderActions .tooltip:last-child .tooltiptext::after {
   left: auto;
   right: 10px;
   margin-left: 0;
 }
+
 .HeaderActions .tooltip:last-child:hover .tooltiptext,
 .HeaderActions .tooltip:last-child:focus-within .tooltiptext {
   transform: translateX(0) translateY(0);
