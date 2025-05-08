@@ -24,6 +24,7 @@ import { useTheme } from '../ThemeContext';
 import { useFileContext } from '../FileContext';
 import Switch from './ui/Switch';
 import NotesCanvas from './NotesCanvas';
+import ImageAnalysisPanel from './ImageAnalysisPanel';
 import '../css/Editor.css';
 
 // New Extensions
@@ -77,6 +78,13 @@ const Editor = () => {
   const [fontFamily, setFontFamily] = useState('');
   const [fontSize, setFontSize] = useState('');
   
+  const [analysisPanel, setAnalysisPanel] = useState({
+    isVisible: false,
+    content: '',
+    position: { top: 0, left: 0 },
+    isLoading: false,
+  });
+
   const { theme } = useTheme();
   const {
     openFiles,
@@ -123,22 +131,27 @@ const Editor = () => {
   const onUpdate = useCallback(({ editor: tiptapEditor }) => {
     if (!tiptapEditor) return;
     const htmlContent = tiptapEditor.getHTML();
-      setLocalContent(htmlContent);
+    setLocalContent(htmlContent);
     setCharCount(tiptapEditor.storage.characterCount.characters());
     setWordCount(tiptapEditor.storage.characterCount.words());
 
-      if (activeFileId && htmlContent !== fileContents[activeFileId]) {
-        setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
-      } else if (activeFileId) {
-        setUnsavedChanges((prev) => {
-          const updated = { ...prev };
-          delete updated[activeFileId];
-          return updated;
-        });
-      }
+    if (activeFileId && htmlContent !== fileContents[activeFileId]) {
+      setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
+    } else if (activeFileId) {
+      setUnsavedChanges((prev) => {
+        const updated = { ...prev };
+        delete updated[activeFileId];
+        return updated;
+      });
+    }
     setFontFamily(tiptapEditor.getAttributes('textStyle').fontFamily || '');
     setFontSize(tiptapEditor.getAttributes('textStyle').fontSize || '');
-  }, [activeFileId, fileContents, setLocalContent, setCharCount, setWordCount, setUnsavedChanges, setFontFamily, setFontSize]);
+
+    // Reposition panel if visible and image is active
+    if (analysisPanel.isVisible && tiptapEditor.isActive('image')) {
+      repositionAnalysisPanel(tiptapEditor);
+    }
+  }, [activeFileId, fileContents, analysisPanel.isVisible, setLocalContent, setCharCount, setWordCount, setUnsavedChanges, setFontFamily, setFontSize]);
 
   // Memoized editorProps
   const editorProps = useMemo(() => ({
@@ -190,7 +203,6 @@ const Editor = () => {
         HTMLAttributes: {
           class: 'markdown-image',
         },
-        resizable: true,
       }).extend({
         addAttributes() {
           return {
@@ -203,8 +215,18 @@ const Editor = () => {
             'data-align': {
               default: 'center',
               parseHTML: element => element.getAttribute('data-align') || 'center',
+              renderHTML: attributes => ({
+                'data-align': attributes['data-align'],
+              }),
+            },
+            'data-ai-content': { // Attribute to store AI analysis
+              default: null,
+              parseHTML: element => element.getAttribute('data-ai-content'),
               renderHTML: attributes => {
-                return { 'data-align': attributes['data-align'] };
+                if (attributes['data-ai-content']) {
+                  return { 'data-ai-content': attributes['data-ai-content'] };
+                }
+                return {};
               },
             },
           };
@@ -786,14 +808,142 @@ const Editor = () => {
   const textColors = ['#000000', '#e03131', '#2f9e44', '#1971c2', '#f08c00', '#862e9c', '#adb5bd', '#ffffff']; // Example palette
   const highlightColors = ['#fff59d', '#a7ffeb', '#ffccbc', '#cfd8dc', 'transparent']; // Example palette
 
+  const getSelectedImageNode = (currentEditor) => {
+    if (!currentEditor || !currentEditor.isActive('image')) return null;
+    const { state } = currentEditor;
+    const { selection } = state;
+    const { from } = selection;
+    // nodeDOM can be null if the node view isn't directly rendered or if selection is tricky
+    let domNode = currentEditor.view.nodeDOM(from);
+
+    // If nodeDOM is a wrapper, try to find the img tag within it
+    if (domNode && !(domNode instanceof HTMLImageElement) && domNode.querySelector) {
+      const imgElement = domNode.querySelector('img');
+      if (imgElement) domNode = imgElement;
+    }
+    
+    // Fallback: check if the node itself is an image (less common for complex node views)
+    if (!domNode || !(domNode instanceof HTMLElement)) {
+        const nodeAtCursor = state.doc.nodeAt(from);
+        if (nodeAtCursor && nodeAtCursor.type.name === 'image') {
+            // This path might not give a direct DOM node easily for class manipulation
+            // For now, we rely on nodeDOM. If it fails, shimmer might not show.
+        }
+    }
+    return domNode instanceof HTMLElement ? domNode : null;
+  };
+
+  const repositionAnalysisPanel = useCallback((currentEditor) => {
+    if (!analysisPanel.isVisible || !currentEditor || !currentEditor.isActive('image')) return;
+
+    const imageDomNode = getSelectedImageNode(currentEditor);
+
+    if (imageDomNode && editorContainerRef.current) {
+      const imageRect = imageDomNode.getBoundingClientRect();
+      const editorRect = editorContainerRef.current.getBoundingClientRect();
+      const scrollTop = editorContainerRef.current.scrollTop;
+      const scrollLeft = editorContainerRef.current.scrollLeft;
+
+      setAnalysisPanel(prev => ({
+        ...prev,
+        position: {
+          top: imageRect.top - editorRect.top + scrollTop,
+          left: imageRect.right - editorRect.left + 10 + scrollLeft,
+        },
+      }));
+    }
+  }, [analysisPanel.isVisible]);
+
+  // Effect for editor scroll events to reposition panel
+  useEffect(() => {
+    const editorViewDom = editorContainerRef.current?.querySelector('.TiptapEditor .ProseMirror');
+    if (!editorViewDom) return;
+
+    const handleScroll = () => {
+      if (analysisPanel.isVisible && editor && editor.isActive('image')) {
+        repositionAnalysisPanel(editor);
+      }
+    };
+    
+    const scrollableContentArea = editorContainerRef.current?.querySelector('.TiptapEditor');
+    if (scrollableContentArea) {
+        scrollableContentArea.addEventListener('scroll', handleScroll);
+        return () => scrollableContentArea.removeEventListener('scroll', handleScroll);
+    }
+  }, [editor, analysisPanel.isVisible, repositionAnalysisPanel]);
+
+  // Effect for selection updates to manage analysis panel content and visibility
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleSelectionOrTransaction = () => {
+      if (editor.isActive('image')) {
+        if (!analysisPanel.isLoading) { // Only act if not currently loading new analysis
+          const imageData = editor.getAttributes('image');
+          const savedContent = imageData?.['data-ai-content'];
+
+          if (savedContent) {
+            // If panel is not visible or content is different, update and show
+            if (!analysisPanel.isVisible || analysisPanel.content !== savedContent) {
+              setAnalysisPanel({
+                isVisible: true,
+                content: savedContent,
+                isLoading: false,
+                position: { top: 0, left: 0 }, // Will be repositioned by the call below
+              });
+              repositionAnalysisPanel(editor);
+            }
+          } else {
+            // No saved content for this image, hide panel if it was visible from another image
+            if (analysisPanel.isVisible) {
+              setAnalysisPanel(prev => ({ ...prev, isVisible: false, content: '' }));
+            }
+          }
+        }
+      } else {
+        // Selection is not an image, hide the panel
+        if (analysisPanel.isVisible) {
+          setAnalysisPanel(prev => ({ ...prev, isVisible: false, isLoading: false, content: '' }));
+        }
+      }
+    };
+
+    editor.on('selectionUpdate', handleSelectionOrTransaction);
+    editor.on('transaction', handleSelectionOrTransaction); // Catch other state changes that might affect selection
+
+    return () => {
+      editor.off('selectionUpdate', handleSelectionOrTransaction);
+      editor.off('transaction', handleSelectionOrTransaction);
+    };
+  }, [editor, analysisPanel.isLoading, analysisPanel.isVisible, analysisPanel.content, repositionAnalysisPanel]);
+
   const handleAnalyzeImage = async () => {
     if (!editor || !editor.isActive('image')) return;
-    const imageData = editor.getAttributes('image');
-    const imageUrl = imageData.src;
+    
+    setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: true, content: 'Processing...' }));
+    repositionAnalysisPanel(editor); // Initial position
 
-    if (!imageUrl) {
-      alert('Could not get image URL.');
+    const imageDomNode = getSelectedImageNode(editor);
+    if (imageDomNode) {
+      imageDomNode.classList.add('image-processing-shimmer');
+    }
+
+    const imageData = editor.getAttributes('image');
+    const originalImageUrl = imageData.src;
+
+    if (!originalImageUrl) {
+      setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: false, content: 'Error: Could not get image URL.'}));
       return;
+    }
+
+    let processedImageUrl = originalImageUrl;
+    try {
+      const urlObject = new URL(originalImageUrl);
+      if (urlObject.protocol === 'http:' || urlObject.protocol === 'https:') {
+        processedImageUrl = urlObject.pathname;
+      }
+    } catch (e) {
+      console.warn('Could not parse image URL to extract pathname, sending original:', originalImageUrl, e);
     }
 
     try {
@@ -802,7 +952,7 @@ const Editor = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ image_url: imageUrl }), // No prompt_text for analysis
+        body: JSON.stringify({ image_url: processedImageUrl }),
       });
 
       if (!response.ok) {
@@ -811,25 +961,60 @@ const Editor = () => {
       }
 
       const result = await response.json();
-      alert(`AI Analysis:\n${result.response}`);
+      
+      if (result.response) {
+        editor.chain().focus().updateAttributes('image', { 'data-ai-content': result.response }).run();
+      }
+      setAnalysisPanel(prev => ({
+        ...prev,
+        isVisible: true,
+        isLoading: false,
+        content: result.response,
+      }));
+      // Reposition after content is set as panel size might change
+      repositionAnalysisPanel(editor); 
+
     } catch (error) {
       console.error('Error analyzing image:', error);
-      alert(`Failed to analyze image: ${error.message}`);
+      setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: false, content: `Failed to analyze image: ${error.message}`}));
+    } finally {
+      if (imageDomNode) {
+        imageDomNode.classList.remove('image-processing-shimmer');
+      }
     }
   };
 
   const handleAskAboutImage = async () => {
     if (!editor || !editor.isActive('image')) return;
-    const imageData = editor.getAttributes('image');
-    const imageUrl = imageData.src;
 
-    if (!imageUrl) {
-      alert('Could not get image URL.');
+    const userPrompt = prompt('Ask something about the image:');
+    if (!userPrompt) return;
+
+    setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: true, content: `Asking: ${userPrompt}...` }));
+    repositionAnalysisPanel(editor); // Initial position
+
+    const imageDomNode = getSelectedImageNode(editor);
+    if (imageDomNode) {
+      imageDomNode.classList.add('image-processing-shimmer');
+    }
+
+    const imageData = editor.getAttributes('image');
+    const originalImageUrl = imageData.src;
+
+    if (!originalImageUrl) {
+      setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: false, content: 'Error: Could not get image URL.'}));
       return;
     }
 
-    const userPrompt = prompt('Ask something about the image:');
-    if (!userPrompt) return; // User cancelled or entered nothing
+    let processedImageUrl = originalImageUrl;
+    try {
+      const urlObject = new URL(originalImageUrl);
+      if (urlObject.protocol === 'http:' || urlObject.protocol === 'https:') {
+        processedImageUrl = urlObject.pathname;
+      }
+    } catch (e) {
+      console.warn('Could not parse image URL to extract pathname, sending original:', originalImageUrl, e);
+    }
 
     try {
       const response = await fetch('http://localhost:8000/api/image/process', {
@@ -837,7 +1022,7 @@ const Editor = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ image_url: imageUrl, prompt_text: userPrompt }),
+        body: JSON.stringify({ image_url: processedImageUrl, prompt_text: userPrompt }),
       });
 
       if (!response.ok) {
@@ -846,10 +1031,29 @@ const Editor = () => {
       }
 
       const result = await response.json();
-      alert(`AI Response:\n${result.response}`);
+
+      if (result.response) {
+        // Optionally, save question and answer, or just the answer
+        const newAiContent = `Q: ${userPrompt}\nA: ${result.response}`;
+        editor.chain().focus().updateAttributes('image', { 'data-ai-content': newAiContent }).run();
+      }
+
+      setAnalysisPanel(prev => ({
+        ...prev,
+        isVisible: true,
+        isLoading: false,
+        content: result.response,
+      }));
+      // Reposition after content is set as panel size might change
+      repositionAnalysisPanel(editor);
+
     } catch (error) {
       console.error('Error asking about image:', error);
-      alert(`Failed to get answer about image: ${error.message}`);
+      setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: false, content: `Failed to get answer: ${error.message}`}));
+    } finally {
+      if (imageDomNode) {
+        imageDomNode.classList.remove('image-processing-shimmer');
+      }
     }
   };
 
@@ -1220,8 +1424,11 @@ const Editor = () => {
                 pluginKey="imageBubbleMenu"
                 className={`EditorBubbleMenu ImageBubbleMenu ${theme === 'dark' ? 'dark' : ''}`}
                 shouldShow={({ editor, view, state, oldState, from, to }) => {
-                  // Show if editor exists and an image node is selected
-                  return !!editor && editor.isActive('image');
+                  const isActive = !!editor && editor.isActive('image');
+                  if (!isActive && analysisPanel.isVisible) { 
+                    setAnalysisPanel(prev => ({ ...prev, isVisible: false, isLoading: false }));
+                  }
+                  return isActive;
                 }}
               >
                 <div className="MenuButtons">
@@ -1262,6 +1469,19 @@ const Editor = () => {
                 </div>
               </BubbleMenu>
               
+              {analysisPanel.isVisible && editor.isActive('image') && (
+                <ImageAnalysisPanel 
+                  content={analysisPanel.content}
+                  isLoading={analysisPanel.isLoading}
+                  style={{ 
+                    top: `${analysisPanel.position.top}px`,
+                    left: `${analysisPanel.position.left}px`,
+                  }}
+                  onClose={() => setAnalysisPanel(prev => ({ ...prev, isVisible: false }))}
+                  theme={theme}
+                />
+              )}
+
             <EditorContent editor={editor} className="TiptapEditor" />
             </div>
           )
