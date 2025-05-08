@@ -950,11 +950,42 @@
 .TiptapEditor .ProseMirror img {
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: transform 0.2s;
-  margin-left: 0; /* Reset */
-  margin-right: 0; /* Reset */
+  transition: all 0.3s ease;
+  margin-left: auto; /* Default to right for block */
+  margin-right: auto; /* Default to center for block */
+  display: block; /* Important for margin auto centering */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Image Alignment Styles */
+.TiptapEditor .ProseMirror img[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.TiptapEditor .ProseMirror img[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.TiptapEditor .ProseMirror img[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.TiptapEditor .ProseMirror img:hover {
+  transform: scale(1.01);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.Editor.dark .TiptapEditor .ProseMirror img {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.Editor.dark .TiptapEditor .ProseMirror img:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 /* Iframe (YouTube) styling - max width 100% of padded .ProseMirror */
@@ -1286,29 +1317,37 @@
   text-align: right;
 }
 
-/* Image styling in the editor - modern look */
-.TiptapEditor .ProseMirror img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-left: 0;
-  margin-right: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+/* Image Resizing Styles */
+/* Style when the image node itself is selected */
+.ProseMirror .ProseMirror-selectednode {
+  /* Ensure selected node itself doesn't have interfering styles */
+  outline: none;
 }
 
-.TiptapEditor .ProseMirror img:hover {
-  transform: scale(1.01);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+.ProseMirror .ProseMirror-selectednode img {
+  outline: 3px solid #3b82f6; /* Use a theme-consistent blue */
+  box-shadow: 0 0 0 3px #3b82f6; /* Match outline color */
 }
 
-.Editor.dark .TiptapEditor .ProseMirror img {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.Editor.dark .ProseMirror .ProseMirror-selectednode img {
+  outline-color: #60a5fa; /* Lighter blue for dark mode */
+  box-shadow: 0 0 0 3px #60a5fa;
 }
 
-.Editor.dark .TiptapEditor .ProseMirror img:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+/* Default browser resize handles are difficult to style directly.
+   The outline provides the main visual cue. */
+
+/* Image Bubble Menu Specific Styles (Optional) */
+.ImageBubbleMenu {
+  padding: 4px;
+}
+
+.ImageBubbleMenu .MenuButtons {
+  gap: 4px;
+}
+
+.ImageBubbleMenu button {
+  padding: 6px;
 }
 
 /* Code Block Styling - enhanced */

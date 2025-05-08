@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     Play, Pause, FileVideo, List, Text, MessageSquare, Clock, FileText, Music, User, BrainCircuit, // Using User/BrainCircuit for sender

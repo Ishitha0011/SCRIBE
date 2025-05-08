@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Handle } from 'reactflow';
-import { Link, Upload, X, AlertCircle, RefreshCw, CheckCircle, Play, Film, Eye } from 'lucide-react';
+import { Link, X, AlertCircle, RefreshCw, CheckCircle, Play, Film, Eye } from 'lucide-react';
 import { getYouTubeVideoId, extractYouTubeTitle, getYouTubeEmbedUrl, getYouTubeThumbnailUrl } from '../../utils/youtubeUtils';
 import { registerNode } from '../../utils/flowUtils';
 

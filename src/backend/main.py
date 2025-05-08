@@ -20,6 +20,10 @@ from threading import Thread
 import queue
 import time
 
+# Imports for Gemini image processing
+from google import genai as gemini_ai # Renamed to avoid conflict with genai used for text
+from google.genai import types as gemini_types
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -116,6 +120,11 @@ class DirectoryRequest(BaseModel):
 class RenameRequest(BaseModel):
     old_path: str
     new_path: str
+
+
+class ImageProcessRequest(BaseModel):
+    image_url: str  # Relative URL like /assets/image.png
+    prompt_text: Optional[str] = None
 
 
 class CreateFileRequest(BaseModel):
@@ -925,6 +934,100 @@ async def handle_ai_chat(request: AIChatRequest):
     except Exception as e:
         logging.error(f"Error in AI chat endpoint: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/image/process")
+async def process_image_with_ai(request: ImageProcessRequest):
+    """Process an image with an optional prompt using Gemini."""
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            logger.error("GEMINI_API_KEY not found in environment variables")
+            raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
+
+        gemini_client = gemini_ai.Client(api_key=api_key)
+
+        # Construct the local file path from the image_url
+        # image_url is like "/assets/image.png", local path should be "assets/image.png"
+        if not request.image_url.startswith("/assets/"):
+            raise HTTPException(status_code=400, detail="Invalid image_url format. Must start with /assets/")
+        
+        local_image_path = request.image_url.lstrip('/') # Remove leading slash
+        
+        if not os.path.exists(local_image_path):
+            logger.error(f"Image file not found at local path: {local_image_path}")
+            raise HTTPException(status_code=404, detail=f"Image file not found: {local_image_path}")
+
+        logger.info(f"Processing image: {local_image_path} with prompt: '{request.prompt_text}'")
+
+        # 1. Upload the file to Gemini
+        try:
+            uploaded_files = [
+                gemini_client.files.upload(file=local_image_path),
+            ]
+            logger.info(f"Successfully uploaded image to Gemini: {uploaded_files[0].uri}")
+        except Exception as e:
+            logger.error(f"Error uploading image to Gemini: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Failed to upload image to Gemini: {str(e)}")
+
+        # 2. Prepare content for the model
+        prompt_to_use = request.prompt_text if request.prompt_text else "Describe this image comprehensively."
+        
+        model_contents = [
+            gemini_types.Content(
+                role="user",
+                parts=[
+                    gemini_types.Part.from_uri(
+                        file_uri=uploaded_files[0].uri,
+                        mime_type=uploaded_files[0].mime_type,
+                    ),
+                    gemini_types.Part.from_text(text=prompt_to_use),
+                ],
+            ),
+        ]
+        
+        generate_content_config = gemini_types.GenerateContentConfig(
+            response_mime_type="text/plain",
+        )
+        
+        model_name = "gemini-2.5-flash-preview-04-17" # As requested
+
+        # 3. Generate content
+        response_chunks = []
+        try:
+            for chunk in gemini_client.models.generate_content_stream(
+                model=model_name,
+                contents=model_contents,
+                config=generate_content_config,
+            ):
+                response_chunks.append(chunk.text)
+            
+            full_response = "".join(response_chunks)
+            logger.info(f"Successfully received response from Gemini model for image.")
+
+            # 4. Clean up the uploaded file (optional, but good practice)
+            # try:
+            #     gemini_client.files.delete(name=uploaded_files[0].name)
+            #     logger.info(f"Successfully deleted temporary file from Gemini: {uploaded_files[0].name}")
+            # except Exception as e:
+            #     logger.warning(f"Could not delete temporary file from Gemini: {e}", exc_info=True)
+
+            return {"status": "success", "response": full_response}
+
+        except Exception as e:
+            logger.error(f"Error generating content with Gemini model: {e}", exc_info=True)
+            # Attempt to delete file even if generation fails
+            # try:
+            #     gemini_client.files.delete(name=uploaded_files[0].name)
+            # except Exception as del_e:
+            #     logger.warning(f"Failed to delete temporary file after generation error: {del_e}")
+            raise HTTPException(status_code=500, detail=f"Failed to generate content from Gemini: {str(e)}")
+
+    except HTTPException:
+        raise # Re-raise HTTPExceptions directly
+    except Exception as e:
+        logger.error(f"Unexpected error in process_image_with_ai: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
 if __name__ == "__main__":

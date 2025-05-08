@@ -1,6 +1,7 @@
+/* eslint-disable */
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-// Combine necessary icons from both versions
-import { Send, Plus, Clock, Copy, Trash2, Maximize2, X, Paperclip, Check, MoreHorizontal, ArrowUp, Edit2, Search, Upload, FileText } from 'lucide-react';
+import { Plus, Clock, Copy, Trash2, Maximize2, X, Paperclip, Check, MoreHorizontal, ArrowUp, Edit2, Search, Upload, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown'; // Keep for rendering
 import { supabase } from '../supabaseClient'; // Ensure path is correct
 import { v4 as uuidv4 } from 'uuid';

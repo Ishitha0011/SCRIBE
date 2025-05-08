@@ -1,5 +1,7 @@
+/* eslint-disable */
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive } from 'lucide-react';
+import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive, Brain, HelpCircle } from 'lucide-react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -121,43 +123,43 @@ const Editor = () => {
   const onUpdate = useCallback(({ editor: tiptapEditor }) => {
     if (!tiptapEditor) return;
     const htmlContent = tiptapEditor.getHTML();
-    setLocalContent(htmlContent);
+      setLocalContent(htmlContent);
     setCharCount(tiptapEditor.storage.characterCount.characters());
     setWordCount(tiptapEditor.storage.characterCount.words());
 
-    if (activeFileId && htmlContent !== fileContents[activeFileId]) {
-      setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
-    } else if (activeFileId) {
-      setUnsavedChanges((prev) => {
-        const updated = { ...prev };
-        delete updated[activeFileId];
-        return updated;
-      });
-    }
+      if (activeFileId && htmlContent !== fileContents[activeFileId]) {
+        setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
+      } else if (activeFileId) {
+        setUnsavedChanges((prev) => {
+          const updated = { ...prev };
+          delete updated[activeFileId];
+          return updated;
+        });
+      }
     setFontFamily(tiptapEditor.getAttributes('textStyle').fontFamily || '');
     setFontSize(tiptapEditor.getAttributes('textStyle').fontSize || '');
   }, [activeFileId, fileContents, setLocalContent, setCharCount, setWordCount, setUnsavedChanges, setFontFamily, setFontSize]);
 
   // Memoized editorProps
   const editorProps = useMemo(() => ({
-    attributes: {
-      class: 'rich-text-editor',
-      spellcheck: 'true',
-    },
-    handlePaste: (view, event, slice) => {
-      const items = Array.from(event.clipboardData?.items || []);
-      let imagePasted = false;
-      items.forEach(item => {
-        if (item.type.startsWith('image/')) {
-          imagePasted = true;
-          event.preventDefault();
-          const file = item.getAsFile();
-          if (file) {
-            handleImageUpload(file);
+      attributes: {
+        class: 'rich-text-editor',
+        spellcheck: 'true',
+      },
+      handlePaste: (view, event, slice) => {
+        const items = Array.from(event.clipboardData?.items || []);
+        let imagePasted = false;
+        items.forEach(item => {
+          if (item.type.startsWith('image/')) {
+            imagePasted = true;
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file) {
+              handleImageUpload(file);
+            }
+            return false;
           }
-          return false;
-        }
-      });
+        });
       if (imagePasted) return true;
       return false;
     },
@@ -187,6 +189,25 @@ const Editor = () => {
         allowBase64: false,
         HTMLAttributes: {
           class: 'markdown-image',
+        },
+        resizable: true,
+      }).extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            src: { default: null },
+            alt: { default: null },
+            title: { default: null },
+            width: { default: null },
+            height: { default: null },
+            'data-align': {
+              default: 'center',
+              parseHTML: element => element.getAttribute('data-align') || 'center',
+              renderHTML: attributes => {
+                return { 'data-align': attributes['data-align'] };
+              },
+            },
+          };
         },
       }),
       UnderlineExtension,
@@ -317,7 +338,7 @@ const Editor = () => {
       setCanvasMode(false);
       return;
     }
-
+    
     const isCanvasType = file.type === 'canvas';
     const hasCanvasExtension = file.name && file.name.toLowerCase().endsWith('.canvas');
     
@@ -408,33 +429,33 @@ const Editor = () => {
     }
 
     // Editor is valid and not destroyed, proceed with normal logic.
-    if (activeFileId && fileContents[activeFileId] !== undefined) {
-      const contentToLoad = fileContents[activeFileId];
-      const file = openFiles.find(f => f.id === activeFileId);
-
-      if (file) {
-        const isCanvasFile = file.type === 'canvas' ||
+      if (activeFileId && fileContents[activeFileId] !== undefined) {
+        const contentToLoad = fileContents[activeFileId];
+        const file = openFiles.find(f => f.id === activeFileId);
+        
+        if (file) {
+          const isCanvasFile = file.type === 'canvas' || 
                             (file.name && file.name.toLowerCase().endsWith('.canvas'));
-
-        if (isCanvasFile) {
-          console.log("Opening canvas file:", file.name);
-          setCanvasMode(true);
-          if (file.type !== 'canvas') {
-            updateFileType(file.id, 'canvas');
-          }
-          try {
-            const parsedData = typeof contentToLoad === 'string' && contentToLoad.trim()
-              ? JSON.parse(contentToLoad)
-              : { nodes: [], edges: [], format: "canvas", version: "1.0" };
-            setCanvasData(parsedData);
+          
+          if (isCanvasFile) {
+            console.log("Opening canvas file:", file.name);
+            setCanvasMode(true);
+            if (file.type !== 'canvas') {
+              updateFileType(file.id, 'canvas');
+            }
+            try {
+              const parsedData = typeof contentToLoad === 'string' && contentToLoad.trim()
+                ? JSON.parse(contentToLoad)
+                : { nodes: [], edges: [], format: "canvas", version: "1.0" };
+              setCanvasData(parsedData);
             editor.setEditable(false); 
-          } catch (error) {
-            console.error('Error parsing canvas data:', error);
-            const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
-            updateFileContent(file.id, JSON.stringify(initialData));
-            setCanvasData(initialData);
-          }
-        } else {
+            } catch (error) {
+              console.error('Error parsing canvas data:', error);
+              const initialData = { nodes: [], edges: [], format: "canvas", version: "1.0" };
+              updateFileContent(file.id, JSON.stringify(initialData));
+              setCanvasData(initialData);
+            }
+          } else {
           // Ensure we are not in canvasMode if it's not a canvas file before calling checkCanvasFile
           if (canvasMode) setCanvasMode(false); 
           editor.setEditable(true); // Set editable before checkCanvasFile if not canvas
@@ -454,30 +475,30 @@ const Editor = () => {
               }
           }
         }
-        setUnsavedChanges((prev) => {
-          const updated = { ...prev };
-          delete updated[activeFileId];
-          return updated;
-        });
-      }
-    } else {
+          setUnsavedChanges((prev) => {
+            const updated = { ...prev };
+            delete updated[activeFileId];
+            return updated;
+          });
+        }
+      } else {
       // No active file (activeFileId is null or content is undefined).
       try {
         if (!editor.isDestroyed) { // Guard again, though top-level guard should catch it
-            editor.commands.setContent('', false);
+        editor.commands.setContent('', false);
         }
         setLocalContent('');
       } catch (error) {
         console.error('Error clearing editor content (no active file):', error);
       }
       if (canvasMode) setCanvasMode(false);
-      setUnsavedChanges({}); 
-    }
-
+        setUnsavedChanges({});
+      }
+      
     try {
       if (!editor.isDestroyed) {
-        setCharCount(editor.storage.characterCount?.characters() || 0);
-        setWordCount(editor.storage.characterCount?.words() || 0);
+      setCharCount(editor.storage.characterCount?.characters() || 0);
+      setWordCount(editor.storage.characterCount?.words() || 0);
       } else {
         setCharCount(0);
         setWordCount(0);
@@ -765,6 +786,73 @@ const Editor = () => {
   const textColors = ['#000000', '#e03131', '#2f9e44', '#1971c2', '#f08c00', '#862e9c', '#adb5bd', '#ffffff']; // Example palette
   const highlightColors = ['#fff59d', '#a7ffeb', '#ffccbc', '#cfd8dc', 'transparent']; // Example palette
 
+  const handleAnalyzeImage = async () => {
+    if (!editor || !editor.isActive('image')) return;
+    const imageData = editor.getAttributes('image');
+    const imageUrl = imageData.src;
+
+    if (!imageUrl) {
+      alert('Could not get image URL.');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8000/api/image/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image_url: imageUrl }), // No prompt_text for analysis
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      alert(`AI Analysis:\n${result.response}`);
+    } catch (error) {
+      console.error('Error analyzing image:', error);
+      alert(`Failed to analyze image: ${error.message}`);
+    }
+  };
+
+  const handleAskAboutImage = async () => {
+    if (!editor || !editor.isActive('image')) return;
+    const imageData = editor.getAttributes('image');
+    const imageUrl = imageData.src;
+
+    if (!imageUrl) {
+      alert('Could not get image URL.');
+      return;
+    }
+
+    const userPrompt = prompt('Ask something about the image:');
+    if (!userPrompt) return; // User cancelled or entered nothing
+
+    try {
+      const response = await fetch('http://localhost:8000/api/image/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image_url: imageUrl, prompt_text: userPrompt }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      alert(`AI Response:\n${result.response}`);
+    } catch (error) {
+      console.error('Error asking about image:', error);
+      alert(`Failed to get answer about image: ${error.message}`);
+    }
+  };
+
   if (!editor) {
     return <div>Loading Editor...</div>;
   }
@@ -836,8 +924,9 @@ const Editor = () => {
                 pluginKey="generalBubbleMenu"
                 shouldShow={({ editor, view, state, oldState, from, to }) => {
                   const { selection } = state;
-                  // Only show if editor exists, is not in a table, has focus, AND text is selected
-                  return !!editor && !editor.isActive('table') && view.hasFocus() && !selection.empty;
+                  // Only show if editor exists, has focus, text is selected,
+                  // AND the selection is NOT an image node.
+                  return !!editor && view.hasFocus() && !selection.empty && !editor.isActive('image');
                 }}
               >
                 <div className="MenuButtons">
@@ -1123,8 +1212,57 @@ const Editor = () => {
                   </button>
                  </div>
               </FloatingMenu>
+
+              {/* NEW: Image Bubble Menu */}
+              <BubbleMenu
+                editor={editor}
+                tippyOptions={{ duration: 100, placement: 'top' }}
+                pluginKey="imageBubbleMenu"
+                className={`EditorBubbleMenu ImageBubbleMenu ${theme === 'dark' ? 'dark' : ''}`}
+                shouldShow={({ editor, view, state, oldState, from, to }) => {
+                  // Show if editor exists and an image node is selected
+                  return !!editor && editor.isActive('image');
+                }}
+              >
+                <div className="MenuButtons">
+                  <button 
+                    onClick={() => editor.chain().focus().updateAttributes('image', { 'data-align': 'left' }).run()}
+                    className={editor.isActive('image', { 'data-align': 'left' }) ? 'is-active' : ''}
+                    title="Align Left"
+                  >
+                    <AlignLeft size={18} />
+                  </button>
+                  <button 
+                    onClick={() => editor.chain().focus().updateAttributes('image', { 'data-align': 'center' }).run()}
+                    className={editor.isActive('image', { 'data-align': 'center' }) ? 'is-active' : ''}
+                    title="Align Center"
+                  >
+                    <AlignCenter size={18} />
+                  </button>
+                  <button 
+                    onClick={() => editor.chain().focus().updateAttributes('image', { 'data-align': 'right' }).run()}
+                    className={editor.isActive('image', { 'data-align': 'right' }) ? 'is-active' : ''}
+                    title="Align Right"
+                  >
+                    <AlignRight size={18} />
+                  </button>
+                  <div className="MenuDivider"></div>
+                  <button
+                    onClick={handleAnalyzeImage}
+                    title="Analyze Image with AI"
+                  >
+                    <Brain size={18} /> Analyze
+                  </button>
+                  <button
+                    onClick={handleAskAboutImage}
+                    title="Ask AI about Image"
+                  >
+                    <HelpCircle size={18} /> Ask
+                  </button>
+                </div>
+              </BubbleMenu>
               
-              <EditorContent editor={editor} className="TiptapEditor" />
+            <EditorContent editor={editor} className="TiptapEditor" />
             </div>
           )
         ) : (

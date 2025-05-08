@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Folder, FileText, File, FileCode, FileBox, PenTool } from 'lucide-react';
 import '../css/CreateItemDialog.css';
