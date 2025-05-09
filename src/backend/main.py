@@ -890,8 +890,8 @@ logger.info("Python backend logging initialized and configured to send to Node.j
 
 
 class AIChatRequest(BaseModel):
-    system_prompt: str
     user_prompt: str
+    system_prompt: str = "You are a helpful assistant."
 
 @app.post("/api/ai-chat")
 async def handle_ai_chat(request: AIChatRequest):

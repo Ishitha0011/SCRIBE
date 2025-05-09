@@ -2155,3 +2155,838 @@ textarea::selection {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* AI Chat UI styles */
+.AiChatUI {
+  position: absolute;
+  z-index: 1100;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  width: 300px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
+
+.AiChatUI.dark {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  color: #fff;
+}
+
+.ChatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f7f7f7;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.AiChatUI.dark .ChatHeader {
+  background-color: #3a3a3a;
+  border-bottom: 1px solid #555;
+}
+
+.CloseButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.AiChatUI.dark .CloseButton {
+  color: #aaa;
+}
+
+.ChatInputContainer {
+  display: flex;
+  padding: 10px;
+}
+
+.ChatInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+}
+
+.AiChatUI.dark .ChatInput {
+  background-color: #444;
+  border: 1px solid #555;
+  color: #fff;
+}
+
+.SubmitButton {
+  margin-left: 8px;
+  background-color: #4d90fe;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.SubmitButton:disabled {
+  background-color: #b3cdf7;
+  cursor: not-allowed;
+}
+
+.AiChatUI.dark .SubmitButton:disabled {
+  background-color: #4c5a6e;
+}
+
+.ProcessingIndicator {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Notion Style AI Helper Styles */
+.NotionStyleAiHelper {
+  position: absolute;
+  z-index: 1100;
+  overflow: visible;
+  margin: 0 auto;
+  max-height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+}
+
+.AiHelperContainer {
+  position: relative;
+  max-width: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.AiChatWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 100%;
+  width: 100%;
+  max-height: calc(100vh - 120px);
+}
+
+/* Prompt Bubble */
+.AiPromptBubble {
+  width: 100%;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.NotionStyleAiHelper.dark .AiPromptBubble {
+  background-color: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.AiPromptHeader {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+}
+
+.AiPromptForm {
+  display: flex;
+  flex: 1;
+  margin: 0 8px;
+}
+
+.AiLogo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f0f2f5;
+  flex-shrink: 0;
+}
+
+.NotionStyleAiHelper.dark .AiLogo {
+  background-color: #444;
+}
+
+.AiLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.AiHelperInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+  padding: 8px 12px;
+  color: #333;
+  min-width: 0;
+}
+
+.NotionStyleAiHelper.dark .AiHelperInput {
+  color: #eee;
+}
+
+.AiHelperInput::placeholder {
+  color: #999;
+}
+
+.NotionStyleAiHelper.dark .AiHelperInput::placeholder {
+  color: #777;
+}
+
+.AiHelperSubmitButton {
+  background-color: #4d90fe;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.AiHelperSubmitButton:hover {
+  background-color: #3a7cf8;
+  transform: scale(1.05);
+}
+
+.AiHelperSubmitButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.NotionStyleAiHelper.dark .AiHelperSubmitButton {
+  background-color: #5d9cff;
+}
+
+.NotionStyleAiHelper.dark .AiHelperSubmitButton:disabled {
+  background-color: #555;
+}
+
+.AiHelperCloseButton {
+  background: transparent;
+  border: none;
+  color: #999;
+  padding: 6px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.AiHelperCloseButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #666;
+}
+
+.NotionStyleAiHelper.dark .AiHelperCloseButton {
+  color: #777;
+}
+
+.NotionStyleAiHelper.dark .AiHelperCloseButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #aaa;
+}
+
+/* Response Bubble */
+.AiResponseBubble {
+  width: 100%;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: slideInUp 0.3s ease-out;
+  max-height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.NotionStyleAiHelper.dark .AiResponseBubble {
+  background-color: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.AiResponseHeader {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.NotionStyleAiHelper.dark .AiResponseHeader {
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.ResponseTitle {
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+  margin-left: 8px;
+}
+
+.NotionStyleAiHelper.dark .ResponseTitle {
+  color: #eee;
+}
+
+.ResponseContent {
+  padding: 16px;
+  max-height: 250px;
+  overflow-y: auto;
+  line-height: 1.6;
+  color: #333;
+  font-size: 14px;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.ResponseContent::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ResponseContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ResponseContent::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  border: 2px solid transparent;
+}
+
+.NotionStyleAiHelper.dark .ResponseContent::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.NotionStyleAiHelper.dark .ResponseContent {
+  color: #eee;
+}
+
+/* Markdown Content Styles */
+.MarkdownContent {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.MarkdownContent p {
+  margin: 0 0 12px 0;
+  white-space: pre-wrap;
+}
+
+.MarkdownContent p:last-child {
+  margin-bottom: 0;
+}
+
+.MarkdownContent h1, 
+.MarkdownContent h2, 
+.MarkdownContent h3 {
+  margin-top: 18px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.MarkdownContent h1 {
+  font-size: 1.5em;
+}
+
+.MarkdownContent h2 {
+  font-size: 1.3em;
+}
+
+.MarkdownContent h3 {
+  font-size: 1.1em;
+}
+
+.MarkdownContent ol, 
+.MarkdownContent ul {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.MarkdownContent li {
+  margin-bottom: 4px;
+}
+
+.MarkdownContent strong, 
+.MarkdownContent b {
+  font-weight: 600;
+}
+
+.MarkdownContent em, 
+.MarkdownContent i {
+  font-style: italic;
+}
+
+/* Lazy Loading Animation */
+.LazyLoadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+  height: 100px;
+}
+
+.LazyLoadingDots {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.LazyLoadingDots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #4d90fe;
+  opacity: 0.6;
+  display: inline-block;
+}
+
+.NotionStyleAiHelper.dark .LazyLoadingDots span {
+  background-color: #5d9cff;
+}
+
+.LazyLoadingDots span:nth-child(1) {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.LazyLoadingDots span:nth-child(2) {
+  animation: pulse 1.4s ease-in-out 0.2s infinite;
+}
+
+.LazyLoadingDots span:nth-child(3) {
+  animation: pulse 1.4s ease-in-out 0.4s infinite;
+}
+
+.LazyLoadingText {
+  font-size: 14px;
+  color: #777;
+  font-style: italic;
+}
+
+.NotionStyleAiHelper.dark .LazyLoadingText {
+  color: #aaa;
+}
+
+/* Response Actions */
+.ResponseActions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #f1f1f1;
+  background-color: #f9f9f9;
+  justify-content: flex-end;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+
+.NotionStyleAiHelper.dark .ResponseActions {
+  border-top: 1px solid #3a3a3a;
+  background-color: #333;
+}
+
+.ResponseActionButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.EditButton {
+  background-color: transparent;
+  color: #555;
+  border: 1px solid #ddd;
+}
+
+.EditButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-color: #ccc;
+  transform: translateY(-1px);
+}
+
+.NotionStyleAiHelper.dark .EditButton {
+  color: #ccc;
+  border-color: #444;
+}
+
+.NotionStyleAiHelper.dark .EditButton:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: #555;
+}
+
+.InsertButton {
+  background-color: #4d90fe;
+  color: white;
+  border: 1px solid #4d90fe;
+}
+
+.InsertButton:hover {
+  background-color: #3a7cf8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.NotionStyleAiHelper.dark .InsertButton {
+  background-color: #5d9cff;
+  border-color: #5d9cff;
+}
+
+.NotionStyleAiHelper.dark .InsertButton:hover {
+  background-color: #4a8eff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Processing Indicator */
+.ProcessingIndicator {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+/* Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(0.8);
+    opacity: 0.3; 
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 1; 
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fix for mobile devices */
+@media (max-width: 768px) {
+  .NotionStyleAiHelper {
+    width: calc(100% - 20px) !important;
+    left: 10px !important;
+    transform: none !important;
+    max-height: 80vh;
+  }
+  
+  .AiChatWrapper {
+    max-height: 70vh;
+  }
+  
+  .AiResponseBubble {
+    max-height: 60vh;
+  }
+  
+  .ResponseContent {
+    max-height: 45vh;
+  }
+}
+
+/* Text Improvement UI Component Styles */
+.TextImproveUI {
+  position: absolute;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  width: 340px;
+  z-index: 1100;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  animation: textImproveUiAppear 0.2s ease forwards;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes textImproveUiAppear {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.TextImproveUI.dark {
+  background-color: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f0f0f0;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.ImproveHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-weight: 500;
+  font-size: 15px;
+  color: #111;
+}
+
+.TextImproveUI.dark .ImproveHeader {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.ImproveHeader .CloseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.15s ease;
+}
+
+.ImproveHeader .CloseButton:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  color: #111;
+}
+
+.TextImproveUI.dark .ImproveHeader .CloseButton {
+  color: #999;
+}
+
+.TextImproveUI.dark .ImproveHeader .CloseButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.ImproveOptions {
+  display: flex;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.ImproveOption {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.TextImproveUI.dark .ImproveOption {
+  background-color: #25282c;
+  border-color: #343a40;
+  color: #ced4da;
+}
+
+.ImproveOption:hover {
+  background-color: #f1f3f5;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+}
+
+.TextImproveUI.dark .ImproveOption:hover {
+  background-color: #2c3035;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.ImproveOption.active {
+  background-color: #e7f5ff;
+  border-color: #74c0fc;
+  color: #1971c2;
+  box-shadow: 0 2px 4px rgba(23, 113, 194, 0.1);
+}
+
+.TextImproveUI.dark .ImproveOption.active {
+  background-color: #0b4a7a;
+  border-color: #1864ab;
+  color: #a5d8ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.ImproveOption .option-icon {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.ImproveOption:hover .option-icon {
+  transform: scale(1.1);
+}
+
+.ImprovePromptContainer {
+  padding: 0 20px 16px;
+}
+
+.ImprovePromptInput {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background-color: #f8f9fa;
+  color: #495057;
+  transition: all 0.2s ease;
+}
+
+.TextImproveUI.dark .ImprovePromptInput {
+  background-color: #25282c;
+  border-color: #343a40;
+  color: #e9ecef;
+}
+
+.ImprovePromptInput:focus {
+  border-color: #74c0fc;
+  box-shadow: 0 0 0 3px rgba(116, 192, 252, 0.15);
+  background-color: #fff;
+}
+
+.TextImproveUI.dark .ImprovePromptInput:focus {
+  border-color: #339af0;
+  box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.15);
+  background-color: #212529;
+}
+
+.ImprovePromptInput::placeholder {
+  color: #adb5bd;
+}
+
+.TextImproveUI.dark .ImprovePromptInput::placeholder {
+  color: #6c757d;
+}
+
+.ImproveButtonContainer {
+  display: flex;
+  justify-content: center;
+  padding: 16px 20px 20px;
+}
+
+.TextImproveUI .SubmitButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #339af0;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(51, 154, 240, 0.25);
+}
+
+.TextImproveUI .SubmitButton:hover {
+  background-color: #228be6;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(51, 154, 240, 0.35);
+}
+
+.TextImproveUI.dark .SubmitButton {
+  background-color: #1c7ed6;
+  box-shadow: 0 4px 12px rgba(28, 126, 214, 0.3);
+}
+
+.TextImproveUI.dark .SubmitButton:hover {
+  background-color: #1971c2;
+  box-shadow: 0 6px 16px rgba(28, 126, 214, 0.4);
+}
+
+.TextImproveUI .SubmitButton:disabled {
+  background-color: #adb5bd;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.TextImproveUI.dark .SubmitButton:disabled {
+  background-color: #495057;
+}
+
+.TextImproveUI.processing {
+  pointer-events: none;
+}
+
+.TextImproveUI .ProcessingIndicator {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}

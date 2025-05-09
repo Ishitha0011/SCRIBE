@@ -594,7 +594,7 @@ const Labs = () => {
                 method: 'POST', 
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    uploadResults: videoFiles, // Send array of files instead of single file
+                    uploadResult: videoFiles, // Changed from uploadResults to uploadResult
                     prompt: finalPrompt, 
                     model: 'gemini-2.0-flash' // Use newer model that supports multiple videos
                 }), 
