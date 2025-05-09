@@ -1000,7 +1000,8 @@ async def process_image_with_ai(request: ImageProcessRequest):
                 contents=model_contents,
                 config=generate_content_config,
             ):
-                response_chunks.append(chunk.text)
+                if chunk.text is not None: # Check if chunk.text is not None
+                    response_chunks.append(chunk.text)
             
             full_response = "".join(response_chunks)
             logger.info(f"Successfully received response from Gemini model for image.")

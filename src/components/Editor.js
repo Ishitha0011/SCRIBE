@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive, Brain, HelpCircle } from 'lucide-react';
+import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive, Brain, HelpCircle, Send } from 'lucide-react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -84,7 +84,14 @@ const Editor = () => {
     position: { top: 0, left: 0 },
     isLoading: false,
   });
-
+  
+  const [imageQueryUI, setImageQueryUI] = useState({
+    isVisible: false,
+    position: { top: 0, left: 0 },
+    query: '',
+    isProcessing: false
+  });
+  
   const { theme } = useTheme();
   const {
     openFiles,
@@ -131,19 +138,19 @@ const Editor = () => {
   const onUpdate = useCallback(({ editor: tiptapEditor }) => {
     if (!tiptapEditor) return;
     const htmlContent = tiptapEditor.getHTML();
-    setLocalContent(htmlContent);
+      setLocalContent(htmlContent);
     setCharCount(tiptapEditor.storage.characterCount.characters());
     setWordCount(tiptapEditor.storage.characterCount.words());
 
-    if (activeFileId && htmlContent !== fileContents[activeFileId]) {
-      setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
-    } else if (activeFileId) {
-      setUnsavedChanges((prev) => {
-        const updated = { ...prev };
-        delete updated[activeFileId];
-        return updated;
-      });
-    }
+      if (activeFileId && htmlContent !== fileContents[activeFileId]) {
+        setUnsavedChanges((prev) => ({ ...prev, [activeFileId]: true }));
+      } else if (activeFileId) {
+        setUnsavedChanges((prev) => {
+          const updated = { ...prev };
+          delete updated[activeFileId];
+          return updated;
+        });
+      }
     setFontFamily(tiptapEditor.getAttributes('textStyle').fontFamily || '');
     setFontSize(tiptapEditor.getAttributes('textStyle').fontSize || '');
 
@@ -984,15 +991,36 @@ const Editor = () => {
     }
   };
 
-  const handleAskAboutImage = async () => {
+  const handleAskAboutImage = useCallback(async () => {
     if (!editor || !editor.isActive('image')) return;
 
-    const userPrompt = prompt('Ask something about the image:');
-    if (!userPrompt) return;
+    // Get image position for placing the query UI
+    const imageDomNode = getSelectedImageNode(editor);
+    if (imageDomNode && editorContainerRef.current) {
+      const imageRect = imageDomNode.getBoundingClientRect();
+      const editorRect = editorContainerRef.current.getBoundingClientRect();
+      const scrollTop = editorContainerRef.current.scrollTop;
+      const scrollLeft = editorContainerRef.current.scrollLeft;
 
-    setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: true, content: `Asking: ${userPrompt}...` }));
-    repositionAnalysisPanel(editor); // Initial position
+      setImageQueryUI({
+        isVisible: true,
+        position: {
+          top: imageRect.bottom - editorRect.top + scrollTop + 10, // Position below image
+          left: imageRect.left - editorRect.left + scrollLeft,
+        },
+        query: '',
+        isProcessing: false
+      });
+    }
+  }, [editor]);
 
+  // Function to handle submission of the image query
+  const handleSubmitImageQuery = useCallback(async () => {
+    if (!editor || !editor.isActive('image') || !imageQueryUI.query.trim()) return;
+    
+    setImageQueryUI(prev => ({ ...prev, isProcessing: true }));
+    
+    // Get the selected image's information
     const imageDomNode = getSelectedImageNode(editor);
     if (imageDomNode) {
       imageDomNode.classList.add('image-processing-shimmer');
@@ -1002,7 +1030,13 @@ const Editor = () => {
     const originalImageUrl = imageData.src;
 
     if (!originalImageUrl) {
-      setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: false, content: 'Error: Could not get image URL.'}));
+      setAnalysisPanel(prev => ({ 
+        ...prev, 
+        isVisible: true, 
+        isLoading: false, 
+        content: 'Error: Could not get image URL.'
+      }));
+      setImageQueryUI(prev => ({ ...prev, isVisible: false, isProcessing: false }));
       return;
     }
 
@@ -1022,7 +1056,7 @@ const Editor = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ image_url: processedImageUrl, prompt_text: userPrompt }),
+        body: JSON.stringify({ image_url: processedImageUrl, prompt_text: imageQueryUI.query }),
       });
 
       if (!response.ok) {
@@ -1033,8 +1067,8 @@ const Editor = () => {
       const result = await response.json();
 
       if (result.response) {
-        // Optionally, save question and answer, or just the answer
-        const newAiContent = `Q: ${userPrompt}\nA: ${result.response}`;
+        // Save question and answer
+        const newAiContent = `Q: ${imageQueryUI.query}\nA: ${result.response}`;
         editor.chain().focus().updateAttributes('image', { 'data-ai-content': newAiContent }).run();
       }
 
@@ -1044,22 +1078,83 @@ const Editor = () => {
         isLoading: false,
         content: result.response,
       }));
-      // Reposition after content is set as panel size might change
+      
+      // Reposition analysis panel
       repositionAnalysisPanel(editor);
+      
+      // Hide the query UI after successful processing
+      setImageQueryUI(prev => ({ ...prev, isVisible: false, isProcessing: false }));
 
     } catch (error) {
       console.error('Error asking about image:', error);
-      setAnalysisPanel(prev => ({ ...prev, isVisible: true, isLoading: false, content: `Failed to get answer: ${error.message}`}));
+      setAnalysisPanel(prev => ({ 
+        ...prev, 
+        isVisible: true, 
+        isLoading: false, 
+        content: `Failed to get answer: ${error.message}`
+      }));
+      setImageQueryUI(prev => ({ ...prev, isProcessing: false }));
     } finally {
       if (imageDomNode) {
         imageDomNode.classList.remove('image-processing-shimmer');
       }
     }
-  };
+  }, [editor, imageQueryUI.query, repositionAnalysisPanel]);
 
   if (!editor) {
     return <div>Loading Editor...</div>;
   }
+
+  // Image Query UI Component Definition
+  const ImageQueryUI = ({ position, query, setQuery, onSubmit, onCancel, theme, isProcessing }) => {
+    const inputRef = useRef(null);
+    
+    useEffect(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, []);
+    
+    return (
+      <div 
+        className={`ImageQueryUI ${theme === 'dark' ? 'dark' : ''} ${isProcessing ? 'processing' : ''}`}
+        style={{ 
+          top: `${position.top}px`,
+          left: `${position.left}px`,
+        }}
+      >
+        <div className="QueryHeader">
+          <span>Ask about this image</span>
+          <button className="CloseButton" onClick={onCancel}>
+            <X size={14} />
+          </button>
+        </div>
+        <div className="QueryInputContainer">
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Type your question..."
+            disabled={isProcessing}
+            onKeyDown={(e) => e.key === 'Enter' && !isProcessing && onSubmit()}
+            className="QueryInput"
+          />
+          <button 
+            className="SubmitButton" 
+            onClick={onSubmit}
+            disabled={isProcessing || !query.trim()}
+          >
+            {isProcessing ? (
+              <span className="ProcessingIndicator"></span>
+            ) : (
+              <Send size={16} />
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={`Editor ${theme === 'dark' ? 'dark' : ''}`}>
@@ -1479,6 +1574,18 @@ const Editor = () => {
                   }}
                   onClose={() => setAnalysisPanel(prev => ({ ...prev, isVisible: false }))}
                   theme={theme}
+                />
+              )}
+
+              {imageQueryUI.isVisible && editor.isActive('image') && (
+                <ImageQueryUI 
+                  position={imageQueryUI.position}
+                  query={imageQueryUI.query}
+                  setQuery={(query) => setImageQueryUI(prev => ({ ...prev, query }))}
+                  onSubmit={handleSubmitImageQuery}
+                  onCancel={() => setImageQueryUI(prev => ({ ...prev, isVisible: false }))}
+                  theme={theme}
+                  isProcessing={imageQueryUI.isProcessing}
                 />
               )}
 
