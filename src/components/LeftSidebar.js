@@ -25,6 +25,7 @@ import { useTheme } from '../ThemeContext';
 import { useFileContext } from '../FileContext';
 import CreateItemDialog from './CreateItemDialog';
 import TreeNode from './TreeNode';
+import SettingsPanel from './SettingsPanel'; // Import the SettingsPanel
 
 const LeftSidebar = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -42,6 +43,11 @@ const LeftSidebar = () => {
   const [addMenuVisible, setAddMenuVisible] = useState(false);
   const [contentSearchActive, setContentSearchActive] = useState(false);
   const [searchMode, setSearchMode] = useState('filename'); // 'filename' or 'content'
+
+  // State for SettingsPanel
+  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
+  const [editorFontFamily, setEditorFontFamily] = useState('JetBrains Mono'); // Default font
+  const [editorFontSize, setEditorFontSize] = useState(14); // Default font size
 
   // Use theme from context
   const { theme } = useTheme();
@@ -72,13 +78,11 @@ const LeftSidebar = () => {
   const searchInputRef = useRef(null);
   const addMenuRef = useRef(null);
 
-  // Add a new useEffect to handle the workspace path change
   useEffect(() => {
     if (workspacePath) {
-      // Workspace is already set, no need to prompt
       loadFileStructure();
     }
-  }, [workspacePath]);
+  }, [workspacePath, loadFileStructure]); // Added loadFileStructure to dependencies
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -117,28 +121,35 @@ const LeftSidebar = () => {
       setIsResizing(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.userSelect = ''; // Re-enable text selection
+      document.body.style.userSelect = '';
     };
 
     const handleMouseDown = (e) => {
-      e.preventDefault(); // Prevent text selection
+      e.preventDefault();
       setIsResizing(true);
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.userSelect = 'none'; // Disable text selection
+      document.body.style.userSelect = 'none';
     };
 
     const resizer = resizerRef.current;
-    resizer.addEventListener('mousedown', handleMouseDown);
+    if (resizer) { // Check if resizer exists
+        resizer.addEventListener('mousedown', handleMouseDown);
+    }
 
     return () => {
-      resizer.removeEventListener('mousedown', handleMouseDown);
+      if (resizer) { // Check if resizer exists before removing listener
+        resizer.removeEventListener('mousedown', handleMouseDown);
+      }
+      // Clean up global listeners on mouseup/mousemove if component unmounts while resizing
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
     };
-  }, [isResizing]);
+  }, [isResizing]); // Removed sidebarRef and resizerRef from deps as they shouldn't change
 
   const openDirectory = async () => {
     try {
-      // Call the backend endpoint to open native file dialog with correct base URL
       const response = await fetch('http://localhost:8000/api/workspace/select-directory', {
         method: 'POST',
         headers: {
@@ -161,7 +172,6 @@ const LeftSidebar = () => {
           alert('Failed to set workspace. Please try again.');
         }
       } else if (result.status === 'cancelled') {
-        // User cancelled the selection, do nothing
         console.log('Workspace selection cancelled');
       } else {
         throw new Error('Invalid response from directory selector');
@@ -177,19 +187,19 @@ const LeftSidebar = () => {
       const success = await deleteItem(id);
       if (success) {
         setMenuVisible(null);
-        setActiveItem(null); // Clear active item if it was deleted
+        setActiveItem(null);
       } else {
         alert('Failed to delete item');
       }
     }
   };
 
-  const handleEdit = async (id, newName) => {
-    if (newName && newName.trim() !== '') {
-      const success = await renameItem(id, newName);
+  const handleEdit = async (id, currentNewName) => { // Renamed newName to currentNewName to avoid conflict with state
+    if (currentNewName && currentNewName.trim() !== '') {
+      const success = await renameItem(id, currentNewName);
       if (success) {
-    setEditMode(null);
-    setNewName('');
+        setEditMode(null);
+        setNewName(''); // Clear state newName
       } else {
         alert('Failed to rename item');
       }
@@ -198,30 +208,25 @@ const LeftSidebar = () => {
     }
   };
 
-  const handleNameInputKeyDown = (e, id) => {
-    if (e.key === 'Enter') {
-      handleEdit(id, newName);
-    }
-  };
+  // const handleNameInputKeyDown = (e, id) => { // This function seems to be using the state `newName`
+  //   if (e.key === 'Enter') {
+  //     handleEdit(id, newName); // Pass the state `newName`
+  //   }
+  // };
 
   const handleAddItem = async (type, name, parentPath = null) => {
     if (!name || name.trim() === '') {
       return;
     }
     
-    // If no parent path is explicitly provided, use the selectedParentFolder
     const effectiveParentPath = parentPath ?? selectedParentFolder;
     
     try {
       if (type === 'canvas') {
-        // Make sure the file has .canvas extension
         const fileName = name.includes('.') ? name : `${name}.canvas`;
-        
-        // Create the file in the file system
         const result = await createItem(fileName, 'file', effectiveParentPath);
         
         if (result) {
-          // Create initial empty canvas data
           const initialCanvasData = JSON.stringify({ 
             nodes: [], 
             edges: [], 
@@ -230,51 +235,23 @@ const LeftSidebar = () => {
             created: new Date().toISOString(),
             name: fileName
           });
-          
-          // Update the file content to contain canvas data
           await updateFileContent(result.id, initialCanvasData);
-          
-          // Set the canvas type
           await updateFileType(result.id, 'canvas');
-          
-          // Open the canvas in the editor
-          openFile({
-            id: result.id,
-            name: result.name,
-            type: 'canvas'
-          });
-          
-          // Close the dialog
+          openFile({ id: result.id, name: result.name, type: 'canvas' });
           setIsDialogOpen(false);
-          
-          // Clear selected parent folder
           setSelectedParentFolder(null);
-          
-          // If the folder was previously collapsed, expand it to show the new item
           if (effectiveParentPath && collapsedFolders[effectiveParentPath]) {
             toggleFolder(effectiveParentPath);
           }
         }
       } else {
-        // Handle regular file/folder creation
         const result = await createItem(name, type, effectiveParentPath);
         if (result) {
-          // Close the dialog
           setIsDialogOpen(false);
-          
-          // Clear selected parent folder
           setSelectedParentFolder(null);
-          
-          // If it's a file, automatically open it
           if (type === 'file') {
-            openFile({
-              id: result.id,
-              name: result.name,
-              type: 'file'
-            });
+            openFile({ id: result.id, name: result.name, type: 'file' });
           }
-          
-          // If the folder was previously collapsed, expand it to show the new item
           if (effectiveParentPath && collapsedFolders[effectiveParentPath]) {
             toggleFolder(effectiveParentPath);
           }
@@ -292,84 +269,74 @@ const LeftSidebar = () => {
     }));
   };
 
-  // Function to handle search
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
+  // const handleSearch = (e) => { // This function is unused as searchTerm is directly set by handleSearchChange
+  //   setSearchTerm(e.target.value);
+  // };
   
-  // Clear search
-  const clearSearch = () => {
-    setSearchTerm('');
-    searchInputRef.current.focus();
-  };
+  // const clearSearch = () => { // This function is unused
+  //   setSearchTerm('');
+  //   if (searchInputRef.current) { // Check if ref exists
+  //       searchInputRef.current.focus();
+  //   }
+  // };
 
-  // Handle file/folder click
   const handleItemClick = (item) => {
     setActiveItem(item.id);
     
-    // If it's a folder, remember it as the selected parent
     if (item.type === 'folder') {
       setSelectedParentFolder(item.id);
     } else {
-      // If it's a canvas type or has .canvas extension, open it as canvas
       if (item.type === 'canvas' || (item.name && item.name.toLowerCase().endsWith('.canvas'))) {
         if (item.type !== 'canvas') {
-          // If the file has .canvas extension but isn't marked as canvas type yet,
-          // update its type before opening
           updateFileType(item.id, 'canvas');
-          openFile({
-            ...item,
-            type: 'canvas'
-          });
+          openFile({ ...item, type: 'canvas' });
         } else {
           openFile(item);
         }
       } else {
-        // For regular files, check if they're supported
         const fileExtension = item.name.split('.').pop().toLowerCase();
         const supportedExtensions = ['txt', 'md', 'markdown', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'json', 'csv', 'xml', 'yml', 'yaml', 'ini', 'config', 'sh', 'bat', 'ps1', 'canvas'];
-        
         if (supportedExtensions.includes(fileExtension)) {
           openFile(item);
         } else {
-          // Inform the user about unsupported file types without blocking alert
           console.warn('This file type may not be fully supported for editing.');
+          // Optionally open unsupported files too, or provide a message
+          // openFile(item); 
         }
       }
     }
   };
 
-  // Function to filter the file structure based on search term
-  const filterStructure = (items, searchTerm) => {
-    if (!searchTerm) return items;
+  const filterStructure = (items, currentSearchTerm) => { // Renamed searchTerm to currentSearchTerm
+    if (!currentSearchTerm) return items;
     
     return items.filter(item => {
-      const nameMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // If it's a folder, also check its children
+      const nameMatch = item.name.toLowerCase().includes(currentSearchTerm.toLowerCase());
       if (item.type === 'folder' && item.children) {
-        const filteredChildren = filterStructure(item.children, searchTerm);
+        const filteredChildren = filterStructure(item.children, currentSearchTerm);
+        // A folder matches if its name matches OR if any of its children match
         return nameMatch || filteredChildren.length > 0;
       }
-      
       return nameMatch;
     }).map(item => {
       if (item.type === 'folder' && item.children) {
-        return {
-          ...item,
-          children: filterStructure(item.children, searchTerm)
-        };
+        // If a folder is included, make sure its children are also filtered
+        return { ...item, children: filterStructure(item.children, currentSearchTerm) };
       }
       return item;
     });
   };
 
   const renderTree = (items) => {
-    // Filter items based on search term
-    const filteredItems = filterStructure(items, searchTerm);
+    const filteredItems = filterStructure(items, searchTerm); // Use state `searchTerm` here
     
-    if (filteredItems.length === 0) {
-      return <div className="EmptyMessage">No items found</div>;
+    if (filteredItems.length === 0 && searchTerm) { // Show "No items found" only if searching and no results
+      return <div className="EmptyMessage">No items found matching "{searchTerm}"</div>;
+    }
+    if (filteredItems.length === 0 && !searchTerm && items.length > 0) {
+        // This case shouldn't happen if items.length > 0 and no search term,
+        // but as a fallback, or if original items itself were empty after initial load.
+        return <div className="EmptyMessage">No items to display.</div>; 
     }
     
     return filteredItems.map((item) => (
@@ -377,7 +344,7 @@ const LeftSidebar = () => {
         key={item.id}
         item={item}
         level={0}
-        activeItem={activeFileId}
+        activeItem={activeFileId} // Use activeFileId from context for consistent active state
         collapsedFolders={collapsedFolders}
         menuVisible={menuVisible}
         onItemClick={handleItemClick}
@@ -385,7 +352,7 @@ const LeftSidebar = () => {
         onMenuToggle={setMenuVisible}
         onEdit={(id, name) => {
           setEditMode(id);
-          setNewName(name);
+          setNewName(name); // Set the initial name for editing
         }}
         onDelete={handleDelete}
         onAddItem={(id) => {
@@ -393,149 +360,157 @@ const LeftSidebar = () => {
           setIsDialogOpen(true);
         }}
         editMode={editMode}
-        newName={newName}
-        onNewNameChange={handleNewNameChange}
-        onRename={handleRename}
-        onKeyDown={handleRenameKeyDown}
+        newName={newName} // Pass the state for controlled input
+        onNewNameChange={setNewName} // Directly use setNewName
+        onRename={(itemId, updatedName) => handleEdit(itemId, updatedName)} // Pass updatedName from TreeNode
+        // Removed onKeyDown as handleRenameKeyDown is below and TreeNode can manage its own Enter/Esc for rename
       />
     ));
   };
 
-  // Handle rename input change
-  const handleNewNameChange = (value) => {
-    setNewName(value);
-  };
+  // Removed handleNewNameChange as setNewName is passed directly
 
-  // Handle keydown in rename input
-  const handleRenameKeyDown = (e, itemId) => {
+  const handleRenameKeyDown = (e, itemId) => { // This is likely used within TreeNode directly, not here
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleRename(itemId);
+      handleRename(itemId); // Call handleRename
     } else if (e.key === 'Escape') {
       setEditMode(null);
+      setNewName(''); // Clear newName on escape
     }
   };
 
-  // Handle rename submit
-  const handleRename = async (itemId) => {
-    if (!newName.trim() || newName === '') {
-      setEditMode(null);
+  const handleRename = async (itemId) => { // This is the actual rename submission logic
+    if (!newName.trim()) { // Check if newName (from state) is empty
+      setEditMode(null); // Exit edit mode if name is empty after trim
+      setNewName('');   // Clear newName
+      // alert('Name cannot be empty'); // Optional: Or just exit edit mode
       return;
     }
     
     try {
-      const success = await renameItem(itemId, newName);
+      const success = await renameItem(itemId, newName); // Use state `newName`
       if (success) {
         setEditMode(null);
+        setNewName(''); // Clear newName on successful rename
+      } else {
+        // renameItem should ideally throw an error or return a message for alerts
+        // alert('Failed to rename item. The name might be invalid or already exist.');
       }
     } catch (error) {
       console.error('Error renaming item:', error);
+      // alert('An error occurred while renaming the item.');
     }
   };
   
-  // Toggle spotlight search
   const toggleSearch = () => {
-    setIsSearchOpen(!isSearchOpen);
-    if (!isSearchOpen) {
+    setIsSearchOpen(prev => !prev); // Use functional update for state based on previous state
+    if (!isSearchOpen) { // If it was closed and is now opening
       setTimeout(() => {
         if (searchInputRef.current) {
           searchInputRef.current.focus();
         }
       }, 100);
-    } else {
-      // Clear search when closing
+    } else { // If it was open and is now closing
       setSearchTerm('');
       setContentSearchActive(false);
       setSearchMode('filename');
     }
   };
   
-  // Handle search mode toggle
   const toggleSearchMode = () => {
-    setSearchMode(prev => prev === 'filename' ? 'content' : 'filename');
-    setContentSearchActive(false);
-    
-    // If switching to content search with existing term, perform the search
-    if (searchTerm && searchMode === 'filename') {
-      handleContentSearch();
-    }
+    setSearchMode(prev => {
+      const newMode = prev === 'filename' ? 'content' : 'filename';
+      // If switching to content search with existing term, perform the search
+      if (searchTerm && newMode === 'content' && prev === 'filename') {
+        // Directly call handleContentSearch, no need for useEffect dependency on searchMode here
+        // as it's part of the same synchronous logic flow.
+        // Ensure handleContentSearch is prepared to be called like this.
+        handleContentSearch(); 
+      }
+      return newMode;
+    });
+    setContentSearchActive(false); // Always reset contentSearchActive when mode toggles
   };
   
-  // Handle content search
   const handleContentSearch = async () => {
     if (!searchTerm || searchTerm.trim() === '') return;
-    
-    setContentSearchActive(true);
+    setContentSearchActive(true); // This indicates that a content search has been initiated
     await searchInContent(searchTerm);
   };
   
-  // Handle search term change with debounce for content search
   const [searchDebounce, setSearchDebounce] = useState(null);
   
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
     
-    // Clear previous debounce timer
     if (searchDebounce) {
       clearTimeout(searchDebounce);
     }
     
-    // If content search is active, debounce the search
     if (searchMode === 'content') {
-      setSearchDebounce(setTimeout(() => {
-        handleContentSearch();
-      }, 500)); // 500ms debounce
+      if (value.trim() === '') { // If search term is cleared in content mode
+        setContentSearchActive(false); // Reset content active state
+        // Optionally clear searchResults if they are managed in FileContext and you want them cleared immediately
+      } else {
+        setSearchDebounce(setTimeout(() => {
+          handleContentSearch();
+        }, 500));
+      }
+    } else {
+        // For filename search, filtering happens live in renderTree, no debounce needed here
+        // If the search term is cleared, filterStructure will return all items.
     }
   };
 
-  // Handle item click from search results
   const handleSearchResultClick = (file, match) => {
-    // Open the file with search highlighting info
-    openFile(file, searchTerm, match.line);
+    openFile(file, searchTerm, match ? match.line : undefined); // Pass match.line if available
     setIsSearchOpen(false);
     setSearchTerm('');
     setContentSearchActive(false);
   };
 
-  // Function to handle keyboard shortcut for search
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Cmd/Ctrl + K to open search
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         toggleSearch();
       }
       
-      // Escape to close search
       if (e.key === 'Escape' && isSearchOpen) {
+        e.preventDefault(); // Prevent other escape actions if search is open
         setIsSearchOpen(false);
         setSearchTerm('');
         setContentSearchActive(false);
+        // setSearchMode('filename'); // Optionally reset search mode
       }
       
-      // Enter to select first search result
       if (e.key === 'Enter' && isSearchOpen && searchTerm) {
         e.preventDefault();
         
         if (searchMode === 'filename') {
+          // For filename search, results are implicitly filtered in the displayed list
           const results = filterStructure(fileStructure, searchTerm);
           if (results.length > 0) {
-            handleItemClick(results[0]);
+            // Decide what 'selecting' the first means. If it's a folder, expand? If a file, open?
+            // For now, let's assume clicking the first displayed item.
+            // This requires identifying the first item in the rendered list.
+            // Or, if you want to open the first match directly:
+            handleItemClick(results[0]); // This will open file or select folder
             setIsSearchOpen(false);
             setSearchTerm('');
           }
-        } else if (searchMode === 'content' && !contentSearchActive) {
-          // Trigger content search on Enter key
-          handleContentSearch();
-        } else if (searchMode === 'content' && contentSearchActive && searchResults.length > 0) {
-          // Open the first search result
-          const firstResult = searchResults[0];
-          handleSearchResultClick(firstResult.file, firstResult.matches[0]);
+        } else if (searchMode === 'content') {
+          if (!contentSearchActive && !isSearching) { // If content search hasn't run yet (or not currently running)
+            handleContentSearch(); // Trigger it on Enter
+          } else if (contentSearchActive && searchResults && searchResults.length > 0) {
+            const firstResult = searchResults[0];
+            handleSearchResultClick(firstResult.file, firstResult.matches[0]);
+          }
         }
       }
       
-      // Alt+F to toggle search mode (changed from Ctrl+F)
       if (e.altKey && e.key.toLowerCase() === 'f' && isSearchOpen) {
         e.preventDefault();
         toggleSearchMode();
@@ -546,7 +521,21 @@ const LeftSidebar = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isSearchOpen, searchTerm, fileStructure, searchMode, contentSearchActive, searchResults]);
+  }, [
+    isSearchOpen, 
+    searchTerm, 
+    fileStructure, // filterStructure depends on this
+    searchMode, 
+    contentSearchActive, 
+    searchResults, // For Enter key on content results
+    isSearching,   // To avoid re-triggering content search if already searching
+    // toggleSearch, toggleSearchMode, handleContentSearch, handleItemClick, handleSearchResultClick, openFile, searchInContent // These are functions, ensure they are stable or memoized if complex
+  ]); // Added missing dependencies
+
+  // Function to toggle SettingsPanel
+  const toggleSettingsPanel = () => {
+    setIsSettingsPanelOpen(!isSettingsPanelOpen);
+  };
 
   return (
     <div
@@ -555,10 +544,10 @@ const LeftSidebar = () => {
       ref={sidebarRef}
     >
       <div className="TopButtons">
-        <button className="IconButton" title="Search files" onClick={toggleSearch}>
+        <button className="IconButton" title="Search files (Cmd/Ctrl+K)" onClick={toggleSearch}>
           <Search size={18} />
         </button>
-        <button className="IconButton" title="Settings">
+        <button className="IconButton" title="Settings" onClick={toggleSettingsPanel}> {/* Attach toggle function */}
           <Settings size={18} />
         </button>
         <div className="AddFileButton" ref={addMenuRef}>
@@ -567,7 +556,7 @@ const LeftSidebar = () => {
             title="Add file or folder"
             id='Addbuttonfiles'
             onClick={() => {
-              setSelectedParentFolder(null);
+              setSelectedParentFolder(null); // Add to root if no folder selected
               setIsDialogOpen(true);
             }}
           >
@@ -576,7 +565,6 @@ const LeftSidebar = () => {
         </div>
       </div>
 
-      {/* File Tree */}
       {!isCollapsed && fileStructure.length > 0 ? (
         <div className="FileTree">
           {loading ? (
@@ -590,14 +578,19 @@ const LeftSidebar = () => {
       ) : (
         !isCollapsed && (
           <div className="NoDirectory">
-            <p className="EmptyMessage">Wow, such empty. Start by selecting the files.</p>
+            {/* Display message based on whether workspacePath is set */}
+            {workspacePath ? (
+              <p className="EmptyMessage">This workspace is empty. Add a file or folder to get started!</p>
+            ) : (
+              <p className="EmptyMessage">Wow, such empty. Open a workspace to see your files.</p>
+            )}
           </div>
         )
       )}
 
       <button
         className="CollapseButton"
-        title="Collapse Sidebar"
+        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         onClick={() => setIsCollapsed((prev) => !prev)}
       >
         {isCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
@@ -607,18 +600,18 @@ const LeftSidebar = () => {
         <CreateItemDialog
           onClose={() => {
             setIsDialogOpen(false);
-            setSelectedParentFolder(null);
+            setSelectedParentFolder(null); // Reset selected parent on close
           }}
           onCreate={(type, name) => handleAddItem(type, name, selectedParentFolder)}
           theme={theme}
-          parentFolderName={selectedParentFolder ? 
-            selectedParentFolder.split('/').pop() : 
-            'workspace'
+          parentFolderName={
+            selectedParentFolder 
+            ? fileStructure.find(item => item.id === selectedParentFolder)?.name || selectedParentFolder.split('/').pop() // Try to find name from structure
+            : 'workspace root'
           }
         />
       )}
 
-      {/* Workspace Selection Section */}
       {!isCollapsed && (
         <div className="WorkspaceSelection">
           <button className="OpenDirectoryButton" onClick={openDirectory}>
@@ -626,39 +619,52 @@ const LeftSidebar = () => {
           </button>
           {workspacePath && (
             <div className="CurrentWorkspace" title={workspacePath}>
-              {workspacePath.split('/').pop()}
+              {workspacePath.split(/[/\\]/).pop()} {/* Handles both / and \ separators */}
             </div>
           )}
         </div>
       )}
 
-      {/* Spotlight Search */}
       {isSearchOpen && (
-        <div className={`SpotlightOverlay ${theme}`} onClick={() => setIsSearchOpen(false)}>
+        <div className={`SpotlightOverlay ${theme}`} onClick={() => {
+            setIsSearchOpen(false); 
+            // Optionally clear search term when clicking overlay
+            // setSearchTerm(''); 
+            // setContentSearchActive(false);
+          }}>
           <div className={`SpotlightSearch ${theme}`} onClick={(e) => e.stopPropagation()}>
             <div className={`SpotlightSearchHeader ${theme}`}>
               <Search size={18} className="SpotlightSearchIcon" />
               <input
                 type="text"
-                placeholder={searchMode === 'filename' ? "Search files..." : "Search in file contents..."}
+                placeholder={searchMode === 'filename' ? "Search files by name..." : "Search in file contents..."}
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className={`SpotlightSearchInput ${theme}`}
                 ref={searchInputRef}
+                autoFocus // autoFocus on open
               />
               <button 
                 className={`SpotlightModeToggle ${theme} ${searchMode === 'content' ? 'active' : ''}`}
                 onClick={toggleSearchMode}
-                title={searchMode === 'filename' ? "Switch to content search" : "Switch to filename search"}
+                title={searchMode === 'filename' ? "Switch to content search (Alt+F)" : "Switch to filename search (Alt+F)"}
               >
-                {searchMode === 'filename' ? 'Aa' : 'Aa'}
+                {searchMode === 'filename' ? <FileText size={16}/> : <FileCode size={16}/> } {/* Example: Different icons */}
               </button>
-              <button className={`SpotlightCloseButton ${theme}`} onClick={() => setIsSearchOpen(false)}>
+              {searchTerm && (
+                <button 
+                    className={`SpotlightClearButton ${theme}`} 
+                    onClick={() => { setSearchTerm(''); if (searchInputRef.current) searchInputRef.current.focus(); setContentSearchActive(false); }}
+                    title="Clear search"
+                >
+                    <X size={16} />
+                </button>
+              )}
+              <button className={`SpotlightCloseButton ${theme}`} onClick={toggleSearch} title="Close (Esc)">
                 <X size={16} />
               </button>
             </div>
             
-            {/* Search loading indicator */}
             {searchMode === 'content' && isSearching && (
               <div className={`SearchLoadingIndicator ${theme}`}>
                 <Loader size={18} className="Spinner" />
@@ -666,24 +672,22 @@ const LeftSidebar = () => {
               </div>
             )}
             
-            {/* Keyboard shortcut hint
-            {searchTerm === '' && (
+            {searchTerm === '' && !isSearching && ( // Hint shown only if search term is empty and not searching
               <div className={`SpotlightHint ${theme}`}>
-                <span>Press <kbd>Alt+F</kbd> to {searchMode === 'filename' ? 'search in content' : 'search filenames'}</span>
+                <span>Type to search. Press <kbd>Alt+F</kbd> to toggle search mode.</span>
               </div>
-            )} */}
+            )}
             
-            {/* Content search results */}
-            {searchMode === 'content' && contentSearchActive && searchTerm && (
+            {searchMode === 'content' && contentSearchActive && searchTerm && !isSearching && (
               <div className={`SpotlightResults ${theme}`}>
                 {searchResults.length > 0 ? (
                   <div className={`ContentSearchResults ${theme}`}>
                     <div className={`ResultsCount ${theme}`}>
-                      Found {searchResults.reduce((acc, result) => acc + result.matches.length, 0)} matches in {searchResults.length} files
+                      Found {searchResults.reduce((acc, result) => acc + result.matches.length, 0)} matches in {searchResults.length} files for "{searchTerm}"
                     </div>
                     {searchResults.map((result) => (
                       <div key={result.file.id} className={`ContentResultFile ${theme}`}>
-                        <div className={`ContentResultFileName ${theme}`}>
+                        <div className={`ContentResultFileName ${theme}`} onClick={() => handleSearchResultClick(result.file, result.matches[0])}>
                           {getFileIcon(result.file)}
                           <span>{result.file.name}</span>
                           <span className="MatchCount">({result.matches.length} {result.matches.length === 1 ? 'match' : 'matches'})</span>
@@ -695,7 +699,7 @@ const LeftSidebar = () => {
                               className={`ContentResultMatch ${theme}`}
                               onClick={() => handleSearchResultClick(result.file, match)}
                             >
-                              <div className="LineNumber">{match.line}</div>
+                              <div className="LineNumber" title={`Line ${match.line}`}>{match.line}</div>
                               <div className="MatchPreview">
                                 <span className="PreviewBefore">{match.preview.before}</span>
                                 <span className="MatchHighlight">{match.preview.match}</span>
@@ -708,31 +712,32 @@ const LeftSidebar = () => {
                     ))}
                   </div>
                 ) : (
-                  !isSearching && <div className={`SpotlightNoResults ${theme}`}>No matches found in file contents</div>
+                   <div className={`SpotlightNoResults ${theme}`}>No content matches found for "{searchTerm}"</div>
                 )}
               </div>
             )}
             
-            {/* Filename search results */}
-            {(searchMode === 'filename' || !contentSearchActive) && searchTerm && (
+            {searchMode === 'filename' && searchTerm && ( // Show filename results only in filename mode and if searchterm exists
               <div className={`SpotlightResults ${theme}`}>
                 {filterStructure(fileStructure, searchTerm).length > 0 ? (
                   filterStructure(fileStructure, searchTerm).map((item) => (
                     <div 
                       key={item.id} 
-                      className={`SpotlightResultItem ${theme}`}
+                      className={`SpotlightResultItem ${theme} ${activeFileId === item.id ? 'active' : ''}`}
                       onClick={() => {
                         handleItemClick(item);
                         setIsSearchOpen(false);
                         setSearchTerm('');
                       }}
+                      title={item.path || item.name} // Show full path on hover if available
                     >
                       {getFileIcon(item)}
                       <span>{item.name}</span>
+                      {/* Optionally show item path or breadcrumbs if nested */}
                     </div>
                   ))
                 ) : (
-                  <div className={`SpotlightNoResults ${theme}`}>No files found</div>
+                  <div className={`SpotlightNoResults ${theme}`}>No files or folders found matching "{searchTerm}"</div>
                 )}
               </div>
             )}
@@ -740,29 +745,39 @@ const LeftSidebar = () => {
         </div>
       )}
 
-      {/* Resizer */}
+      {/* Render SettingsPanel */}
+      <SettingsPanel
+        isOpen={isSettingsPanelOpen}
+        onClose={toggleSettingsPanel}
+        theme={theme}
+        editorFontFamily={editorFontFamily}
+        setEditorFontFamily={setEditorFontFamily}
+        editorFontSize={editorFontSize}
+        setEditorFontSize={setEditorFontSize}
+      />
+
       <div className={`Resizer ${isResizing ? 'active' : ''}`} ref={resizerRef} />
     </div>
   );
 };
 
-// Helper function for spotlight search
 const getFileIcon = (item) => {
-  if (item.type === 'folder') return <Folder size={16} />;
+  if (item.type === 'folder') return <Folder size={16} className="FileIcon" />;
   
   const extension = item.name.split('.').pop().toLowerCase();
   
   switch (extension) {
-    case 'js':
-    case 'jsx':
-    case 'ts':
-    case 'tsx':
-      return <FileCode size={16} />;
-    case 'md':
+    case 'js': case 'jsx': case 'ts': case 'tsx':
+      return <FileCode size={16} className="FileIcon js" />;
+    case 'md': case 'markdown':
+      return <FileBox size={16} className="FileIcon md" />; // Using FileBox for markdown
+    case 'canvas':
+        return <AlertCircle size={16} className="FileIcon canvas" />; // Example: Placeholder for canvas
+    case 'html': case 'css': case 'json': // Add more specific icons if desired
     case 'txt':
-      return <FileBox size={16} />;
+      return <FileText size={16} className="FileIcon txt" />;
     default:
-      return <FileText size={16} />;
+      return <FileText size={16} className="FileIcon generic" />;
   }
 };
 
