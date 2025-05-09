@@ -92,6 +92,9 @@ const Editor = () => {
     isProcessing: false
   });
   
+  const [autoSaveInterval, setAutoSaveInterval] = useState(60000); // 1 minute in milliseconds
+  const [lastAutoSave, setLastAutoSave] = useState(null);
+  
   const { theme } = useTheme();
   const {
     openFiles,
@@ -101,7 +104,8 @@ const Editor = () => {
     closeFile,
     saveFile,
     updateFileContent,
-    updateFileType
+    updateFileType,
+    autoSaveChanges
   } = useFileContext();
 
   const tabsLeftRef = useRef(null);
@@ -399,6 +403,36 @@ const Editor = () => {
     }
   }, [editor, fileContents, updateFileContent, updateFileType, setCanvasMode, setCanvasData]);
 
+  // Auto-save timer
+  useEffect(() => {
+    const autoSaveTimer = setInterval(async () => {
+      if (Object.keys(unsavedChanges).length > 0) {
+        try {
+          // If editor is actively being used, capture the latest content for the active file
+          if (editor && !editor.isDestroyed && activeFileId && unsavedChanges[activeFileId]) {
+            // First update file content with latest editor content
+            if (canvasMode) {
+              const canvasContent = JSON.stringify(canvasData);
+              updateFileContent(activeFileId, canvasContent);
+            } else {
+              const htmlContent = editor.getHTML();
+              updateFileContent(activeFileId, htmlContent);
+            }
+          }
+          
+          // Then trigger auto-save
+          await autoSaveChanges();
+          setLastAutoSave(new Date());
+        } catch (error) {
+          console.error('Error during auto-save:', error);
+        }
+      }
+    }, autoSaveInterval);
+
+    return () => clearInterval(autoSaveTimer);
+  }, [unsavedChanges, autoSaveChanges, autoSaveInterval, openFiles, editor, activeFileId, canvasMode, canvasData, updateFileContent]);
+
+  // Manual save function with updated logic
   const handleSaveFile = useCallback(async () => {
     if (activeFileId && editor) {
       let success = false;
@@ -741,15 +775,16 @@ const Editor = () => {
   };
 
   const getLastSavedTime = () => {
-    if (!lastSaved) return 'Never';
+    if (!lastSaved && !lastAutoSave) return 'Never';
     
+    const lastSaveTime = lastSaved ? lastSaved : lastAutoSave;
     const now = new Date();
-    const diff = Math.floor((now - lastSaved) / 1000);
+    const diff = Math.floor((now - lastSaveTime) / 1000);
     
     if (diff < 60) return 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-    return lastSaved.toLocaleTimeString();
+    return lastSaveTime.toLocaleTimeString();
   };
 
   const addLink = useCallback(() => {
@@ -1625,7 +1660,7 @@ const Editor = () => {
                   </div>
                 </>
               )}
-              {lastSaved && (
+              {(lastSaved || lastAutoSave) && (
                 <div className="FooterItem optional">
                   <Clock size={14} />
                   <span>Saved: {getLastSavedTime()}</span>

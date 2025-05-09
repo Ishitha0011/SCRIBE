@@ -15,8 +15,9 @@ export const FileProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState({});
 
-  // Load workspace path on mount
+  // Load workspace path and restore open files on mount
   useEffect(() => {
     const loadWorkspace = async () => {
       try {
@@ -24,6 +25,9 @@ export const FileProvider = ({ children }) => {
         if (path) {
           setWorkspacePath(path);
           loadFileStructure(path);
+          
+          // After loading file structure, restore open files
+          restoreOpenFiles();
         }
       } catch (error) {
         console.error('Error loading workspace:', error);
@@ -33,6 +37,93 @@ export const FileProvider = ({ children }) => {
 
     loadWorkspace();
   }, []);
+
+  // Restore open files from localStorage
+  const restoreOpenFiles = async () => {
+    try {
+      const savedOpenFiles = localStorage.getItem('scribe-openFiles');
+      const savedActiveFileId = localStorage.getItem('scribe-activeFileId');
+      const savedFileContents = localStorage.getItem('scribe-fileContents');
+      
+      if (savedOpenFiles) {
+        const parsedOpenFiles = JSON.parse(savedOpenFiles);
+        setOpenFiles(parsedOpenFiles);
+        
+        // Load content for each open file
+        const contentPromises = parsedOpenFiles.map(async (file) => {
+          if (!file.isNew) {
+            try {
+              const content = await FileService.readFile(file.id);
+              return { id: file.id, content };
+            } catch (error) {
+              console.error(`Error loading content for file ${file.id}:`, error);
+              return { id: file.id, content: '' };
+            }
+          }
+          return { id: file.id, content: '' };
+        });
+        
+        const loadedContents = await Promise.all(contentPromises);
+        const contentsMap = loadedContents.reduce((acc, item) => {
+          acc[item.id] = item.content;
+          return acc;
+        }, {});
+        
+        // If there were cached file contents, merge them with loaded contents
+        if (savedFileContents) {
+          const parsedContents = JSON.parse(savedFileContents);
+          setFileContents({ ...contentsMap, ...parsedContents });
+        } else {
+          setFileContents(contentsMap);
+        }
+        
+        // Restore active file
+        if (savedActiveFileId && parsedOpenFiles.some(file => file.id === savedActiveFileId)) {
+          setActiveFileId(savedActiveFileId);
+        } else if (parsedOpenFiles.length > 0) {
+          setActiveFileId(parsedOpenFiles[0].id);
+        }
+      }
+      
+      // Recover pending changes if any
+      const savedPendingChanges = localStorage.getItem('scribe-pendingChanges');
+      if (savedPendingChanges) {
+        setPendingChanges(JSON.parse(savedPendingChanges));
+      }
+    } catch (error) {
+      console.error('Error restoring open files:', error);
+    }
+  };
+
+  // Save open files to localStorage whenever they change
+  useEffect(() => {
+    if (openFiles.length > 0) {
+      localStorage.setItem('scribe-openFiles', JSON.stringify(openFiles));
+    }
+  }, [openFiles]);
+
+  // Save active file to localStorage whenever it changes
+  useEffect(() => {
+    if (activeFileId) {
+      localStorage.setItem('scribe-activeFileId', activeFileId);
+    }
+  }, [activeFileId]);
+
+  // Save file contents to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(fileContents).length > 0) {
+      localStorage.setItem('scribe-fileContents', JSON.stringify(fileContents));
+    }
+  }, [fileContents]);
+
+  // Save pending changes to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(pendingChanges).length > 0) {
+      localStorage.setItem('scribe-pendingChanges', JSON.stringify(pendingChanges));
+    } else {
+      localStorage.removeItem('scribe-pendingChanges');
+    }
+  }, [pendingChanges]);
 
   // Load file structure
   const loadFileStructure = async (path = null) => {
@@ -199,6 +290,13 @@ export const FileProvider = ({ children }) => {
                 }));
               }
               
+              // Clear pending changes for this file
+              setPendingChanges(prev => {
+                const newPendingChanges = { ...prev };
+                delete newPendingChanges[fileId];
+                return newPendingChanges;
+              });
+              
               // Refresh file structure
               await loadFileStructure();
               
@@ -217,6 +315,13 @@ export const FileProvider = ({ children }) => {
             ...prev,
             [fileId]: content
           }));
+          
+          // Clear pending changes for this file
+          setPendingChanges(prev => {
+            const newPendingChanges = { ...prev };
+            delete newPendingChanges[fileId];
+            return newPendingChanges;
+          });
           
           return true;
         }
@@ -307,6 +412,16 @@ export const FileProvider = ({ children }) => {
             });
           }
           
+          // Update pending changes if any
+          if (pendingChanges[oldPath]) {
+            setPendingChanges(prev => {
+              const newPendingChanges = { ...prev };
+              newPendingChanges[newPath] = newPendingChanges[oldPath];
+              delete newPendingChanges[oldPath];
+              return newPendingChanges;
+            });
+          }
+          
           // Update active file if needed
           if (activeFileId === oldPath) {
             setActiveFileId(newPath);
@@ -336,6 +451,13 @@ export const FileProvider = ({ children }) => {
       return newContents;
     });
     
+    // Clear pending changes for this file
+    setPendingChanges(prev => {
+      const newPendingChanges = { ...prev };
+      delete newPendingChanges[fileId];
+      return newPendingChanges;
+    });
+    
     // If closing the active file, set the next available file as active
     if (fileId === activeFileId) {
       const remainingFiles = openFiles.filter(file => file.id !== fileId);
@@ -347,12 +469,71 @@ export const FileProvider = ({ children }) => {
     }
   };
 
-  // Update file content in memory
+  // Update file content in memory and mark pending changes
   const updateFileContent = (fileId, content) => {
     setFileContents(prev => ({
       ...prev,
       [fileId]: content
     }));
+    
+    // Mark as having pending changes
+    setPendingChanges(prev => ({
+      ...prev,
+      [fileId]: {
+        timestamp: Date.now(),
+        content
+      }
+    }));
+  };
+
+  // Auto-save any pending changes
+  const autoSaveChanges = async () => {
+    const now = Date.now();
+    const pendingFiles = Object.entries(pendingChanges);
+    let savedAny = false;
+    
+    if (pendingFiles.length === 0) return;
+    
+    for (const [fileId, { timestamp, content }] of pendingFiles) {
+      try {
+        // Check if file is still open
+        const fileItem = openFiles.find(file => file.id === fileId);
+        if (!fileItem) continue;
+        
+        // Skip new files (require user interaction to name them)
+        if (fileItem.isNew) continue;
+        
+        // Save the file to the backend
+        const result = await FileService.writeFile(fileItem.id, content);
+        
+        if (result.status === 'success') {
+          // Update in-memory content to ensure it's available after reload
+          setFileContents(prev => ({
+            ...prev,
+            [fileId]: content
+          }));
+          
+          // Remove from pending changes
+          setPendingChanges(prev => {
+            const newPendingChanges = { ...prev };
+            delete newPendingChanges[fileId];
+            return newPendingChanges;
+          });
+          
+          savedAny = true;
+          console.log(`Auto-saved file: ${fileItem.name}`);
+        } else {
+          console.error(`Failed to auto-save file ${fileItem.name}`);
+        }
+      } catch (error) {
+        console.error(`Error auto-saving file ${fileId}:`, error);
+      }
+    }
+    
+    // Update the localStorage after auto-saving
+    if (savedAny) {
+      localStorage.setItem('scribe-fileContents', JSON.stringify(fileContents));
+    }
   };
 
   // Update file type (used for canvas files)
@@ -407,6 +588,7 @@ export const FileProvider = ({ children }) => {
         error,
         searchResults,
         isSearching,
+        pendingChanges,
         setWorkspace,
         loadFileStructure,
         openFile,
@@ -419,7 +601,8 @@ export const FileProvider = ({ children }) => {
         createItem,
         deleteItem,
         renameItem,
-        searchInContent
+        searchInContent,
+        autoSaveChanges
       }}
     >
       {children}

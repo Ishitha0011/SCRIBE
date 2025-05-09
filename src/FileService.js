@@ -359,22 +359,22 @@ class FileService {
           status: response.status,
           error: data.detail || 'Failed to write file'
         }, 'ERROR');
+        return { status: 'error', error: data.detail || 'Failed to write file' };
       } else {
         logFileOperation('writeFile', { 
           path, 
           status: response.status,
           success: true
         });
+        return { status: 'success', ...data };
       }
-      
-      return data;
     } catch (error) {
       logFileOperation('writeFile', { 
         path, 
         error: error.message 
       }, 'ERROR');
       console.error('Error writing file:', error);
-      throw error;
+      return { status: 'error', error: error.message };
     }
   }
 
