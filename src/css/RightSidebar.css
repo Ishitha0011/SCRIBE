@@ -153,7 +153,7 @@
 
 /* Dropdown arrow icon */
 .DropdownIcon {
-  color: #777;
+  color: #333;
   transition: transform 0.3s ease;
   margin-left: 4px; /* Space between text and icon */
 }
@@ -232,7 +232,7 @@
   cursor: pointer;
   border-radius: 50%;
   background-color: #fff;
-  color: #555;
+  color: #333;
   border: 1px solid rgba(0, 0, 0, 0.08);
   transition: all 0.2s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -275,7 +275,7 @@
   align-items: center;
   justify-content: center;
   height: 100%; /* Fill available space */
-  color: #777;
+  color: #333;
   font-size: 14px;
   text-align: center;
   padding: 20px;
@@ -325,7 +325,7 @@
 }
 
 .AskAIInput::placeholder {
-  color: #aaa;
+  color: #333;
 }
 
 .RightSidebar.dark .AskAIInput::placeholder {
