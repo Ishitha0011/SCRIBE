@@ -82,7 +82,7 @@ const LeftSidebar = () => {
     if (workspacePath) {
       loadFileStructure();
     }
-  }, [workspacePath, loadFileStructure]); // Added loadFileStructure to dependencies
+  }, [workspacePath]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
