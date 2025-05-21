@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Handle, Position } from 'reactflow';
 import '../../css/Nodes.css';
-import { Bot, Copy, Download, CheckCircle, AlertCircle, RefreshCw as ProcessingIcon, Code, FileText } from 'lucide-react';
+import { Bot, Copy, Download, CheckCircle, AlertCircle, RefreshCw as ProcessingIcon, Code, FileText, File } from 'lucide-react';
 import { useTheme } from '../../ThemeContext'; // Import useTheme hook
 
 const AIOutputNode = ({ data, isConnectable, id }) => {
@@ -13,6 +13,8 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
   const [nodeState, setNodeState] = useState('idle'); // idle, processing, complete, error
   const [displayMode, setDisplayMode] = useState('plain'); // 'plain', 'formatted', 'code'
   const [errorMessage, setErrorMessage] = useState(null);
+  const [contentType, setContentType] = useState('text'); // 'text', 'pdf', 'image', etc.
+  const [sourceInfo, setSourceInfo] = useState(null); // Information about where the data came from
   const responseRef = useRef(null);
   const nodeIdRef = useRef(id);
   
@@ -30,10 +32,12 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
       data.onChange({ 
         response: responseText, // Pass the actual text
         displayMode,
-        errorMessage
+        errorMessage,
+        contentType,
+        sourceInfo
       });
     }
-  }, [responseText, displayMode, errorMessage, data]);
+  }, [responseText, displayMode, errorMessage, contentType, sourceInfo, data]);
   
   // Update internal state based on flow execution props
   useEffect(() => {
@@ -89,6 +93,86 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
     } else {
       setDisplayMode('plain');
     }
+  };
+
+  // Process incoming data and extract displayable content
+  const processIncomingData = (inputData) => {
+    // Reset states
+    setErrorMessage(null);
+    setSourceInfo(null);
+    
+    // Handle null or undefined input
+    if (!inputData) {
+      setErrorMessage("No data received");
+      return null;
+    }
+    
+    // Handle error objects from any node
+    if (inputData.error) {
+      setErrorMessage(inputData.error);
+      
+      // If we have original data despite error, try to display it
+      if (inputData.originalData) {
+        return processIncomingData(inputData.originalData);
+      }
+      return null;
+    }
+    
+    // Handle PDF text extraction data
+    if (inputData.text && inputData.filename) {
+      setContentType('pdf');
+      setSourceInfo({
+        type: 'PDF',
+        filename: inputData.filename,
+        filesize: inputData.filesize
+      });
+      return inputData.text;
+    }
+    
+    // Handle AI chat response data
+    if (inputData.response) {
+      setContentType('ai');
+      // If we have metadata about what generated this response
+      if (inputData.generatedFrom) {
+        setSourceInfo({
+          type: 'AI',
+          prompt: inputData.generatedFrom.userPrompt,
+          system: inputData.generatedFrom.systemPrompt
+        });
+      }
+      return inputData.response;
+    }
+    
+    // Generic object handling - try to extract meaningful text
+    if (typeof inputData === 'object') {
+      // Look for any text/content properties
+      const possibleContentProps = ['content', 'message', 'text', 'data', 'output', 'result'];
+      for (const prop of possibleContentProps) {
+        if (inputData[prop] && typeof inputData[prop] === 'string') {
+          setContentType('generic');
+          return inputData[prop];
+        }
+      }
+      
+      // If no recognizable fields, convert the object to a readable string
+      try {
+        setContentType('json');
+        return JSON.stringify(inputData, null, 2);
+      } catch (e) {
+        setErrorMessage("Could not parse data");
+        return null;
+      }
+    }
+    
+    // If it's just a string, display it directly
+    if (typeof inputData === 'string') {
+      setContentType('text');
+      return inputData;
+    }
+    
+    // Fallback: unknown data format
+    setErrorMessage("Unsupported data format");
+    return null;
   };
 
   // Format the response based on display mode
@@ -186,6 +270,28 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
     
     return <pre>{text}</pre>; // Fallback to preformatted text
   };
+
+  // Display source information if available
+  const renderSourceInfo = () => {
+    if (!sourceInfo) return null;
+    
+    return (
+      <div className="source-info">
+        {sourceInfo.type === 'PDF' && (
+          <div className="pdf-source">
+            <File size={12} />
+            <span>Source: {sourceInfo.filename}</span>
+          </div>
+        )}
+        {sourceInfo.type === 'AI' && (
+          <div className="ai-source">
+            <Bot size={12} />
+            <span>AI-generated response</span>
+          </div>
+        )}
+      </div>
+    );
+  };
   
   // Handle flow execution: Extract response/error from inputData
   useEffect(() => {
@@ -193,23 +299,19 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
       const unregister = data.registerNodeForFlow(nodeIdRef.current, async (inputData) => {
         setIsProcessing(true);
         setNodeState('processing');
-        setErrorMessage(null); // Clear previous errors
-        setResponseText(''); // Clear previous response text
         
-        // Simulate processing delay
+        // Process the input data to extract displayable content
+        const processedText = processIncomingData(inputData);
+        
+        // Small delay to show processing state
         await new Promise(resolve => setTimeout(resolve, 200)); 
         
-        if (inputData?.error) {
-          console.error(`AIOutputNode (${nodeIdRef.current}) received error:`, inputData.error);
-          setErrorMessage(inputData.error);
-          setNodeState('error');
-        } else if (inputData?.response) {
-          setResponseText(inputData.response);
-            setNodeState('complete');
-        } else {
-          // Handle cases where input is missing expected fields
-          console.warn(`AIOutputNode (${nodeIdRef.current}) received unexpected input:`, inputData);
-          setErrorMessage('Received invalid data from previous node.');
+        if (processedText !== null) {
+          setResponseText(processedText);
+          setNodeState('complete');
+        } else if (!errorMessage) {
+          // Only set a generic error if no specific error was set during processing
+          setErrorMessage('Could not display the incoming data');
           setNodeState('error');
         }
         
@@ -223,15 +325,25 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
     }
   }, [data.registerNodeForFlow]); // Re-register only if register function changes
 
+  // Icon to show based on content type
+  const getContentTypeIcon = () => {
+    switch(contentType) {
+      case 'pdf': return <FileText size={15} />;
+      case 'ai': return <Bot size={15} />;
+      case 'json': return <Code size={15} />;
+      default: return <Bot size={15} />;
+    }
+  };
+
   return (
     // Add theme class to the root container
-    <div className={`ai-output-node node-container state-${nodeState} ${theme}`}>
+    <div className={`ai-output-node node-container state-${nodeState} ${theme} ${data.isInExecutionPath ? 'in-path' : ''}`}>
       <Handle type="target" position={Position.Top} id="a" isConnectable={isConnectable} className="node-handle target-handle" />
       
       <div className="node-header ai-output-header">
         <div className="node-header-title">
-           <Bot size={15} className="node-title-icon" />
-           <span>AI Output</span>
+           {getContentTypeIcon()}
+           <span>Output</span>
         </div>
         <div className="node-header-actions">
           <button 
@@ -269,6 +381,9 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
       </div>
 
       <div className="node-content ai-output-content">
+        {/* Source information */}
+        {renderSourceInfo()}
+        
         <div 
           className={`ai-response-container ${isProcessing ? 'processing' : ''}`}
           ref={responseRef}
@@ -293,12 +408,9 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
             </div>
           )}
         </div>
-         {/* Status text can be integrated or removed if node border indicates state */}
-         {/* <div className="node-status-indicator">...</div> */}
       </div>
 
-      {/* Output handle might not be needed if this is a terminal node, 
-          but keep for potential chaining */}
+      {/* Output handle for potential chaining */}
       <Handle type="source" position={Position.Bottom} id="b" isConnectable={isConnectable} className="node-handle source-handle" />
     </div>
   );
