@@ -1,20 +1,18 @@
 import React from 'react';
-import LeftSidebar from './components/LeftSidebar';
-import RightSidebar from './components/RightSidebar';
-import Editor from './components/Editor';
-import { FileProvider } from './FileContext';
-import { ThemeProvider } from './ThemeContext';
 import './App.css';
+import LeftSidebar from './components/LeftSidebar';
+import Editor from './components/Editor'; 
+import RightSidebar from './components/RightSidebar';
+import { ThemeProvider } from './ThemeContext'; // Import ThemeProvider
+import { FileProvider } from './FileContext'; // Import FileProvider
 
 function App() {
   return (
     <ThemeProvider>
       <FileProvider>
-        <div className="AppWrapper">
+        <div className="App">
           <LeftSidebar />
-          <main className="MainContent">
-            <Editor />
-          </main>
+          <Editor />
           <RightSidebar />
         </div>
       </FileProvider>
