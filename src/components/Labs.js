@@ -9,7 +9,6 @@ import {
 import { useTheme } from '../ThemeContext';
 import '../css/Labs.css'; // We will update this file
 import ChatPopup from './ChatPopup'; // Assuming this exists and is styled
-import Flashcards from './Flashcards'; // Import Flashcards component
 
 // --- Helper Hook (Keep) ---
 const useAutoResizeTextArea = (value, maxHeight = 100) => {
@@ -54,7 +53,6 @@ const writeToLog = async (logEntry) => {
 
 const Labs = () => {
     const { theme } = useTheme(); // Use your theme
-    const [activeTool, setActiveTool] = useState('videoAnalysis'); // State for active tool
 
     // --- State Variables (Updated for multiple videos) ---
     const [videos, setVideos] = useState([]); // Array of video objects with file metadata and UI state
@@ -1155,20 +1153,6 @@ const Labs = () => {
             {/* Header with Global Actions */}
             <div className="LabsHeader">
                 <h2>Labs</h2>
-                <div className="LabsHeaderNav">
-                    <button
-                        className={`LabsNavButton ${activeTool === 'videoAnalysis' ? 'active' : ''}`}
-                        onClick={() => setActiveTool('videoAnalysis')}
-                    >
-                        Video Analysis
-                    </button>
-                    <button
-                        className={`LabsNavButton ${activeTool === 'flashcards' ? 'active' : ''}`}
-                        onClick={() => setActiveTool('flashcards')}
-                    >
-                        Flashcards
-                    </button>
-                </div>
                 <div className="HeaderActions">
                      <div className="tooltip">
                         <button className="HeaderButton" onClick={() => setShowHistoryPanel(true)} title="Analysis History"><Clock size={18} /></button>
@@ -1181,16 +1165,9 @@ const Labs = () => {
 
             {/* Scrollable Content Area */}
             <div className="LabsContentWrapper">
-              {activeTool === 'videoAnalysis' && (
-                <>
-                  {renderVideoSection()}
-                  {videos.length > 0 && videos.some(v => !v.isLoading && !v.error) && renderModesSection()}
-                  {renderResultsSection()}
-                </>
-              )}
-              {activeTool === 'flashcards' && (
-                <Flashcards />
-              )}
+                {renderVideoSection()}
+                {videos.length > 0 && videos.some(v => !v.isLoading && !v.error) && renderModesSection()}
+                {renderResultsSection()}
             </div>
 
             {/* Overlay Panels */}
