@@ -24,10 +24,35 @@ import time
 from google import genai as gemini_ai # Renamed to avoid conflict with genai used for text
 from google.genai import types as gemini_types
 
+# PDF Processing Imports
+from langchain_community.document_loaders import PyPDFLoader
+from groq import Groq
+import tempfile
+import httpx # Added for explicit httpx client creation
+
 # Load environment variables from .env file
 load_dotenv()
 
 app = FastAPI()
+
+# Initialize Groq client for Llama3 PDF Q&A
+llama_api_key = os.getenv("LLAMA_API_KEY")
+groq_client = None # Initialize to None
+
+if not llama_api_key:
+    # Log a warning instead of raising an error to allow other functionalities
+    logging.warning("LLAMA_API_KEY not found in .env file. PDF Q&A feature will not work.")
+else:
+    try:
+        # Explicitly create an httpx client.
+        # This allows httpx to use its default proxy handling (e.g., from environment variables)
+        # and bypasses potential issues with Groq's internal client wrapper mis-passing the 'proxies' argument.
+        custom_httpx_client = httpx.Client()
+        groq_client = Groq(api_key=llama_api_key, http_client=custom_httpx_client)
+        logging.info("Groq client initialized successfully with custom httpx client.")
+    except Exception as e:
+        logging.error(f"Failed to initialize Groq client: {e}", exc_info=True)
+        # groq_client remains None if initialization fails
 
 # Allow CORS for frontend communication
 app.add_middleware(
@@ -140,6 +165,11 @@ class WorkspaceRequest(BaseModel):
 
 class LogEntry(BaseModel):
     log: str
+
+
+class PDFQuestionRequest(BaseModel):
+    pdf_text: str
+    question: str
 
 
 # Helper function to convert dict to Message
@@ -1028,6 +1058,113 @@ async def process_image_with_ai(request: ImageProcessRequest):
         raise # Re-raise HTTPExceptions directly
     except Exception as e:
         logger.error(f"Unexpected error in process_image_with_ai: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+
+# PDF Processing Helper Functions
+def extract_text_from_pdf_file(pdf_path: str):
+    """Extract all text from a PDF file using LangChain."""
+    try:
+        loader = PyPDFLoader(pdf_path)
+        documents = loader.load()
+        text = "\\n".join(doc.page_content for doc in documents)
+        return text
+    except Exception as e:
+        logging.error(f"Error extracting text from PDF {pdf_path}: {e}", exc_info=True)
+        return f"Error extracting text: {e}"
+
+def ask_question_to_pdf_text(pdf_text: str, question: str):
+    """Ask a question based on the content of the PDF using Llama3 via Groq."""
+    if not groq_client:
+        return "Llama3 client not initialized due to missing LLAMA_API_KEY."
+    try:
+        # Truncate pdf_text if it's too long for the context window,
+        # keeping in mind the model's limits (e.g., llama3-8b-8192)
+        # A rough estimate for token to char ratio is 1 token ~ 4 chars.
+        # 8192 tokens * 3 chars/token (conservative) = ~24000 chars.
+        # We also need space for the question and system prompt.
+        max_text_len = 20000 # Max length for the PDF text part of the prompt
+        
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant analyzing PDF content. Answer the user's question based on the provided text from a PDF document."},
+            {"role": "user", "content": f"The PDF contains the following text (potentially truncated): {pdf_text[:max_text_len]}"},
+            {"role": "user", "content": question}
+        ]
+        completion = groq_client.chat.completions.create(
+            model="llama3-8b-8192", # Or any other suitable model available via Groq
+            messages=messages,
+            temperature=0.7,
+            max_tokens=1000, # Allow for longer answers
+            top_p=1,
+            stream=False
+        )
+        
+        if hasattr(completion, 'choices') and len(completion.choices) > 0:
+            return completion.choices[0].message.content
+        else:
+            logging.warning("Unexpected response structure from Llama3 API via Groq.")
+            return "Unexpected response structure from Llama3 API."
+    except Exception as e:
+        logging.error(f"Error interacting with Llama3 via Groq: {e}", exc_info=True)
+        return f"Error interacting with Llama3: {e}"
+
+
+# PDF Processing Endpoints
+@app.post("/api/pdf/extract-text")
+async def pdf_extract_text(file: UploadFile = File(...)):
+    """
+    Uploads a PDF file, extracts text from it, and returns the extracted text.
+    """
+    try:
+        # Create a temporary file to store the uploaded PDF
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
+            shutil.copyfileobj(file.file, tmp_pdf)
+            tmp_pdf_path = tmp_pdf.name
+        
+        extracted_text = extract_text_from_pdf_file(tmp_pdf_path)
+        
+    except Exception as e:
+        logging.error(f"Error processing uploaded PDF for text extraction: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to process PDF: {str(e)}")
+    finally:
+        # Ensure the temporary file is deleted
+        if 'tmp_pdf_path' in locals() and os.path.exists(tmp_pdf_path):
+            os.remove(tmp_pdf_path)
+        # Close the uploaded file
+        if file and hasattr(file, 'file') and not file.file.closed:
+            file.file.close()
+
+    if extracted_text.startswith("Error extracting text:"):
+        raise HTTPException(status_code=500, detail=extracted_text)
+        
+    return {"text": extracted_text}
+
+@app.post("/api/pdf/ask")
+async def pdf_ask_question(request: PDFQuestionRequest):
+    """
+    Receives extracted PDF text and a question, then returns an answer
+    generated by Llama3 via Groq.
+    """
+    if not groq_client:
+        raise HTTPException(status_code=503, detail="PDF Q&A service is unavailable due to missing API key.")
+    try:
+        if not request.pdf_text or not request.pdf_text.strip():
+            raise HTTPException(status_code=400, detail="PDF text cannot be empty.")
+        if not request.question or not request.question.strip():
+            raise HTTPException(status_code=400, detail="Question cannot be empty.")
+            
+        answer = ask_question_to_pdf_text(request.pdf_text, request.question)
+        
+        if answer.startswith("Error interacting with Llama3:") or \
+           answer == "Unexpected response structure from Llama3 API." or \
+           answer == "Llama3 client not initialized due to missing LLAMA_API_KEY.":
+            raise HTTPException(status_code=500, detail=answer)
+            
+        return {"answer": answer}
+    except HTTPException:
+        raise # Re-raise HTTPExceptions directly
+    except Exception as e:
+        logging.error(f"Error in PDF ask question endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 

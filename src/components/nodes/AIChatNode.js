@@ -13,6 +13,9 @@ const AIChatNode = ({ data, isConnectable, id }) => {
   const [isEditingSystem, setIsEditingSystem] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [nodeState, setNodeState] = useState('idle'); // idle, processing, complete, error
+  const [lastOutput, setLastOutput] = useState(null); // Store last generated output
+  const [lastInputData, setLastInputData] = useState(null); // Store incoming data
+  const [hasIncomingData, setHasIncomingData] = useState(false); // Flag to show if we have data from previous node
   const systemPromptRef = useRef(null);
   const nodeIdRef = useRef(id);
   
@@ -26,10 +29,12 @@ const AIChatNode = ({ data, isConnectable, id }) => {
     if (data.onChange) {
       data.onChange({ 
         systemPrompt, 
-        userPrompt // Ensure userPrompt is always part of the saved data
+        userPrompt, // Ensure userPrompt is always part of the saved data
+        lastOutput, // Track the last output for this node
+        lastInputData // Track the last input data that came into this node
       });
     }
-  }, [systemPrompt, userPrompt, data]);
+  }, [systemPrompt, userPrompt, lastOutput, lastInputData, data]);
   
   // Focus system prompt input when editing
   useEffect(() => {
@@ -77,17 +82,85 @@ const AIChatNode = ({ data, isConnectable, id }) => {
     setIsEditingSystem(false);
   };
 
+  // Helper to create a composite prompt using incoming data
+  const createEnhancedPrompt = (basePrompt, inputData) => {
+    // First, ensure we have valid input
+    if (!basePrompt && !inputData) return "";
+    if (!inputData) return basePrompt;
+    
+    // Initialize the enhanced prompt with the user's base prompt
+    let enhancedPrompt = basePrompt || "";
+    
+    // Extract the most relevant content from inputData
+    let context = "";
+    
+    // If inputData has PDF text, format it appropriately
+    if (inputData.text) {
+      context += `PDF CONTENT:\n${inputData.text}\n\n`;
+      if (inputData.filename) {
+        context += `This content is from file: ${inputData.filename}\n\n`;
+      }
+    } 
+    // If inputData has AI-generated response, format it as context
+    else if (inputData.response) {
+      context += `PREVIOUS AI OUTPUT:\n${inputData.response}\n\n`;
+    }
+    // Fallback if other data types are received
+    else if (typeof inputData === 'object') {
+      // Try to create a readable context from whatever data is available
+      const safeStringify = (obj) => {
+        try {
+          // Get all non-null values as a formatted string
+          return Object.entries(obj)
+            .filter(([key, value]) => value !== null && value !== undefined && key !== 'error')
+            .map(([key, value]) => {
+              if (typeof value === 'object') {
+                return `${key}: (complex data)`;
+              }
+              return `${key}: ${value}`;
+            })
+            .join('\n');
+        } catch (e) {
+          return "Unparseable data";
+        }
+      };
+      
+      context += `CONTEXT DATA:\n${safeStringify(inputData)}\n\n`;
+    }
+    
+    // Combine context with user prompt if there's any user input
+    if (enhancedPrompt && context) {
+      return `${context}Please answer the following question or complete the following task based on the above context:\n\n${enhancedPrompt}`;
+    } 
+    // If there's only context but no user input, make a generic prompt
+    else if (context && !enhancedPrompt) {
+      return `${context}Please analyze the above information and provide insights or a summary.`;
+    }
+    // Fallback to just the user's prompt if we have nothing else
+    return enhancedPrompt;
+  };
+
   // Main processing function called by the flow
-  const generateAIResponse = async () => { // No longer takes inputPrompt argument here
-    // Use the component's userPrompt state
-    const currentPrompt = userPrompt;
+  const generateAIResponse = async (inputData) => {
+    // Set incoming data flag and store input
+    setHasIncomingData(!!inputData && Object.keys(inputData).length > 0);
+    setLastInputData(inputData || null);
+    
+    // Create an enhanced prompt that incorporates incoming data if available
+    const enhancedPrompt = createEnhancedPrompt(userPrompt, inputData);
+    
+    // Fall back to user prompt if enhancedPrompt is empty
+    const currentPrompt = enhancedPrompt || userPrompt;
 
     // Input validation
     if (!currentPrompt || !currentPrompt.trim()) {
-      console.warn(`AI Chat Node (${nodeIdRef.current}): User prompt is empty.`);
+      console.warn(`AI Chat Node (${nodeIdRef.current}): No usable prompt available.`);
       setNodeState('error');
       setIsGenerating(false);
-      return { error: "User prompt is empty." }; 
+      return { 
+        error: "No usable prompt available.",
+        originalData: inputData // Pass through original data
+      }; 
     }
     
     setIsGenerating(true);
@@ -101,7 +174,7 @@ const AIChatNode = ({ data, isConnectable, id }) => {
         },
         body: JSON.stringify({
           system_prompt: systemPrompt,
-          user_prompt: currentPrompt // Use the node's internal prompt
+          user_prompt: currentPrompt
         })
       });
 
@@ -120,15 +193,30 @@ const AIChatNode = ({ data, isConnectable, id }) => {
       setIsGenerating(false);
       setNodeState('complete');
       
+      // Store the last output
+      const output = { 
+        response: aiResponse,
+        generatedFrom: { 
+          userPrompt: userPrompt,
+          systemPrompt: systemPrompt,
+          inputData: inputData // Reference to incoming data that informed this response
+        }
+      };
+      
+      setLastOutput(output);
+      
       // Output the response in JSON format for the next node
-      return { response: aiResponse }; 
+      return output; 
 
     } catch (error) {
       console.error(`AI Chat Node (${nodeIdRef.current}) Error:`, error);
       setIsGenerating(false);
       setNodeState('error');
-      // Output an error object
-      return { error: error.message || 'Failed to generate response' }; 
+      // Output an error object, but also pass through original data
+      return { 
+        error: error.message || 'Failed to generate response',
+        originalData: inputData // Pass through original data
+      }; 
     }
   };
   
@@ -136,10 +224,8 @@ const AIChatNode = ({ data, isConnectable, id }) => {
   useEffect(() => {
     if (data.registerNodeForFlow && nodeIdRef.current) {
       const unregister = data.registerNodeForFlow(nodeIdRef.current, async (inputData) => {
-        // Ignore inputData for prompt source, always use the node's own prompt
-        // inputData is only used to trigger the execution
-        console.log(`AI Processor Node ${nodeIdRef.current} triggered. Using internal prompt.`);
-        return await generateAIResponse(); // Call with no arguments
+        console.log(`AI Processor Node ${nodeIdRef.current} triggered with input:`, inputData);
+        return await generateAIResponse(inputData);
       });
       
       return unregister; // Cleanup registration
@@ -149,7 +235,7 @@ const AIChatNode = ({ data, isConnectable, id }) => {
 
   return (
     // Add theme class alongside other classes
-    <div className={`ai-chat-node node-container state-${nodeState} ${theme}`}>
+    <div className={`ai-chat-node node-container state-${nodeState} ${theme} ${data.isInExecutionPath ? 'in-path' : ''}`}>
       <Handle type="target" position={Position.Top} id="a" isConnectable={isConnectable} className="node-handle target-handle" />
       
       <div className="node-header ai-chat-header">
@@ -194,14 +280,21 @@ const AIChatNode = ({ data, isConnectable, id }) => {
           )}
         </div>
 
-        {/* User Prompt Input Section - Added Back */}
+        {/* User Prompt Input Section */}
         <div className="user-prompt-section">
-          <label className="user-prompt-label">User Prompt</label>
+          <label className="user-prompt-label">
+            User Prompt
+            {hasIncomingData && lastInputData && (
+              <span className="input-data-indicator">
+                (Using data from previous node)
+              </span>
+            )} 
+          </label>
           <textarea 
             value={userPrompt} 
             onChange={handleUserPromptChange} 
             className="user-prompt-input node-textarea" 
-            rows={4} // Give it a bit more space 
+            rows={4}
             placeholder="Enter the prompt for the AI..."
             disabled={isGenerating} />
         </div> 
