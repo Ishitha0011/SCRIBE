@@ -1,7 +1,7 @@
 /* Common Node Styles - Modern UI Update */
 .node-container {
-  min-width: 240px;
-  max-width: 360px;
+  min-width: 300px;
+  max-width: 400px;
   background-color: var(--background-primary, #ffffff);
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
@@ -1651,4 +1651,86 @@
 .ai-chat-node .user-prompt-input:disabled {
   background-color: var(--background-secondary, #f8f9fa);
   opacity: 0.7;
+}
+
+/* Web Scraper Node Styles */
+.web-scraper-node {
+  min-width: 300px; /* Keep minimum width */
+  /* Let content determine max-width up to node-container limit */
+  /* Remove fixed width and min-height */
+  background: var(--background-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.web-scraper-node .node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.web-scraper-node .node-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.web-scraper-node .url-input-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.web-scraper-node .url-input {
+  width: 100%;
+  /* Increase padding to make the input field taller, similar to YouTube node */
+  padding: 12px 16px; 
+  border: 1px solid var(--border-color);
+  border-radius: 8px; /* Match YouTube node's input border-radius */
+  font-size: 14px; /* Slightly larger font */
+  background: var(--background-primary);
+  color: var(--text-primary);
+  box-sizing: border-box;
+  min-height: 45px; /* Ensure minimum height */
+}
+
+.web-scraper-node .url-input:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(246, 246, 247, 0.1);
+}
+
+/* Handle styles for connections */
+.web-scraper-node .node-handle {
+  width: 12px;
+  height: 12px;
+  background: var(--accent-color);
+  border: 2px solid var(--background-primary);
+  border-radius: 50%;
+}
+
+.web-scraper-node .node-handle:hover {
+  background: var(--accent-color-hover);
+  transform: scale(1.1);
+}
+
+/* Ensure the node is visible when selected */
+.web-scraper-node.selected {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(121, 82, 179, 0.2);
+}
+
+/* Remove all the extra styling we don't need */
+.web-scraper-node .website-preview,
+.web-scraper-node .content-preview,
+.web-scraper-node .scrape-controls,
+.web-scraper-node .error-message,
+.web-scraper-node .flow-info {
+  display: none;
 } 

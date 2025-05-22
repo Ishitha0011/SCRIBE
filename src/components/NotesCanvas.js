@@ -18,7 +18,6 @@ import { Save, RefreshCw, ZoomIn, ZoomOut, Maximize2, Grid, Trash2 } from 'lucid
 import { useTheme } from '../ThemeContext';
 
 // Custom Node Types (will be implemented separately)
-import TextNode from './nodes/TextNode';
 import PDFNode from './nodes/PDFNode';
 import YouTubeNode from './nodes/YouTubeNode';
 import AIChatNode from './nodes/AIChatNode';
@@ -26,6 +25,7 @@ import AIOutputNode from './nodes/AIOutputNode';
 import FileNode from './nodes/FileNode';
 import NoteNode from './nodes/NoteNode';
 import StartNode from './nodes/StartNode';
+import WebScraperNode from './nodes/WebScraperNode';
 
 // Function to create node component wrappers that pass the ID properly
 const createNodeWrapper = (NodeComponent) => {
@@ -38,7 +38,6 @@ const createNodeWrapper = (NodeComponent) => {
 
 // Map of node types to their components, with proper ID passing
 const nodeTypes = {
-  textNode: createNodeWrapper(TextNode),
   pdfNode: createNodeWrapper(PDFNode),
   youtubeNode: createNodeWrapper(YouTubeNode),
   aiChatNode: createNodeWrapper(AIChatNode),
@@ -46,6 +45,7 @@ const nodeTypes = {
   fileNode: createNodeWrapper(FileNode),
   noteNode: createNodeWrapper(NoteNode),
   startNode: createNodeWrapper(StartNode),
+  webScraperNode: createNodeWrapper(WebScraperNode),
 };
 
 const NotesCanvas = ({ canvasData, onSave, canvasId }) => {

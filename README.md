@@ -99,6 +99,7 @@ The application logs various events:
 ### Log Format
 
 Each log entry includes:
+
 - Timestamp
 - Event type (info, error, request, response)
 - Action (upload_video, generate_content, etc.)
@@ -107,3 +108,45 @@ Each log entry includes:
 ## Using the Application
 
 // ... rest of README content
+
+# API Key Configuration
+
+## Setting Up API Keys
+
+1. Copy the template configuration file:
+
+   ```bash
+   cp src/config.template.js src/config.js
+   ```
+
+2. Edit `src/config.js` and replace the placeholder values with your actual API keys:
+   ```javascript
+   const config = {
+     GEMINI_API_KEY: "your_actual_gemini_api_key",
+     // ... other configurations
+   };
+   ```
+
+## Security Notes
+
+- Never commit `src/config.js` to version control
+- Keep your API keys secure and don't share them
+- If you accidentally commit an API key, rotate it immediately
+- Use environment variables for production deployments
+
+## Available API Keys
+
+- **Gemini API**: Required for video analysis and AI processing
+
+  - Get your API key from: [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+- **Local AI API**: Required for chat functionality
+  - Configure the URL in `config.js` to point to your local AI server
+
+## Troubleshooting
+
+If you see errors about missing API keys:
+
+1. Check that `src/config.js` exists and contains valid API keys
+2. Verify that the API keys are correctly formatted
+3. Ensure the API services are accessible from your network

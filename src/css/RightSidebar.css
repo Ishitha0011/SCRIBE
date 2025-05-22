@@ -394,3 +394,65 @@
     max-height: 200px; /* Limit dropdown height on smaller screens */
   }
 }
+
+/* Node Library Styles */
+.node-library {
+  padding: 12px;
+}
+
+.node-category {
+  margin-bottom: 20px;
+}
+
+.category-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  padding: 0 8px;
+}
+
+.node-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.node-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.node-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+}
+
+.node-item:active {
+  cursor: grabbing;
+}
+
+.node-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-color);
+}
+
+/* Dark theme specific styles */
+.dark .node-item {
+  background: var(--bg-secondary-dark);
+  border-color: var(--border-color-dark);
+}
+
+.dark .node-item:hover {
+  background: var(--bg-hover-dark);
+  border-color: var(--accent-color-dark);
+}

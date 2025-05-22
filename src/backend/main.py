@@ -19,6 +19,10 @@ import requests
 from threading import Thread
 import queue
 import time
+import httpx
+from bs4 import BeautifulSoup
+import aiohttp
+from urllib.parse import urlparse
 
 # Imports for Gemini image processing
 from google import genai as gemini_ai # Renamed to avoid conflict with genai used for text
@@ -28,7 +32,6 @@ from google.genai import types as gemini_types
 from langchain_community.document_loaders import PyPDFLoader
 from groq import Groq
 import tempfile
-import httpx # Added for explicit httpx client creation
 
 # Load environment variables from .env file
 load_dotenv()
@@ -1166,6 +1169,77 @@ async def pdf_ask_question(request: PDFQuestionRequest):
     except Exception as e:
         logging.error(f"Error in PDF ask question endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+
+# Add new model for web scraping request
+class ScrapeRequest(BaseModel):
+    url: str
+
+# Add new endpoint for web scraping
+@app.post("/api/scrape")
+async def scrape_website(request: ScrapeRequest):
+    """Scrape content from a website"""
+    try:
+        # Validate URL
+        parsed_url = urlparse(request.url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise HTTPException(status_code=400, detail="Invalid URL format")
+
+        # Set up headers to mimic a browser
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(request.url, headers=headers) as response:
+                if response.status != 200:
+                    raise HTTPException(status_code=response.status, detail=f"Failed to fetch website: {response.status}")
+
+                html = await response.text()
+                
+                # Parse HTML with BeautifulSoup
+                soup = BeautifulSoup(html, 'html.parser')
+                
+                # Remove script and style elements
+                for script in soup(["script", "style"]):
+                    script.decompose()
+                
+                # Get text content
+                text = soup.get_text(separator='\n', strip=True)
+                
+                # Clean up text
+                lines = (line.strip() for line in text.splitlines())
+                chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+                text = '\n'.join(chunk for chunk in chunks if chunk)
+                
+                # Get title
+                title = soup.title.string if soup.title else "No title found"
+                
+                # Get meta description
+                meta_desc = soup.find('meta', attrs={'name': 'description'})
+                description = meta_desc['content'] if meta_desc else None
+                
+                # Get main content (try to find the main article or content area)
+                main_content = None
+                for tag in ['article', 'main', '[role="main"]', '#content', '.content']:
+                    content = soup.select_one(tag)
+                    if content:
+                        main_content = content.get_text(separator='\n', strip=True)
+                        break
+                
+                return {
+                    "title": title,
+                    "description": description,
+                    "text": text,
+                    "main_content": main_content,
+                    "url": request.url
+                }
+
+    except aiohttp.ClientError as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching website: {str(e)}")
+    except Exception as e:
+        logging.error(f"Error scraping website: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error scraping website: {str(e)}")
 
 
 if __name__ == "__main__":

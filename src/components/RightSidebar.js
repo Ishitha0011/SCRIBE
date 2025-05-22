@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, MessageSquare, BookOpen, FlaskConical } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, MessageSquare, BookOpen, FlaskConical, Globe } from 'lucide-react';
 import AskAI from './AskAI';
 import Notes from './Notes';  // Updated import to use new Notes component
 import Labs from './Labs';

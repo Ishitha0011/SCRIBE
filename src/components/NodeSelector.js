@@ -1,5 +1,5 @@
 import React from 'react';
-import { Type, FileText, Youtube, MessageSquare, File, StickyNote, Folder, Bot, Play } from 'lucide-react';
+import { Type, FileText, Youtube, MessageSquare, File, StickyNote, Folder, Bot, Play, Globe } from 'lucide-react';
 import '../css/NodeSelector.css';
 import { useTheme } from '../ThemeContext';
 
@@ -31,10 +31,10 @@ const NodeSelector = ({ isCanvasActive }) => {
       description: 'Starting point for flow execution'
     },
     { 
-      type: 'textNode', 
-      label: 'Text',
-      icon: <Type size={18} />,
-      description: 'Add a simple text block'
+      type: 'webScraperNode', 
+      label: 'Web Scraper',
+      icon: <Globe size={18} />,
+      description: 'Extract content from websites'
     },
     { 
       type: 'noteNode', 
@@ -54,8 +54,8 @@ const NodeSelector = ({ isCanvasActive }) => {
       icon: <Youtube size={18} />,
       description: 'Process YouTube video or upload'
     },
-    { 
-      type: 'aiChatNode', 
+    {
+      type: 'aiChatNode',
       label: 'AI Chat',
       icon: <MessageSquare size={18} />,
       description: 'AI conversation with prompt'
@@ -82,7 +82,7 @@ const NodeSelector = ({ isCanvasActive }) => {
     },
     {
       title: 'Basic',
-      nodes: ['textNode', 'noteNode']
+      nodes: ['webScraperNode', 'noteNode']
     },
     {
       title: 'Media',
