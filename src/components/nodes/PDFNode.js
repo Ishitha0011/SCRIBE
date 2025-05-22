@@ -1,26 +1,121 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Handle, Position } from 'reactflow';
 import '../../css/Nodes.css';
-import { FileText, Upload, X, Eye, Download } from 'lucide-react';
+import { FileText, Upload, X, Eye, Download, RefreshCw as ProcessingIcon, CheckCircle, AlertCircle } from 'lucide-react';
 
-const PDFNode = ({ data, isConnectable }) => {
+const PDFNode = ({ data, isConnectable, id }) => {
   const [file, setFile] = useState(data.file || null);
   const [preview, setPreview] = useState(data.preview || null);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = React.useRef(null);
+  const [extractedText, setExtractedText] = useState(data.extractedText || null);
+  const [extractionError, setExtractionError] = useState(data.extractionError || null);
+  const fileInputRef = useRef(null);
   
-  // Update data when file changes
+  // Add flow execution states
+  const [nodeState, setNodeState] = useState('idle'); // idle, processing, complete, error
+  const nodeIdRef = useRef(id);
+  
+  // Ensure we track the node ID
+  useEffect(() => {
+    nodeIdRef.current = id;
+  }, [id]);
+  
+  // Update data when file, preview, extractedText, or error changes
   useEffect(() => {
     if (data.onChange) {
-      data.onChange({ file, preview });
+      data.onChange({ 
+        file, 
+        preview, 
+        extractedText, 
+        extractionError 
+      });
     }
-  }, [file, preview, data]);
+  }, [file, preview, extractedText, extractionError, data]);
   
-  const handleFileChange = (e) => {
+  // Handle flow execution state changes
+  useEffect(() => {
+    let timer;
+    if (data.isExecuting) {
+      setNodeState('processing');
+    } else if (data.executionComplete) {
+      setNodeState('complete');
+      timer = setTimeout(() => setNodeState('idle'), 2000);
+    } else if (data.executionError) {
+      setNodeState('error');
+      timer = setTimeout(() => setNodeState('idle'), 3000);
+    } else if (!data.isInExecutionPath) {
+      setNodeState('idle');
+    }
+    return () => clearTimeout(timer);
+  }, [data.isExecuting, data.executionComplete, data.executionError, data.isInExecutionPath]);
+  
+  // Process PDF file and extract text
+  const processPDFFile = async (fileToProcess) => {
+    if (!fileToProcess || fileToProcess.type !== 'application/pdf') {
+      return { error: "No PDF file available to process" };
+    }
+    
+    try {
+      setNodeState('processing');
+      
+      // If we already have extracted text for this file, use it
+      if (extractedText && !extractionError) {
+        return { 
+          success: true, 
+          text: extractedText,
+          filename: fileToProcess.name,
+          filesize: fileToProcess.size
+        };
+      }
+      
+      // Otherwise, extract the text
+      const formData = new FormData();
+      formData.append('file', fileToProcess);
+
+      const response = await fetch('http://localhost:8000/api/pdf/extract-text', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to extract text. Unknown error.' }));
+        throw new Error(errorData.detail || `HTTP error ${response.status}`);
+      }
+
+      const result = await response.json();
+      setExtractedText(result.text);
+      setExtractionError(null);
+      
+      return {
+        success: true,
+        text: result.text,
+        filename: fileToProcess.name,
+        filesize: fileToProcess.size,
+        contentType: fileToProcess.type
+      };
+      
+    } catch (error) {
+      console.error("Error processing PDF:", error);
+      setExtractionError(error.message || 'Error processing PDF file');
+      setNodeState('error');
+      
+      return {
+        error: error.message || 'Failed to process PDF file',
+        filename: fileToProcess.name
+      };
+    }
+  };
+  
+  const handleFileChange = async (e) => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
+
+    // Reset states for new file
+    setFile(null);
+    setPreview(null);
+    setExtractedText(null);
+    setExtractionError(null);
     
-    // Check file type
     const fileType = selectedFile.type;
     const validTypes = [
       'application/pdf',
@@ -44,20 +139,62 @@ const PDFNode = ({ data, isConnectable }) => {
     if (fileType.startsWith('image/')) {
       // For images, create a direct preview
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreview(e.target.result);
+      reader.onload = (ev) => {
+        setPreview(ev.target.result);
         setFile(selectedFile);
         setIsUploading(false);
       };
       reader.readAsDataURL(selectedFile);
+    } else if (fileType === 'application/pdf') {
+      // For PDFs, upload to extract text
+      setFile(selectedFile); // Set file object immediately for display
+      
+      // Call the process function directly during upload for immediate feedback
+      await processPDFFile(selectedFile);
+      setIsUploading(false);
+      
     } else {
-      // For documents, we'd normally use a library like pdf.js
-      // For now, we'll just set the file without a preview
+      // For other documents (DOC, PPTX, etc.), just set the file without a preview or extraction
       setFile(selectedFile);
-      setPreview(null);
+      setPreview(null); // Ensure preview is null
+      setExtractedText(null); // Ensure no old extracted text remains
+      setExtractionError(null); // Ensure no old error remains
       setIsUploading(false);
     }
   };
+  
+  // Register this node for flow execution
+  useEffect(() => {
+    if (data.registerNodeForFlow && nodeIdRef.current) {
+      const unregister = data.registerNodeForFlow(nodeIdRef.current, async (inputData) => {
+        console.log(`PDF Node ${nodeIdRef.current} processing as part of flow`);
+        
+        // Process the current file when the flow runs
+        if (file && file.type === 'application/pdf') {
+          const result = await processPDFFile(file);
+          return result; // This gets passed to the next node
+        } else if (file) {
+          // If we have a non-PDF file, return basic info
+          return {
+            success: true,
+            filename: file.name,
+            filesize: file.size,
+            contentType: file.type,
+            message: "Non-PDF file. No text extraction performed."
+          };
+        } else {
+          // If no file is uploaded
+          return {
+            error: "No file available to process", 
+            message: "Please upload a file first."
+          };
+        }
+      });
+      
+      return unregister; // Clean up registration when node unmounts
+    }
+    // Re-register if registerNodeForFlow changes
+  }, [data.registerNodeForFlow, file]);
   
   const handleUploadClick = () => {
     fileInputRef.current.click();
@@ -66,13 +203,17 @@ const PDFNode = ({ data, isConnectable }) => {
   const handleRemoveFile = () => {
     setFile(null);
     setPreview(null);
+    setExtractedText(null);
+    setExtractionError(null);
   };
   
   const handleViewFile = () => {
     if (file) {
-      // In a real implementation, this would open the file in a viewer
-      // For now, we'll just show an alert
-      alert(`Viewing file: ${file.name}`);
+      // Create URL for the file and open in new tab
+      const url = URL.createObjectURL(file);
+      window.open(url, '_blank');
+      // Clean up URL after a short delay
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
   };
   
@@ -90,16 +231,45 @@ const PDFNode = ({ data, isConnectable }) => {
     }
   };
 
+  // Status indicators based on execution state
+  const renderStatusIndicator = () => {
+    if (nodeState === 'processing') {
+      return (
+        <div className="node-status-indicator processing">
+          <ProcessingIcon size={14} className="spinning" />
+          <span>Processing...</span>
+        </div>
+      );
+    } else if (nodeState === 'complete') {
+      return (
+        <div className="node-status-indicator complete">
+          <CheckCircle size={14} />
+          <span>Processed</span>
+        </div>
+      );
+    } else if (nodeState === 'error') {
+      return (
+        <div className="node-status-indicator error">
+          <AlertCircle size={14} />
+          <span>Error</span>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="pdf-node node-container">
+    <div className={`pdf-node node-container state-${nodeState} ${data.isInExecutionPath ? 'in-path' : ''}`}>
       <Handle
         type="target"
         position={Position.Top}
+        id="in"
         isConnectable={isConnectable}
+        className="node-handle target-handle"
       />
       <div className="node-header">
-        <FileText size={16} />
-        <div className="node-title">Document</div>
+        <FileText size={16} className="node-title-icon" />
+        <div className="node-title">PDF Processor</div>
       </div>
       <div className="node-content">
         <input 
@@ -123,6 +293,15 @@ const PDFNode = ({ data, isConnectable }) => {
                 <div className="file-size">
                   {(file.size / 1024).toFixed(1)} KB
                 </div>
+                {/* Display extraction status for PDF */}
+                {file.type === 'application/pdf' && (
+                  <div className="extraction-status">
+                    {isUploading && <span>Extracting text...</span>}
+                    {extractionError && <span className="error-text">Error: {extractionError}</span>}
+                    {extractedText && !isUploading && !extractionError && <span className="success-text">Text extracted</span>}
+                    {!extractedText && !isUploading && !extractionError && <span>Ready to extract text (if re-upload)</span>}
+                  </div>
+                )}
               </div>
             )}
             
@@ -155,7 +334,7 @@ const PDFNode = ({ data, isConnectable }) => {
             <button 
               className="upload-btn"
               onClick={handleUploadClick}
-              disabled={isUploading}
+              disabled={isUploading || nodeState === 'processing'}
             >
               {isUploading ? (
                 <span>Uploading...</span>
@@ -171,11 +350,16 @@ const PDFNode = ({ data, isConnectable }) => {
             </div>
           </div>
         )}
+        
+        {/* Status indicator for flow execution */}
+        {renderStatusIndicator()}
       </div>
       <Handle
         type="source"
         position={Position.Bottom}
+        id="out"
         isConnectable={isConnectable}
+        className="node-handle source-handle"
       />
     </div>
   );
