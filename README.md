@@ -179,6 +179,7 @@ Once Scribe is up and running, you can explore its various features:
    - Once uploaded and processed, select different analysis modes (e.g., captions, summary, key moments) to view the AI-generated results.
    - Use the interactive timeline to navigate through the video and its analyses.
 
+
 **3. AI-Enhanced Editor & Workspace:**
    - **File Management (Left Sidebar):**
      - Browse your selected workspace directory structure.
@@ -250,7 +251,3 @@ The log server aggregates logs from:
 - Supabase interactions (if any are logged to this server)
 
 Each log entry typically includes a timestamp, log level, message, and source.
-
-## License
-
-MIT

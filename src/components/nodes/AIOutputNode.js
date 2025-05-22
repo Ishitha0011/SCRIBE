@@ -118,6 +118,18 @@ const AIOutputNode = ({ data, isConnectable, id }) => {
       return null;
     }
     
+    // Handle web scraping data
+    if (inputData.title || inputData.text || inputData.main_content) {
+      setContentType('web');
+      setSourceInfo({
+        type: 'Webpage',
+        title: inputData.title,
+        url: inputData.url
+      });
+      // Return the main content if available, otherwise the full text
+      return inputData.main_content || inputData.text;
+    }
+    
     // Handle PDF text extraction data
     if (inputData.text && inputData.filename) {
       setContentType('pdf');

@@ -84,9 +84,17 @@ const AIChatNode = ({ data, isConnectable, id }) => {
 
   // Helper to create a composite prompt using incoming data
   const createEnhancedPrompt = (basePrompt, inputData) => {
+    console.log('Creating enhanced prompt with:', { basePrompt, inputData });
+    
     // First, ensure we have valid input
-    if (!basePrompt && !inputData) return "";
-    if (!inputData) return basePrompt;
+    if (!basePrompt && !inputData) {
+      console.warn('No base prompt or input data available');
+      return "";
+    }
+    if (!inputData) {
+      console.log('No input data, using base prompt only');
+      return basePrompt;
+    }
     
     // Initialize the enhanced prompt with the user's base prompt
     let enhancedPrompt = basePrompt || "";
@@ -94,8 +102,39 @@ const AIChatNode = ({ data, isConnectable, id }) => {
     // Extract the most relevant content from inputData
     let context = "";
     
+    // If inputData has video analysis data
+    if (inputData.analysis) {
+      console.log('Processing video analysis data');
+      context += `VIDEO ANALYSIS:\n${inputData.analysis}\n\n`;
+      if (inputData.title) {
+        context += `Video Title: ${inputData.title}\n`;
+      }
+      if (inputData.url) {
+        context += `Video URL: ${inputData.url}\n\n`;
+      }
+    }
+    // If inputData has web scraping data
+    else if (inputData.title || inputData.text || inputData.main_content) {
+      console.log('Processing web scraping data');
+      context += `WEBPAGE CONTENT:\n`;
+      if (inputData.title) {
+        context += `Title: ${inputData.title}\n`;
+      }
+      if (inputData.description) {
+        context += `Description: ${inputData.description}\n`;
+      }
+      if (inputData.main_content) {
+        context += `Main Content:\n${inputData.main_content}\n\n`;
+      } else if (inputData.text) {
+        context += `Content:\n${inputData.text}\n\n`;
+      }
+      if (inputData.url) {
+        context += `Source URL: ${inputData.url}\n\n`;
+      }
+    }
     // If inputData has PDF text, format it appropriately
-    if (inputData.text) {
+    else if (inputData.text) {
+      console.log('Processing PDF data');
       context += `PDF CONTENT:\n${inputData.text}\n\n`;
       if (inputData.filename) {
         context += `This content is from file: ${inputData.filename}\n\n`;
@@ -103,10 +142,12 @@ const AIChatNode = ({ data, isConnectable, id }) => {
     } 
     // If inputData has AI-generated response, format it as context
     else if (inputData.response) {
+      console.log('Processing previous AI output');
       context += `PREVIOUS AI OUTPUT:\n${inputData.response}\n\n`;
     }
     // Fallback if other data types are received
     else if (typeof inputData === 'object') {
+      console.log('Processing generic object data');
       // Try to create a readable context from whatever data is available
       const safeStringify = (obj) => {
         try {
@@ -129,19 +170,27 @@ const AIChatNode = ({ data, isConnectable, id }) => {
     }
     
     // Combine context with user prompt if there's any user input
+    let finalPrompt;
     if (enhancedPrompt && context) {
-      return `${context}Please answer the following question or complete the following task based on the above context:\n\n${enhancedPrompt}`;
+      finalPrompt = `${context}Please answer the following question or complete the following task based on the above context:\n\n${enhancedPrompt}`;
     } 
     // If there's only context but no user input, make a generic prompt
     else if (context && !enhancedPrompt) {
-      return `${context}Please analyze the above information and provide insights or a summary.`;
+      finalPrompt = `${context}Please analyze the above information and provide insights or a summary.`;
     }
     // Fallback to just the user's prompt if we have nothing else
-    return enhancedPrompt;
+    else {
+      finalPrompt = enhancedPrompt;
+    }
+    
+    console.log('Final enhanced prompt:', finalPrompt);
+    return finalPrompt;
   };
 
   // Main processing function called by the flow
   const generateAIResponse = async (inputData) => {
+    console.log('AIChatNode received input data:', inputData);
+    
     // Set incoming data flag and store input
     setHasIncomingData(!!inputData && Object.keys(inputData).length > 0);
     setLastInputData(inputData || null);
@@ -167,6 +216,13 @@ const AIChatNode = ({ data, isConnectable, id }) => {
     setNodeState('processing');
     
     try {
+      // Log the request for debugging
+      console.log('Sending request to AI API:', {
+        systemPrompt,
+        currentPrompt,
+        hasInputData: !!inputData
+      });
+
       const response = await fetch('http://localhost:8000/api/ai-chat', {
         method: 'POST',
         headers: {
@@ -180,13 +236,17 @@ const AIChatNode = ({ data, isConnectable, id }) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown API error' }));
+        console.error('API error response:', errorData);
         throw new Error(`API error ${response.status}: ${errorData.detail || response.statusText}`);
       }
 
       const responseData = await response.json();
+      console.log('Received response from AI API:', responseData);
+      
       const aiResponse = responseData.response;
 
       if (!aiResponse) {
+        console.error('Empty response from AI API');
         throw new Error("Received empty response from API");
       }
       
@@ -204,6 +264,9 @@ const AIChatNode = ({ data, isConnectable, id }) => {
       };
       
       setLastOutput(output);
+      
+      // Log the output for debugging
+      console.log('AI Chat Node final output:', output);
       
       // Output the response in JSON format for the next node
       return output; 
