@@ -15,11 +15,6 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* Node states for flow execution */
-.node-container.state-idle {
-  /* Default border */
-}
-
 .node-container.state-processing,
 .node-container.in-path /* Keep in-path highlight */
 {
@@ -1627,11 +1622,6 @@
 
 .ai-chat-node.state-error {
   border-color: #dc3545; /* Red border */
-}
-
-/* User Prompt Section - Added Back */
-.ai-chat-node .user-prompt-section {
-  /* Uses .node-content gap for spacing */
 }
 
 .ai-chat-node .user-prompt-label {

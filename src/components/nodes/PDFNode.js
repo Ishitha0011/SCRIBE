@@ -129,7 +129,8 @@ const PDFNode = ({ data, isConnectable, id }) => {
     ];
     
     if (!validTypes.includes(fileType)) {
-      alert('Please select a valid file (PDF, DOC, DOCX, PPTX, or image)');
+      // alert('Please select a valid file (PDF, DOC, DOCX, PPTX, or image)');
+      alert('Please select a valid file (PDF, DOC, DOCX or PPTX)');
       return;
     }
     
@@ -341,13 +342,14 @@ const PDFNode = ({ data, isConnectable, id }) => {
               ) : (
                 <>
                   <Upload size={16} />
-                  <span>Upload PDF/DOC/Image</span>
+                  {/* <span>Upload PDF/DOC/Image</span> */}
+                  <span>Upload PDF/DOC</span>
                 </>
               )}
             </button>
-            <div className="upload-hint">
+            {/* <div className="upload-hint">
               Supports PDF, DOC, DOCX, PPTX, and images
-            </div>
+            </div> */}
           </div>
         )}
         

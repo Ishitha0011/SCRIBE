@@ -1,4 +1,4 @@
-// YouTube node component for video analysis and screenshot capture
+// YouTube node component with modern UI for video analysis
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Handle, Position } from 'reactflow';
 import { Link, X, AlertCircle, RefreshCw, CheckCircle, Play, Film, Eye, Bot, FileText, Clock, Camera, Scissors } from 'lucide-react';
@@ -149,7 +149,7 @@ function YouTubeScreenshotNode({ id, data, isConnectable }) {
       playerRef.current = new window.YT.Player(playerContainerRef.current, {
         videoId: videoId,
         height: '180',
-        width: '320',
+        width: '100%',
         playerVars: {
           controls: 1,
           disablekb: 0,
@@ -510,23 +510,45 @@ Format the output in a clear, structured way that can be used for answering ques
     }
   }, [data.registerNodeForFlow, videoId, url, title, videoAnalysis, analysisState, analysisError]);
 
+  // Hidden canvas for screenshots
+  const hiddenCanvas = <canvas ref={canvasRef} style={{ display: 'none' }} />;
+
   return (
-    <div className={`node-container youtube-screenshot-node state-${nodeState} ${data.isInExecutionPath ? 'in-path' : ''}`}>
+    <div className={`node-container youtube-node state-${nodeState} ${data.isInExecutionPath ? 'in-path' : ''}`} style={{ 
+      borderRadius: '12px',
+      overflow: 'hidden',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.08)'
+    }}>
       <Handle 
         type="target" 
         position={Position.Top} 
-        id="youtube-screenshot-input" 
+        id="youtube-input" 
         isConnectable={isConnectable}
         className="node-handle target-handle"
+        style={{ background: '#ff0000', border: 'none' }}
       />
       
-      <div className="node-header">
-        <Camera size={18} className="node-title-icon" />
+      <div className="node-header" style={{ 
+        background: 'linear-gradient(90deg, #ff0000, #ff4500)',
+        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        color: 'white',
+        fontWeight: 600,
+        fontSize: '14px',
+        borderBottom: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        <Film size={18} className="node-title-icon" />
         <div className="node-title">YouTube Analyzer</div>
       </div>
       
-      <div className="node-content">
-        <div className="url-input-container">
+      <div className="node-content" style={{ padding: '16px' }}>
+        <div className="url-input-container" style={{
+          position: 'relative',
+          marginBottom: '12px'
+        }}>
           <input
             type="text"
             value={url}
@@ -534,10 +556,29 @@ Format the output in a clear, structured way that can be used for answering ques
             placeholder="Enter YouTube URL"
             className="url-input"
             disabled={nodeState === 'processing' || isProcessing || analysisState === 'analyzing'}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              paddingRight: '34px',
+              borderRadius: '8px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              transition: 'border-color 0.2s',
+              outline: 'none',
+              background: 'white',
+              color: '#333'
+            }}
           />
-          <div className="input-icon">
+          <div className="input-icon" style={{ 
+            position: 'absolute',
+            right: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            pointerEvents: 'none',
+            color: '#666'
+          }}>
             {isProcessing ? (
-              <RefreshCw size={16} className="spinning" />
+              <RefreshCw size={16} className="spinning" style={{ animation: 'spin 1s linear infinite' }} />
             ) : url ? (
               <Link size={16} />
             ) : null}
@@ -545,84 +586,311 @@ Format the output in a clear, structured way that can be used for answering ques
         </div>
         
         {videoId && (
-          <div className="video-preview">
-            <div className="video-thumbnail">
-              <img 
-                src={getYouTubeThumbnailUrl(videoId)} 
-                alt={title || "YouTube video thumbnail"} 
-                className="thumbnail-img"
-              />
-              {!showEmbed && (
-                <div className="thumbnail-overlay" onClick={toggleEmbed}>
-                  <Play size={32} />
+          <div className="video-content" style={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            marginBottom: '12px'
+          }}>
+            <div className="video-card" style={{
+              background: '#f8f9fa',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
+            }}>
+              <div className="video-thumbnail" style={{
+                position: 'relative',
+                aspectRatio: '16/9',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                borderBottom: '1px solid #eee'
+              }}>
+                <img 
+                  src={getYouTubeThumbnailUrl(videoId)} 
+                  alt={title || "YouTube video thumbnail"} 
+                  className="thumbnail-img"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.3s',
+                    backgroundColor: '#000'
+                  }}
+                />
+                {!showEmbed && (
+                  <div className="thumbnail-overlay" onClick={toggleEmbed} style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.4)',
+                    transition: 'background 0.2s'
+                  }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: '#ff0000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                    }}>
+                      <Play size={24} color="white" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="video-details" style={{
+                padding: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}>
+                <div className="video-title" style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  lineHeight: '1.3',
+                  color: '#333',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>{title || "YouTube Video"}</div>
+                
+                <div className="video-actions" style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginTop: '4px'
+                }}>
+                  <button 
+                    className="video-action-btn"
+                    onClick={analyzeVideo}
+                    disabled={!videoId || analysisState === 'analyzing'}
+                    style={{
+                      background: '#f0f2f5',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: '#333',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    <Bot size={14} />
+                    {analysisState === 'analyzing' ? 'Analyzing...' : 
+                     analysisState === 'complete' ? 'Analyzed' : 'Analyze Video'}
+                  </button>
+                  
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="icon-btn"
+                      onClick={toggleEmbed}
+                      disabled={nodeState === 'processing' || analysisState === 'analyzing'}
+                      title={showEmbed ? "Hide player" : "Show player"}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #ddd',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: '#666',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Eye size={14} />
+                    </button>
+                    <button 
+                      className="icon-btn"
+                      onClick={removeVideo}
+                      disabled={nodeState === 'processing' || analysisState === 'analyzing'}
+                      title="Remove video"
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #ddd',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: '#666',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-            
-            <div className="video-info">
-              <div className="video-title">{title || "YouTube Video"}</div>
-              <div className="video-actions">
-                <button 
-                  className="video-action-btn"
-                  onClick={toggleEmbed}
-                  disabled={nodeState === 'processing' || analysisState === 'analyzing'}
-                  title={showEmbed ? "Hide player" : "Show player"}
-                >
-                  <Eye size={16} />
-                </button>
-                <button 
-                  className="video-action-btn"
-                  onClick={removeVideo}
-                  disabled={nodeState === 'processing' || analysisState === 'analyzing'}
-                  title="Remove video"
-                >
-                  <X size={16} />
-                </button>
               </div>
             </div>
-          </div>
-        )}
-        
-        {showEmbed && videoId && (
-          <div className="video-player-container">
-            <div id="youtube-player" ref={playerContainerRef}></div>
+            
+            {showEmbed && videoId && (
+              <div className="video-player-container" style={{
+                borderRadius: '8px',
+                overflow: 'hidden',
+                background: '#000',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div 
+                  id="youtube-player" 
+                  ref={playerContainerRef} 
+                  style={{ width: '100%', aspectRatio: '16/9' }}
+                ></div>
+                
+                {mode === 'screenshot' && (
+                  <div className="player-controls" style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: '8px',
+                    background: '#f8f9fa',
+                    borderTop: '1px solid #eee'
+                  }}>
+                    <button 
+                      onClick={takeScreenshot}
+                      disabled={isCapturingScreenshot}
+                      style={{
+                        background: '#3498db',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Camera size={14} />
+                      {isCapturingScreenshot ? 'Capturing...' : 'Take Screenshot'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {videoAnalysis && analysisState === 'complete' && (
+              <div className="analysis-result" style={{
+                background: '#f1f8ff',
+                padding: '12px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                lineHeight: '1.4',
+                maxHeight: '100px',
+                overflowY: 'auto',
+                border: '1px solid #d1e6ff'
+              }}>
+                <div style={{ fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle size={14} color="#0070f3" />
+                  <span>Analysis Complete</span>
+                </div>
+                <p style={{ margin: '0', color: '#444', fontSize: '12px' }}>
+                  Video analysis completed successfully. The results are available for downstream nodes.
+                </p>
+              </div>
+            )}
+            
+            {analysisError && (
+              <div className="analysis-error" style={{
+                background: '#fff5f5',
+                padding: '12px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                color: '#e53e3e',
+                border: '1px solid #fed7d7'
+              }}>
+                <div style={{ fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertCircle size={14} />
+                  <span>Analysis Failed</span>
+                </div>
+                <p style={{ margin: '0', fontSize: '12px' }}>
+                  {analysisError}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
-        <div className={`flow-info ${nodeState !== 'idle' ? 'active' : ''}`}>
+        <div className={`flow-status ${nodeState !== 'idle' || (videoId && videoAnalysis) ? 'active' : ''}`} style={{
+          padding: '10px',
+          borderRadius: '6px',
+          background: nodeState === 'processing' ? '#fcf7e6' :
+                     nodeState === 'complete' ? '#edf7ed' :
+                     nodeState === 'error' ? '#fce8e6' :
+                     videoId && videoAnalysis ? '#f0f7ff' : '#f5f5f5',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '12px',
+          color: nodeState === 'processing' ? '#b06000' :
+                 nodeState === 'complete' ? '#1e7e34' :
+                 nodeState === 'error' ? '#c62828' :
+                 videoId && videoAnalysis ? '#0d47a1' : '#555',
+          border: `1px solid ${
+            nodeState === 'processing' ? '#fee8bc' :
+            nodeState === 'complete' ? '#c8e6c9' :
+            nodeState === 'error' ? '#fad2cf' :
+            videoId && videoAnalysis ? '#bbdefb' : '#e0e0e0'
+          }`
+        }}>
           {nodeState === 'processing' ? (
-            <div className="processing-indicator">
-              <RefreshCw size={16} className="spinning" />
+            <>
+              <RefreshCw size={14} className="spinning" style={{ animation: 'spin 1s linear infinite' }} />
               <span>Processing video...</span>
-            </div>
+            </>
           ) : nodeState === 'complete' ? (
-            <div className="complete-indicator">
-              <CheckCircle size={16} />
+            <>
+              <CheckCircle size={14} />
               <span>Video processed successfully</span>
-            </div>
+            </>
           ) : nodeState === 'error' ? (
-            <div className="error-indicator">
-              <AlertCircle size={16} />
+            <>
+              <AlertCircle size={14} />
               <span>Error processing video</span>
-            </div>
+            </>
+          ) : videoId && videoAnalysis ? (
+            <>
+              <CheckCircle size={14} />
+              <span>Video ready for flow execution</span>
+            </>
           ) : videoId ? (
-            <div className="flow-instruction">
-              <span>Ready for flow execution</span>
-            </div>
+            <>
+              <Film size={14} />
+              <span>Video loaded, needs analysis</span>
+            </>
           ) : (
-            <div className="flow-instruction">
-              <span>Add a YouTube URL to process</span>
-            </div>
+            <>
+              <Film size={14} />
+              <span>Add a YouTube URL to analyze</span>
+            </>
           )}
         </div>
       </div>
       
+      {hiddenCanvas}
+      
       <Handle 
         type="source" 
         position={Position.Bottom} 
-        id="youtube-screenshot-output" 
+        id="youtube-output" 
         isConnectable={isConnectable}
         className="node-handle source-handle"
+        style={{ background: '#ff0000', border: 'none' }}
       />
     </div>
   );

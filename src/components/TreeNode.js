@@ -129,7 +129,11 @@ const TreeNode = ({
               className="RenameInput"
               value={newName}
               onChange={(e) => onNewNameChange(e.target.value)}
-              onKeyDown={(e) => onKeyDown(e, item.id)}
+              onKeyDown={(e) => {
+                if (typeof onKeyDown === 'function') {
+                  onKeyDown(e, item.id);
+                }
+              }}
               onBlur={() => onRename(item.id)}
               onClick={(e) => e.stopPropagation()}
             />

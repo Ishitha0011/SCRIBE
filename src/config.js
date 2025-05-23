@@ -1,12 +1,42 @@
-// Configuration file for the application
+/**
+ * Application configuration settings
+ */
 
-// API base URL
+// Define API base URL for backward compatibility with existing code
 const API_BASE_URL = 'http://localhost:8000/api';
 
-// API Configuration
 export const config = {
-  GEMINI_API_KEY: process.env.REACT_APP_GEMINI_API_KEY || 'your_api_key_here',
-  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000'
+  /**
+   * Gemini API key for direct model access
+   * 
+   * To use the Gemini API directly:
+   * 1. Get an API key from https://aistudio.google.com/app/apikey
+   * 2. Replace 'your_api_key_here' with your actual API key
+   * 3. Keep this key secure and don't commit it to public repositories
+   */
+  GEMINI_API_KEY: "AIzaSyAu5Rc7cLDxND_0hQVNYkGEuDIyGlAXcOU",
+  
+  /**
+   * API base URL
+   * Points to the backend server for API requests
+   */
+  API_BASE_URL: API_BASE_URL,
+  
+  /**
+   * Editor settings
+   */
+  EDITOR: {
+    /**
+     * Default font size in pixels
+     */
+    DEFAULT_FONT_SIZE: 16,
+    
+    /**
+     * Auto-save interval in milliseconds (60 seconds)
+     */
+    AUTO_SAVE_INTERVAL: 60000,
+  }
 };
 
+// Export API_BASE_URL as default for backward compatibility
 export default API_BASE_URL; 

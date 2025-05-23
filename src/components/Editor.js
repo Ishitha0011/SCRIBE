@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive, Brain, HelpCircle, Send, Zap, Edit, Check } from 'lucide-react';
+import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive, Brain, HelpCircle, Send, Edit, Check, PlayCircle, Terminal, RefreshCw, Zap, Layers } from 'lucide-react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -25,7 +25,12 @@ import { useFileContext } from '../FileContext';
 import Switch from './ui/Switch';
 import NotesCanvas from './NotesCanvas';
 import ImageAnalysisPanel from './ImageAnalysisPanel';
+import FlashcardGeneratorUI from './FlashcardGeneratorUI';
+import YouTubeHelperUI from './YouTubeHelperUI'; // Import the new YouTubeHelperUI component
+import { getYouTubeVideoId, extractYouTubeTitle, analyzeYoutubeVideo, extractCodeFromYoutube } from '../utils/youtubeUtils';
+import { config } from '../config';
 import '../css/Editor.css';
+import customCodeBlock from '../utils/codeBlockExtension';
 
 // New Extensions
 import TextStyle from '@tiptap/extension-text-style';
@@ -36,6 +41,7 @@ import SubscriptExtension from '@tiptap/extension-subscript';
 import SuperscriptExtension from '@tiptap/extension-superscript';
 import MathExtension from '@aarkue/tiptap-math-extension'; // Community Math Extension
 import 'katex/dist/katex.min.css'; // Import KaTeX CSS
+import { FlashcardNode, FlashcardSetNode } from '../utils/flashcardNodeExtension';
 
 // Create a lowlight instance with common languages
 const lowlight = createLowlight();
@@ -121,6 +127,26 @@ const Editor = () => {
   
   const [autoSaveInterval, setAutoSaveInterval] = useState(60000); // 1 minute in milliseconds
   const [lastAutoSave, setLastAutoSave] = useState(null);
+
+  const [youtubeHelperInfo, setYoutubeHelperInfo] = useState({
+    mode: 'analyzer', // 'analyzer' or 'coder'
+    link: '',
+    customPrompt: '',
+    position: { top: 0, left: 0 },
+    isVisible: false,
+    isProcessing: false,
+    response: null,
+  });
+  
+  // New state for Flashcard Generator
+  const [flashcardGeneratorInfo, setFlashcardGeneratorInfo] = useState({
+    topic: '',
+    position: { top: 0, left: 0 },
+    isVisible: false,
+    isProcessing: false, // This can be removed if isLoading in the popup is sufficient
+    flashcards: [], // This can be removed if data is passed directly to editor
+    error: null,
+  });
   
   const { theme } = useTheme();
   const {
@@ -230,7 +256,7 @@ const Editor = () => {
         hardBreak: {
           keepMarks: true
         },
-        codeBlock: false, // We'll use CodeBlockLowlight instead
+        codeBlock: false, // We'll use our custom code block extension instead
         strike: false, // Use Strike extension separately
         bold: { HTMLAttributes: { class: 'font-bold' } }, // Optional: add classes for Tailwind/utility CSS
         italic: { HTMLAttributes: { class: 'italic' } },
@@ -310,7 +336,7 @@ const Editor = () => {
           class: 'tiptap-task-item',
         },
       }),
-      CodeBlockLowlight.configure({
+      customCodeBlock.configure({
         lowlight,
         HTMLAttributes: {
           class: 'tiptap-code-block',
@@ -326,6 +352,10 @@ const Editor = () => {
       SubscriptExtension,
       SuperscriptExtension,
       MathExtension.configure({}),
+      
+      // Flashcard Extensions
+      FlashcardNode,
+      FlashcardSetNode,
     ],
     content: '',
     onUpdate,    // Pass memoized onUpdate
@@ -1531,9 +1561,456 @@ const Editor = () => {
     editor?.chain().focus().run();
   };
 
+  // Helper to escape HTML for code blocks if inserting as HTML string
+  const escapeHtml = (unsafe) => {
+    if (typeof unsafe !== 'string') return '';
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // YouTube Helper functions
+  const handleOpenYoutubeHelper = useCallback((mode) => {
+    if (!editor) return;
+    const editorView = editor.view;
+    const editorContainer = editorContainerRef.current;
+
+    if (!editorContainer) return;
+    const containerRect = editorContainer.getBoundingClientRect();
+    
+    const helperWidth = 420; 
+    const helperHeight = mode === 'analyzer' ? 250 : 200;
+
+    setYoutubeHelperInfo(prev => ({
+      ...prev,
+      mode,
+      link: '', // Reset link and prompt when opening
+      customPrompt: '',
+      position: {
+        top: Math.max(20, (containerRect.height - helperHeight) / 2 + editorContainer.scrollTop),
+        left: Math.max(20, (containerRect.width - helperWidth) / 2 + editorContainer.scrollLeft),
+      },
+      isVisible: true,
+      isProcessing: false,
+      response: null,
+    }));
+  }, [editor]); // Removed info.mode dependency as it caused issues, mode is passed directly
+
+  const handleYoutubeHelperCancel = useCallback(() => {
+    setYoutubeHelperInfo(prev => ({ ...prev, isVisible: false, link: '', customPrompt: '' }));
+    editor?.chain().focus().run();
+  }, [editor]);
+
+  // Function to analyze YouTube video using Gemini API
+  const analyzeYoutubeVideo = useCallback(async (url, customPrompt = '') => {
+    const videoId = getYouTubeVideoId(url);
+    if (!videoId) {
+      throw new Error("Invalid YouTube URL");
+    }
+    
+    // Try to get the video title for better context
+    let title = '';
+    try {
+      title = await extractYouTubeTitle(url);
+    } catch (error) {
+      console.warn("Could not extract YouTube title:", error);
+    }
+    
+    // Get API key from config
+    const apiKey = config.GEMINI_API_KEY;
+    
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      throw new Error("Gemini API key not configured. Please update the API key in src/config.js");
+    }
+    
+    // Build system instruction for video content analysis
+    const defaultSystemInstruction = `Analyze this YouTube video and provide a comprehensive summary. Include:
+
+1. Main topics and key points discussed
+2. Important visual elements (diagrams, charts, graphs)
+3. Key timestamps for important moments
+4. Overall summary of the content
+
+Format the output in a clear, structured way that can be used for answering questions about the video.`;
+
+    const systemInstruction = customPrompt || defaultSystemInstruction;
+    
+    // Prepare request body
+    const requestBody = {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              fileData: {
+                fileUri: `https://youtu.be/${videoId}`,
+                mimeType: "video/*",
+              }
+            },
+            {
+              text: "Analyze this video and provide a comprehensive summary of its content.",
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+        responseMimeType: "text/plain"
+      },
+      systemInstruction: {
+        parts: [{ text: systemInstruction }]
+      }
+    };
+    
+    // Make the API call
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Extract the analysis text
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const analysisText = data.candidates[0].content.parts[0].text;
+      return {
+        analysis_text: analysisText,
+        video_id: videoId,
+        title: title
+      };
+    } else {
+      throw new Error("Unexpected response format from Gemini API");
+    }
+  }, []);
+
+  // Function to extract code from YouTube video using Gemini API
+  const extractCodeFromYoutube = useCallback(async (url) => {
+    const videoId = getYouTubeVideoId(url);
+    if (!videoId) {
+      throw new Error("Invalid YouTube URL");
+    }
+    
+    // Get API key from config
+    const apiKey = config.GEMINI_API_KEY;
+    
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      throw new Error("Gemini API key not configured. Please update the API key in src/config.js");
+    }
+    
+    // Build system instruction for code extraction
+    const systemInstruction = `Analyze this YouTube coding tutorial and extract all code snippets shown or explained in the video. 
+
+For each code block:
+1. Identify the programming language
+2. Extract the complete code with proper formatting
+3. Note any filename or context information provided
+4. Capture any crucial instructions for using the code
+
+Format your response as follows:
+- Each code block should be clearly separated
+- Include the language of each code block
+- Provide instructions for implementation if mentioned
+- If there are multiple files, clearly indicate which code belongs to which file
+
+Also provide a summary of the implementation steps explained in the video.`;
+    
+    // Prepare request body
+    const requestBody = {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              fileData: {
+                fileUri: `https://youtu.be/${videoId}`,
+                mimeType: "video/*",
+              }
+            },
+            {
+              text: "Extract all code snippets from this programming tutorial video, along with instructions for implementation.",
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.2,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+        responseMimeType: "text/plain"
+      },
+      systemInstruction: {
+        parts: [{ text: systemInstruction }]
+      }
+    };
+    
+    // Make the API call
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Extract the code and instructions
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const rawText = data.candidates[0].content.parts[0].text;
+      
+      // Parse the response to extract code blocks and instructions
+      const codeBlocks = [];
+      let instructions = "";
+      
+      // Basic parsing of code blocks - this could be enhanced with more sophisticated regex
+      const codeBlockRegex = /```(\w+)?\s*([\s\S]*?)```/g;
+      let match;
+      
+      while ((match = codeBlockRegex.exec(rawText)) !== null) {
+        const language = match[1] || 'text';
+        const code = match[2].trim();
+        
+        // Look for filename hints before the code block
+        const lines = rawText.substring(0, match.index).split('\n');
+        let filename = '';
+        
+        // Check last few lines before code block for filename hints
+        for (let i = lines.length - 1; i >= Math.max(0, lines.length - 5); i--) {
+          const line = lines[i].trim();
+          if (line.match(/file:?\s*[\w.-]+\.([\w]+)/i)) {
+            filename = line.match(/file:?\s*([\w.-]+\.[\w]+)/i)[1];
+            break;
+          }
+        }
+        
+        codeBlocks.push({
+          language,
+          code,
+          filename
+        });
+      }
+      
+      // Extract instructions (text outside code blocks)
+      let plainText = rawText.replace(codeBlockRegex, '');
+      instructions = plainText.trim();
+      
+      return {
+        extracted_code: codeBlocks,
+        instructions,
+        video_id: videoId
+      };
+    } else {
+      throw new Error("Unexpected response format from Gemini API");
+    }
+  }, []);
+
+  const handleYoutubeHelperSubmit = useCallback(async () => {
+    if (!youtubeHelperInfo.link.trim()) return;
+    setYoutubeHelperInfo(prev => ({ ...prev, isProcessing: true }));
+
+    try {
+      const apiKey = config.GEMINI_API_KEY;
+      
+      if (!apiKey || apiKey === 'your_api_key_here') {
+        throw new Error("Gemini API key not configured. Please update the API key in src/config.js");
+      }
+      
+      let result;
+      
+      if (youtubeHelperInfo.mode === 'analyzer') {
+        // Use direct Gemini API integration
+        result = await analyzeYoutubeVideo(
+          youtubeHelperInfo.link, 
+          apiKey,
+          youtubeHelperInfo.customPrompt
+        );
+        
+        if (result && result.analysis_text) {
+          const contentToInsert = `# Analysis of: ${result.title || youtubeHelperInfo.link}\n\n${result.analysis_text}`;
+          editor.chain().focus().insertContent(contentToInsert).run();
+        }
+      } else { // coder mode
+        // Use direct Gemini API integration
+        result = await extractCodeFromYoutube(
+          youtubeHelperInfo.link,
+          apiKey
+        );
+        
+        if (result.extracted_code && result.extracted_code.length > 0) {
+          // Start with a title
+          const titleContent = `# Code from: ${result.title || youtubeHelperInfo.link}\n\n`;
+          editor.chain().focus().insertContent(titleContent).run();
+          
+          // Process instructions and code blocks
+          const instructionParts = result.instructions.split('\n\n');
+          let currentInstructionIndex = 0;
+          
+          // Insert each code block with its context
+          result.extracted_code.forEach((block, index) => {
+            // Look for relevant instruction parts that should go before this code block
+            let relevantInstructions = '';
+            while (currentInstructionIndex < instructionParts.length) {
+              const part = instructionParts[currentInstructionIndex];
+              // Check if this instruction part references the next code block
+              if (index < result.extracted_code.length - 1 && 
+                  (part.includes(result.extracted_code[index + 1].filename) || 
+                   part.toLowerCase().includes(result.extracted_code[index + 1].language))) {
+                break;
+              }
+              
+              // Add this instruction part
+              if (part.trim()) {
+                relevantInstructions += part + '\n\n';
+              }
+              currentInstructionIndex++;
+            }
+            
+            // Insert relevant instructions if any
+            if (relevantInstructions.trim()) {
+              editor.chain().focus().insertContent(relevantInstructions.trim()).run();
+              editor.chain().focus().insertContent('\n\n').run();
+            }
+            
+            // Insert a paragraph with filename if available
+            if (block.filename) {
+              const filenameContent = `**File: ${block.filename}**\n\n`;
+              editor.chain().focus().insertContent(filenameContent).run();
+            }
+            
+            // Insert the code block with language
+            editor.chain().focus()
+              .insertContent({
+                type: 'codeBlock',
+                attrs: {
+                  language: block.language || 'text'
+                },
+                content: [{ type: 'text', text: block.code }]
+              })
+              .run();
+            
+            // Add a line break after each code block
+            editor.chain().focus().insertContent('\n\n').run();
+          });
+          
+          // Add any remaining instructions
+          if (currentInstructionIndex < instructionParts.length) {
+            const remainingInstructions = instructionParts.slice(currentInstructionIndex).join('\n\n');
+            if (remainingInstructions.trim()) {
+              editor.chain().focus().insertContent(remainingInstructions.trim()).run();
+            }
+          }
+        } else {
+          throw new Error("No code blocks were extracted from the video");
+        }
+      }
+
+      setYoutubeHelperInfo(prev => ({ 
+        ...prev, 
+        isVisible: false, 
+        isProcessing: false,
+        link: '', 
+        customPrompt: '' 
+      }));
+      
+    } catch (error) {
+      console.error(`Error in YouTube ${youtubeHelperInfo.mode}:`, error);
+      alert(`Failed to process YouTube link: ${error.message}`);
+      setYoutubeHelperInfo(prev => ({ ...prev, isProcessing: false }));
+    }
+  }, [editor, youtubeHelperInfo, analyzeYoutubeVideo, extractCodeFromYoutube]);
+
+  const handleGeneratedFlashcards = useCallback((generatedFlashcards) => {
+    if (!editor || editor.isDestroyed) return;
+
+    console.log("Generated Flashcards:", generatedFlashcards);
+    
+    // The Flashcards are already in the editor through the FlashcardGeneratorUI component
+    // But if we need to do anything additional with them after generation, we can do it here
+    
+    // Each flashcard in generatedFlashcards should already have an onGenerateImage function
+    // attached to it from the FlashcardGeneratorUI component
+  }, [editor]);
+
+  // Flashcard Generator functions
+  const handleOpenFlashcardGenerator = useCallback(() => {
+    if (!editor) return;
+    const editorView = editor.view;
+    const editorContainer = editorContainerRef.current;
+
+    if (!editorContainer) return;
+    const containerRect = editorContainer.getBoundingClientRect();
+    
+    // Position the helper in the center of the editor view
+    const helperWidth = 500; // Approximate width of the helper UI
+    const helperHeight = 600; // Approximate height
+
+    setFlashcardGeneratorInfo({
+      topic: '',
+      position: {
+        top: Math.max(20, (containerRect.height - helperHeight) / 2 + editorContainer.scrollTop),
+        left: Math.max(20, (containerRect.width - helperWidth) / 2 + editorContainer.scrollLeft),
+      },
+      isVisible: true,
+      isProcessing: false,
+      flashcards: [],
+      error: null,
+    });
+  }, [editor]);
+
+  const handleFlashcardGeneratorCancel = useCallback(() => {
+    setFlashcardGeneratorInfo(prev => ({ ...prev, isVisible: false, topic: '', flashcards: [], error: null }));
+    editor?.chain().focus().run();
+  }, [editor]);
+
   if (!editor) {
     return <div>Loading Editor...</div>;
   }
+
+  // Memoize style objects for popups
+  const flashcardGeneratorStyle = useMemo(() => ({
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 1250,
+  }), []);
+
+  const youtubeHelperStyle = useMemo(() => ({
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 1200,
+  }), []);
+
+  // Specific updaters for YouTubeHelperUI props to help with memoization
+  const handleYoutubeLinkChange = useCallback((link) => {
+    setYoutubeHelperInfo(prev => ({ ...prev, link }));
+  }, []);
+
+  const handleYoutubePromptChange = useCallback((customPrompt) => {
+    setYoutubeHelperInfo(prev => ({ ...prev, customPrompt }));
+  }, []);
 
   // Image Query UI Component Definition
   const ImageQueryUI = ({ position, query, setQuery, onSubmit, onCancel, theme, isProcessing }) => {
@@ -1969,6 +2446,36 @@ const Editor = () => {
     );
   };
 
+  // GetStartedWithButtons component
+  const GetStartedWithButtons = () => {
+    if (!editor || !activeFileId || canvasMode || !editor.isEmpty) {
+      return null;
+    }
+
+    return (
+      <div className="GetStartedWithContainer">
+        <p className="GetStartedWithTitle">Get started with</p>
+        <div className="GetStartedWithButtonsInternal">
+          <button onClick={() => handleShowAiChat()} title="Ask AI">
+            <Brain size={18} /> Ask AI
+          </button>
+          <button onClick={() => handleOpenYoutubeHelper('analyzer')} title="YouTube Analyser">
+            <PlayCircle size={18} /> YT Analyser
+          </button>
+          <button onClick={() => handleOpenYoutubeHelper('coder')} title="Coder using YouTube">
+            <Terminal size={18} /> Coder from YT
+          </button>
+          <button onClick={handleOpenFlashcardGenerator} title="Generate Flashcards">
+            <Layers size={18} /> Flashcards
+          </button>
+        </div>
+      </div>
+    );
+  };
+  
+  // YouTube Helper UI Component (Removed from here)
+  // const YouTubeHelperUIComponent = () => { ... };
+
   return (
     <div className={`Editor ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="Tabs">
@@ -2037,8 +2544,13 @@ const Editor = () => {
                 shouldShow={({ editor, view, state, oldState, from, to }) => {
                   const { selection } = state;
                   // Only show if editor exists, has focus, text is selected,
-                  // AND the selection is NOT an image node.
-                  return !!editor && view.hasFocus() && !selection.empty && !editor.isActive('image');
+                  // AND the selection is NOT an image node, flashcardNode, or flashcardSetNode.
+                  return !!editor && 
+                         view.hasFocus() && 
+                         !selection.empty && 
+                         !editor.isActive('image') && 
+                         !editor.isActive('flashcardNode') && 
+                         !editor.isActive('flashcardSetNode');
                 }}
               >
                 <div className="MenuButtons">
@@ -2461,6 +2973,28 @@ const Editor = () => {
               )}
 
             <EditorContent editor={editor} className="TiptapEditor" />
+            <GetStartedWithButtons />
+            {youtubeHelperInfo.isVisible && 
+              <YouTubeHelperUI 
+                info={youtubeHelperInfo}
+                onCancel={handleYoutubeHelperCancel}
+                onSubmit={handleYoutubeHelperSubmit}
+                theme={theme}
+                onLinkChange={handleYoutubeLinkChange}
+                onPromptChange={handleYoutubePromptChange}
+                style={youtubeHelperStyle} // Pass memoized style
+              />
+            }
+            {flashcardGeneratorInfo.isVisible && 
+              <FlashcardGeneratorUI 
+                info={flashcardGeneratorInfo} 
+                onCancel={handleFlashcardGeneratorCancel} 
+                theme={theme} 
+                onFlashcardsGenerated={handleGeneratedFlashcards}
+                style={flashcardGeneratorStyle}
+                editor={editor}
+              />
+            }
             </div>
           )
         ) : (

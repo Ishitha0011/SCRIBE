@@ -1,137 +1,64 @@
 /* eslint-disable */
 
-import React, { useState, useEffect } from 'react';
-import { Handle, Position } from 'reactflow';
+import React, { useState, useRef, useEffect } from 'react';
 import '../../css/Nodes.css';
-import { StickyNote, FileText, X, Plus } from 'lucide-react';
+import { StickyNote, Maximize, Minimize } from 'lucide-react';
 
-const NoteNode = ({ data, isConnectable }) => {
-  const [selectedFiles, setSelectedFiles] = useState(data.selectedFiles || []);
-  const [showFileSelector, setShowFileSelector] = useState(false);
-  const [availableFiles, setAvailableFiles] = useState([]);
+const NoteNode = ({ data }) => {
+  const [noteContent, setNoteContent] = useState(data.content || '');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const textareaRef = useRef(null);
   
-  // Mock function to get available files - replace with actual implementation
-  useEffect(() => {
-    // This would be replaced with actual file fetching logic
-    const fetchFiles = async () => {
-      // Mock data - replace with actual API call
-      const mockFiles = [
-        { id: 'file1', name: 'Research Notes.md' },
-        { id: 'file2', name: 'Project Ideas.md' },
-        { id: 'file3', name: 'Meeting Notes.md' },
-        { id: 'file4', name: 'Todo List.md' },
-      ];
-      setAvailableFiles(mockFiles);
-    };
-    
-    fetchFiles();
-  }, []);
-  
-  // Update data when selected files change
+  // Update data when content changes
   useEffect(() => {
     if (data.onChange) {
-      data.onChange({ selectedFiles });
+      data.onChange({ content: noteContent });
     }
-  }, [selectedFiles, data]);
+  }, [noteContent, data]);
   
-  const handleFileSelect = (file) => {
-    if (selectedFiles.length >= 10) {
-      alert('Maximum 10 files allowed');
-      return;
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-    
-    if (!selectedFiles.find(f => f.id === file.id)) {
-      setSelectedFiles([...selectedFiles, file]);
-    }
-    setShowFileSelector(false);
+  }, [noteContent, isExpanded]);
+  
+  const handleContentChange = (e) => {
+    setNoteContent(e.target.value);
   };
   
-  const handleRemoveFile = (fileId) => {
-    setSelectedFiles(selectedFiles.filter(file => file.id !== fileId));
-  };
-  
-  const handleAddFile = () => {
-    setShowFileSelector(true);
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
   };
 
   return (
-    <div className="note-node node-container">
-      <Handle
-        type="target"
-        position={Position.Top}
-        isConnectable={isConnectable}
-      />
+    <div className={`note-node node-container sticky-note ${isExpanded ? 'expanded' : ''}`}>
       <div className="node-header">
         <StickyNote size={16} />
-        <div className="node-title">Notes</div>
+        <div className="node-title">Sticky Note</div>
+        <button 
+          className="expand-btn"
+          onClick={toggleExpand}
+          title={isExpanded ? "Collapse" : "Expand"}
+        >
+          {isExpanded ? <Minimize size={14} /> : <Maximize size={14} />}
+        </button>
       </div>
       <div className="node-content">
-        <div className="notes-container">
-          {selectedFiles.length > 0 ? (
-            <div className="selected-files">
-              {selectedFiles.map(file => (
-                <div key={file.id} className="file-item">
-                  <FileText size={14} />
-                  <span className="file-name">{file.name}</span>
-                  <button 
-                    className="remove-file-btn"
-                    onClick={() => handleRemoveFile(file.id)}
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <p>No files selected</p>
-            </div>
-          )}
-          
-          {selectedFiles.length < 10 && (
-            <button 
-              className="add-file-btn"
-              onClick={handleAddFile}
-            >
-              <Plus size={14} />
-              <span>Add File</span>
-            </button>
-          )}
-          
-          {showFileSelector && (
-            <div className="file-selector">
-              <div className="file-selector-header">
-                <h4>Select Files</h4>
-                <button 
-                  className="close-selector-btn"
-                  onClick={() => setShowFileSelector(false)}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              <div className="file-list">
-                {availableFiles.map(file => (
-                  <div 
-                    key={file.id} 
-                    className="file-option"
-                    onClick={() => handleFileSelect(file)}
-                  >
-                    <FileText size={14} />
-                    <span>{file.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="sticky-note-container">
+          <textarea
+            ref={textareaRef}
+            value={noteContent}
+            onChange={handleContentChange}
+            placeholder="Type your notes here..."
+            className="sticky-note-textarea"
+            rows={isExpanded ? 10 : 4}
+          />
         </div>
       </div>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        isConnectable={isConnectable}
-      />
     </div>
   );
 };
 
-export default NoteNode; 
+export default NoteNode;

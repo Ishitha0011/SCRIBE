@@ -54,6 +54,51 @@ Scribe offers a comprehensive suite of tools to augment your workflow:
     - A dedicated log server provides a web interface to view real-time logs from all parts of the application.
     - Useful for diagnostics and troubleshooting.
 
+## YouTube Analysis Features
+
+Scribe includes two powerful YouTube integration features:
+
+1. **YouTube Analyzer**: Extracts key points, summaries, and timestamps from any YouTube video
+2. **Code from YouTube**: Automatically extracts code snippets and implementation steps from coding tutorials
+
+## Setting Up Gemini API for YouTube Features
+
+To use the YouTube analysis features, you'll need to set up a Gemini API key:
+
+1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey) and create a free account if you don't have one
+2. Create a new API key from the API Keys section
+3. Open `src/config.js` in your project
+4. Replace `'your_api_key_here'` with your actual Gemini API key:
+
+```javascript
+export const config = {
+  GEMINI_API_KEY: 'your-actual-api-key-here',
+  // other configuration...
+};
+```
+
+## Using YouTube Features
+
+1. **YouTube Analyzer**:
+   - Create a new document or open an existing one
+   - Click on the "YT Analyser" button in the toolbar
+   - Paste a YouTube URL and add optional custom prompts
+   - Click the submit button to generate a comprehensive summary
+
+2. **Code from YouTube**:
+   - Create a new document or open an existing one
+   - Click on the "Coder from YT" button in the toolbar
+   - Paste a YouTube URL with a coding tutorial
+   - Click the submit button to extract all code snippets with proper formatting
+
+## Other Features
+
+- Rich text formatting with markdown support
+- Image analysis and AI-powered descriptions
+- Canvas mode for creating mind maps
+- Auto-save functionality
+- Dark/light theme support
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:

@@ -939,9 +939,9 @@
   background-color: #f5f5f5;
   border-radius: 6px;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  padding: 1em;
-  margin-top: 1em;
-  margin-bottom: 1em;
+  /* padding: 1em; */
+  /* margin-top: 1em;
+  margin-bottom: 1em; */
   overflow-x: auto;
   position: relative;
 }
@@ -2989,4 +2989,1630 @@ textarea::selection {
   border-radius: 50%;
   border-top-color: white;
   animation: spin 0.8s linear infinite;
+}
+
+/* Get Started With Container Styles */
+.GetStartedWithContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
+}
+
+.GetStartedWithTitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-bottom: 20px;
+  font-weight: 400;
+}
+
+.GetStartedWithButtonsInternal {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+}
+
+.GetStartedWithButtonsInternal button {
+  background-color: rgba(45, 45, 50, 0.98);
+  border: none;
+  border-radius: 25px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 400;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Set specific widths for each button to match the reference */
+.GetStartedWithButtonsInternal button:nth-child(1) {
+  min-width: 100px;
+}
+
+.GetStartedWithButtonsInternal button:nth-child(2) {
+  min-width: 130px;
+}
+
+.GetStartedWithButtonsInternal button:nth-child(3) {
+  min-width: 150px;
+}
+
+.GetStartedWithButtonsInternal button:nth-child(4) {
+  min-width: 120px;
+}
+
+.GetStartedWithButtonsInternal button:hover {
+  background-color: rgba(75, 75, 80, 0.95);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.GetStartedWithButtonsInternal button svg {
+  flex-shrink: 0;
+}
+
+/* YouTube Helper UI Styles - Revamped */
+.YoutubeHelperUI {
+  position: fixed;
+  background-color: rgba(255, 255, 255, 0.85); /* Semi-transparent for glassy effect */
+  color: #202124; 
+  border-radius: 16px; /* Slightly more rounded for modern feel */
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0,0,0,0.1); /* Softer, more spread shadow */
+  padding: 24px; 
+  width: 450px; 
+  max-width: calc(100vw - 40px); 
+  z-index: 1200;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5); /* Subtle border for definition */
+  display: flex;
+  flex-direction: column;
+  gap: 20px; 
+  opacity: 0;
+  transform: translateY(20px) scale(0.95); /* Start slightly lower and smaller for pop effect */
+  animation: popupAppear 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+/* General Popup Appear Animation */
+@keyframes popupAppear {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.YoutubeHelperUI.dark {
+  background-color: rgba(40, 41, 42, 0.85); /* Dark semi-transparent */
+  color: #e8eaed; 
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0,0,0,0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.YoutubeHelperUI .HelperHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 18px; /* Larger title */
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0; /* Lighter separator */
+  color: #202124;
+}
+
+.YoutubeHelperUI.dark .HelperHeader {
+  border-bottom-color: #3c4043;
+  color: #e8eaed;
+}
+
+.YoutubeHelperUI .CloseButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #5f6368; /* Google's icon color */
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.YoutubeHelperUI .CloseButton:hover {
+  background-color: #f1f3f4; /* Light grey hover */
+  color: #202124;
+}
+
+.YoutubeHelperUI.dark .CloseButton {
+  color: #9aa0a6;
+}
+
+.YoutubeHelperUI.dark .CloseButton:hover {
+  background-color: #3c4043; /* Darker grey hover */
+  color: #e8eaed;
+}
+
+.YoutubeHelperUI .HelperInputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Adjusted gap */
+}
+
+.YoutubeHelperUI .HelperInput,
+.YoutubeHelperUI .HelperTextarea {
+  width: 100%;
+  padding: 12px 16px; /* More padding */
+  font-size: 14px;
+  line-height: 1.5;
+  color: #202124;
+  background-color: #f8f9fa; /* Lighter input background */
+  border: 1px solid #dadce0; /* Google-style border */
+  border-radius: 8px; /* More rounded inputs */
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.YoutubeHelperUI.dark .HelperInput,
+.YoutubeHelperUI.dark .HelperTextarea {
+  background-color: #3c4043; /* Darker input background */
+  border-color: #5f6368;
+  color: #e8eaed;
+}
+
+.YoutubeHelperUI .HelperInput::placeholder,
+.YoutubeHelperUI .HelperTextarea::placeholder {
+  color: #80868b; /* Softer placeholder */
+}
+
+.YoutubeHelperUI.dark .HelperInput::placeholder,
+.YoutubeHelperUI.dark .HelperTextarea::placeholder {
+  color: #9aa0a6;
+}
+
+.YoutubeHelperUI .HelperInput:focus,
+.YoutubeHelperUI .HelperTextarea:focus {
+  border-color: #1a73e8; /* Google blue focus */
+  box-shadow: 0 0 0 1px #1a73e8;
+  background-color: #ffffff;
+}
+
+.YoutubeHelperUI.dark .HelperInput:focus,
+.YoutubeHelperUI.dark .HelperTextarea:focus {
+  border-color: #8ab4f8; /* Google blue dark focus */
+  box-shadow: 0 0 0 1px #8ab4f8;
+  background-color: #2d2e30;
+}
+
+.YoutubeHelperUI .HelperTextarea {
+  resize: vertical;
+  min-height: 70px; /* Slightly taller textarea */
+}
+
+.YoutubeHelperUI .SubmitButton {
+  align-self: flex-end;
+  background-color: #1a73e8; /* Google blue */
+  color: white;
+  border: none;
+  padding: 10px 20px; /* Adjusted padding */
+  border-radius: 8px; /* More rounded */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.YoutubeHelperUI .SubmitButton:hover {
+  background-color: #185abc; /* Darker blue on hover */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.YoutubeHelperUI .SubmitButton:disabled {
+  background-color: #f1f3f4; /* Disabled light */
+  color: #bdc1c6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.YoutubeHelperUI.dark .SubmitButton {
+  background-color: #8ab4f8; /* Lighter blue for dark mode */
+  color: #202124; /* Dark text on light blue button */
+}
+
+.YoutubeHelperUI.dark .SubmitButton:hover {
+  background-color: #99c0f9;
+}
+
+.YoutubeHelperUI.dark .SubmitButton:disabled {
+  background-color: #3c4043; /* Disabled dark */
+  color: #5f6368;
+}
+
+.YoutubeHelperUI.processing .SubmitButton,
+.YoutubeHelperUI.processing .CloseButton,
+.YoutubeHelperUI.processing .HelperInput,
+.YoutubeHelperUI.processing .HelperTextarea {
+  pointer-events: none;
+  opacity: 0.65; /* Slightly more visible when processing */
+}
+
+.YoutubeHelperUI .ProcessingIndicator {
+  display: inline-block;
+  width: 18px; /* Larger spinner */
+  height: 18px;
+  border: 2.5px solid #ffffff; /* White spinner on blue button */
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: rotate 0.8s linear infinite; /* Slightly faster */
+}
+
+.YoutubeHelperUI.dark .ProcessingIndicator {
+  border: 2.5px solid #202124; /* Dark spinner on light blue button */
+  border-bottom-color: transparent;
+}
+
+/* Code block styling - Modern UI */
+.tiptap-code-block {
+  position: relative;
+  margin: 1.5rem 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #1e1e1e;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.Editor.dark .tiptap-code-block {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Language indicator */
+.code-block-language {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: #2c2c2c;
+  color: #e0e0e0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.code-block-language-name {
+  font-weight: 500;
+  color: #cccccc;
+  font-size: 0.85rem;
+  text-transform: lowercase;
+}
+
+.code-block-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.code-block-action {
+  background: transparent;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.code-block-action:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Code content */
+.tiptap-code-block pre {
+  margin: 0;
+  padding: 12px 16px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+/* Copy success indicator */
+.copy-success-indicator {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  background-color: #4caf50;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.copy-success-indicator.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Make sure the code block is properly contained */
+.TiptapEditor .ProseMirror .tiptap-code-block {
+  max-width: 100%;
+}
+
+.TiptapEditor .ProseMirror .tiptap-code-block pre code {
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* Ensure proper display in dark mode */
+.Editor.dark .tiptap-code-block,
+.Editor.dark .tiptap-code-block pre {
+  background-color: #1e1e1e;
+}
+
+.Editor.dark .code-block-language {
+  background-color: #2c2c2c;
+}
+
+/* Animation for copy button */
+@keyframes copySuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.copy-success {
+  animation: copySuccess 0.3s ease-in-out;
+}
+
+/* Java syntax highlighting */
+.tiptap-code-block[data-language="java"] .hljs-keyword,
+.language-java .hljs-keyword {
+  color: #569cd6;
+}
+
+.tiptap-code-block[data-language="java"] .hljs-class,
+.language-java .hljs-class {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="java"] .hljs-string,
+.language-java .hljs-string {
+  color: #ce9178;
+}
+
+.tiptap-code-block[data-language="java"] .hljs-comment,
+.language-java .hljs-comment {
+  color: #6a9955;
+}
+
+.tiptap-code-block[data-language="java"] .hljs-function,
+.language-java .hljs-function {
+  color: #dcdcaa;
+}
+
+.tiptap-code-block[data-language="java"] .hljs-number,
+.language-java .hljs-number {
+  color: #b5cea8;
+}
+
+.tiptap-code-block[data-language="java"] .hljs-type,
+.language-java .hljs-type {
+  color: #4ec9b0;
+}
+
+/* C# syntax highlighting */
+.tiptap-code-block[data-language="csharp"] .hljs-keyword,
+.language-csharp .hljs-keyword {
+  color: #569cd6;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-class,
+.language-csharp .hljs-class {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-string,
+.language-csharp .hljs-string {
+  color: #ce9178;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-comment,
+.language-csharp .hljs-comment {
+  color: #6a9955;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-function,
+.language-csharp .hljs-function {
+  color: #dcdcaa;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-number,
+.language-csharp .hljs-number {
+  color: #b5cea8;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-type,
+.language-csharp .hljs-type {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-built_in,
+.language-csharp .hljs-built_in {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-namespace,
+.language-csharp .hljs-namespace {
+  color: #569cd6;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-title,
+.language-csharp .hljs-title {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-meta,
+.language-csharp .hljs-meta {
+  color: #569cd6;
+}
+
+.tiptap-code-block[data-language="csharp"] .hljs-literal,
+.language-csharp .hljs-literal {
+  color: #569cd6;
+}
+
+/* Python syntax highlighting */
+.tiptap-code-block[data-language="python"] .hljs-keyword,
+.language-python .hljs-keyword {
+  color: #569cd6;
+}
+
+.tiptap-code-block[data-language="python"] .hljs-built_in,
+.language-python .hljs-built_in {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="python"] .hljs-string,
+.language-python .hljs-string {
+  color: #ce9178;
+}
+
+.tiptap-code-block[data-language="python"] .hljs-comment,
+.language-python .hljs-comment {
+  color: #6a9955;
+}
+
+.tiptap-code-block[data-language="python"] .hljs-number,
+.language-python .hljs-number {
+  color: #b5cea8;
+}
+
+.tiptap-code-block[data-language="python"] .hljs-function,
+.language-python .hljs-function {
+  color: #dcdcaa;
+}
+
+/* JavaScript syntax highlighting */
+.tiptap-code-block[data-language="javascript"] .hljs-keyword,
+.language-javascript .hljs-keyword {
+  color: #569cd6;
+}
+
+.tiptap-code-block[data-language="javascript"] .hljs-function,
+.language-javascript .hljs-function {
+  color: #dcdcaa;
+}
+
+.tiptap-code-block[data-language="javascript"] .hljs-string,
+.language-javascript .hljs-string {
+  color: #ce9178;
+}
+
+.tiptap-code-block[data-language="javascript"] .hljs-comment,
+.language-javascript .hljs-comment {
+  color: #6a9955;
+}
+
+.tiptap-code-block[data-language="javascript"] .hljs-number,
+.language-javascript .hljs-number {
+  color: #b5cea8;
+}
+
+.tiptap-code-block[data-language="javascript"] .hljs-operator,
+.language-javascript .hljs-operator {
+  color: #d4d4d4;
+}
+
+.tiptap-code-block[data-language="javascript"] .hljs-literal,
+.language-javascript .hljs-literal {
+  color: #569cd6;
+}
+
+/* C++ syntax highlighting */
+.tiptap-code-block[data-language="cpp"] .hljs-keyword,
+.language-cpp .hljs-keyword {
+  color: #569cd6;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-built_in,
+.language-cpp .hljs-built_in {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-string,
+.language-cpp .hljs-string {
+  color: #ce9178;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-comment,
+.language-cpp .hljs-comment {
+  color: #6a9955;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-function,
+.language-cpp .hljs-function {
+  color: #dcdcaa;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-number,
+.language-cpp .hljs-number {
+  color: #b5cea8;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-preprocessor,
+.language-cpp .hljs-preprocessor {
+  color: #c586c0;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-class,
+.language-cpp .hljs-class {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-type,
+.language-cpp .hljs-type {
+  color: #4ec9b0;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-meta,
+.language-cpp .hljs-meta {
+  color: #c586c0;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-literal,
+.language-cpp .hljs-literal {
+  color: #569cd6;
+}
+
+.tiptap-code-block[data-language="cpp"] .hljs-operator,
+.language-cpp .hljs-operator {
+  color: #d4d4d4;
+}
+
+/* Fix for empty code blocks */
+.tiptap-code-block pre:empty::after {
+  content: "Empty place please remove it";
+  color: #666;
+  font-style: italic;
+}
+
+/* Fix for weird highlighting */
+.tiptap-code-block pre .hljs-string,
+.tiptap-code-block pre .hljs-string * {
+  color: #ce9178 !important;
+}
+
+/* --- Flashcard Generator UI Styles --- */
+.FlashcardGeneratorUI {
+  position: fixed;
+  background-color: rgba(255, 255, 255, 0.85); /* Semi-transparent */
+  color: #202124;
+  border-radius: 16px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0,0,0,0.1); 
+  padding: 0; 
+  width: 500px;
+  height: 650px;
+  max-width: calc(100vw - 30px);
+  max-height: calc(100vh - 40px);
+  z-index: 1250;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(20px) scale(0.95); /* Start slightly lower and smaller */
+  animation: popupAppear 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; /* Use shared animation */
+  overflow: hidden; 
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+/* @keyframes flashcardHelperAppear removed, using popupAppear */
+
+.FlashcardGeneratorUI.dark {
+  background-color: rgba(40, 41, 42, 0.85); /* Dark semi-transparent */
+  color: #e8eaed;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0,0,0,0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.FlashcardGeneratorUI .GeneratorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 18px;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  color: #202124;
+  flex-shrink: 0;
+}
+
+.FlashcardGeneratorUI.dark .GeneratorHeader {
+  border-bottom-color: #3c4043;
+  color: #e8eaed;
+}
+
+.FlashcardGeneratorUI .CloseButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #5f6368;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.FlashcardGeneratorUI .CloseButton:hover {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+.FlashcardGeneratorUI.dark .CloseButton {
+  color: #9aa0a6;
+}
+
+.FlashcardGeneratorUI.dark .CloseButton:hover {
+  background-color: #3c4043;
+  color: #e8eaed;
+}
+
+.FlashcardGeneratorUI .GeneratorInputContainer {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.FlashcardGeneratorUI.dark .GeneratorInputContainer {
+  border-bottom-color: #3c4043;
+}
+
+.FlashcardGeneratorUI .TopicInput {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #202124;
+  background-color: #f8f9fa;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+  resize: none;
+}
+
+.FlashcardGeneratorUI.dark .TopicInput {
+  background-color: #3c4043;
+  border-color: #5f6368;
+  color: #e8eaed;
+}
+
+.FlashcardGeneratorUI .TopicInput::placeholder {
+  color: #80868b;
+}
+
+.FlashcardGeneratorUI.dark .TopicInput::placeholder {
+  color: #9aa0a6;
+}
+
+.FlashcardGeneratorUI .TopicInput:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 1px #1a73e8;
+  background-color: #ffffff;
+}
+
+.FlashcardGeneratorUI.dark .TopicInput:focus {
+  border-color: #8ab4f8;
+  box-shadow: 0 0 0 1px #8ab4f8;
+  background-color: #2d2e30;
+}
+
+.FlashcardGeneratorUI .GenerateButton {
+  align-self: flex-start; /* Align to start of flex container */
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.FlashcardGeneratorUI .GenerateButton:hover {
+  background-color: #185abc;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.FlashcardGeneratorUI .GenerateButton:disabled {
+  background-color: #f1f3f4;
+  color: #bdc1c6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.FlashcardGeneratorUI.dark .GenerateButton {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+.FlashcardGeneratorUI.dark .GenerateButton:hover {
+  background-color: #99c0f9;
+}
+
+.FlashcardGeneratorUI.dark .GenerateButton:disabled {
+  background-color: #3c4043;
+  color: #5f6368;
+}
+
+.FlashcardGeneratorUI .ErrorMessage {
+  padding: 12px 24px;
+  color: #d93025; /* Google red error color */
+  background-color: #fce8e6;
+  border-bottom: 1px solid #f9c6c2;
+  font-size: 13px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.FlashcardGeneratorUI.dark .ErrorMessage {
+  color: #f28b82;
+  background-color: #3c2826;
+  border-bottom-color: #5c403d;
+}
+
+.FlashcardGeneratorUI .FlashcardsDisplayArea {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+
+.FlashcardGeneratorUI.dark .FlashcardsDisplayArea {
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+.FlashcardGeneratorUI .FlashcardsDisplayArea::-webkit-scrollbar {
+  width: 8px;
+}
+.FlashcardGeneratorUI .FlashcardsDisplayArea::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.15);
+  border-radius: 4px;
+}
+.FlashcardGeneratorUI.dark .FlashcardsDisplayArea::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.15);
+}
+
+.FlashcardGeneratorUI .LoadingOverlay {
+  position: absolute;
+  top: 0; 
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  gap: 15px;
+}
+
+.FlashcardGeneratorUI.dark .LoadingOverlay {
+  background-color: rgba(45, 46, 48, 0.85);
+}
+
+.FlashcardGeneratorUI .LoadingOverlay p {
+  font-size: 15px;
+  font-weight: 500;
+  color: #5f6368;
+}
+
+.FlashcardGeneratorUI.dark .LoadingOverlay p {
+  color: #9aa0a6;
+}
+
+.FlashcardGeneratorUI .ProcessingIndicator, 
+.FlashcardGeneratorUI .LoadingOverlay .spinning {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #1a73e8;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: rotate 0.8s linear infinite;
+}
+.FlashcardGeneratorUI .GenerateButton .ProcessingIndicator {
+  border-color: #fff;
+  border-bottom-color: transparent;
+}
+.FlashcardGeneratorUI.dark .GenerateButton .ProcessingIndicator {
+  border-color: #202124;
+  border-bottom-color: transparent;
+}
+
+
+.FlashcardGeneratorUI.dark .ProcessingIndicator,
+.FlashcardGeneratorUI.dark .LoadingOverlay .spinning {
+  border-color: #8ab4f8;
+  border-bottom-color: transparent;
+}
+
+/* --- Individual Flashcard Styles --- */
+.Flashcard {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  perspective: 1000px;
+  min-height: 220px; /* Ensure a minimum height */
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  position: relative;
+}
+
+.Flashcard:hover, .Flashcard:focus-within {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.Flashcard.dark {
+  background-color: #3c4043;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.Flashcard.dark:hover, .Flashcard.dark:focus-within {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.FlashcardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  display: flex; /* Added for flex-grow on children */
+  flex-direction: column; /* Added for flex-grow on children */
+  flex-grow: 1; /* Ensure inner takes full height */
+}
+
+.Flashcard.flipped .FlashcardInner {
+  transform: rotateY(180deg);
+}
+
+.FlashcardFront,
+.FlashcardBack {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 18px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  overflow: hidden; /* For content that might exceed */
+}
+
+.FlashcardFront {
+  background-color: #f8f9fa;
+  color: #202124;
+}
+
+.Flashcard.dark .FlashcardFront {
+  background-color: #2d2e30;
+  color: #e8eaed;
+}
+
+.FlashcardBack {
+  background-color: #e9f2ff; /* Light blue for back */
+  color: #174ea6; /* Darker blue for text */
+  transform: rotateY(180deg);
+  justify-content: space-between; /* To push button to bottom */
+}
+
+.Flashcard.dark .FlashcardBack {
+  background-color: #28313e; /* Darker blue for back */
+  color: #aecbfa; /* Lighter blue for text */
+}
+
+.Flashcard .Term {
+  font-size: 18px;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.Flashcard .Definition {
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  width: 100%;
+  word-break: break-word;
+  max-height: 100px; /* Limit definition height before image */
+  overflow-y: auto; /* Scroll if definition is too long */
+  scrollbar-width: thin;
+  padding-right: 5px; /* space for scrollbar */
+}
+
+.Flashcard.dark .Definition {
+   scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+.FlashcardImageContainer {
+  width: 100%;
+  height: 120px; /* Fixed height for image area */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  border-radius: 6px;
+  background-color: rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+
+.Flashcard.dark .FlashcardImageContainer {
+  background-color: rgba(255,255,255,0.05);
+}
+
+.Flashcard .GeneratedImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.Flashcard .ImageSpinner,
+.Flashcard .ImageError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #5f6368;
+  font-size: 13px;
+  gap: 8px;
+  text-align: center;
+  padding: 10px;
+}
+
+.Flashcard.dark .ImageSpinner,
+.Flashcard.dark .ImageError {
+  color: #9aa0a6;
+}
+
+.Flashcard .ImageError svg {
+  color: #d93025;
+}
+.Flashcard.dark .ImageError svg {
+  color: #f28b82;
+}
+
+
+.Flashcard .GenerateImageButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 12px;
+  align-self: center; /* Center the button */
+  transition: background-color 0.2s;
+}
+
+.Flashcard .GenerateImageButton:hover {
+  background-color: #185abc;
+}
+
+.Flashcard.dark .GenerateImageButton {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+.Flashcard.dark .GenerateImageButton:hover {
+  background-color: #9fc3f9;
+}
+
+.Flashcard .GenerateImageButton:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+.Flashcard.dark .GenerateImageButton:disabled {
+  background-color: #5f6368;
+}
+
+/* Layout adjustment when image is present */
+.FlashcardBack.image-layout-active .Definition {
+  max-height: 60px; /* Reduce definition height if image is shown */
+}
+
+.FlashcardBack.image-layout-active .FlashcardImageContainer {
+  height: 100px; /* Slightly smaller when definition is also present */
+}
+
+.FlashcardBack:not(.image-layout-active) .FlashcardImageContainer {
+    display: none; /* Hide image container if no image and not loading */
+}
+
+/* Spinning animation */
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinning {
+  animation: rotate 1s linear infinite;
+}
+
+.YoutubeHelperUI .SubmitButton, .FlashcardGeneratorUI .GenerateButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: #1a73e8;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 15px;
+  align-self: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.YoutubeHelperUI .SubmitButton:hover, .FlashcardGeneratorUI .GenerateButton:hover {
+  background-color: #0d66d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.YoutubeHelperUI.dark .SubmitButton, .FlashcardGeneratorUI.dark .GenerateButton {
+  background-color: #4285f4;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.YoutubeHelperUI.dark .SubmitButton:hover, .FlashcardGeneratorUI.dark .GenerateButton:hover {
+  background-color: #5c9aff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Flashcard Node Styles --- */
+
+.flashcard-node-wrapper {
+  margin: 20px 0;
+  max-width: 100%;
+}
+
+/* Flashcard Set Container */
+.flashcard-set {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px; 
+  padding: 15px;
+  /* background-color: var(--editor-secondary-bg, #f0f2f5); */
+  border-radius: 8px;
+  margin: 15px 0;
+  justify-content: center; /* Changed from flex-start to center */
+  align-items: stretch; /* Makes cards in the same row equal height if they have varying content */
+  min-height: 180px; /* Ensure it has some height even when empty or with few cards */
+}
+
+.Editor.dark .flashcard-set {
+  /* background-color: var(--editor-dark-secondary-bg, #2d3748); */
+}
+
+/* Individual Flashcards in Editor */
+.flashcard-node-wrapper .Flashcard {
+  width: 280px;
+  height: 180px;
+  perspective: 1000px;
+  margin: 10px 0;
+  cursor: pointer;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.flashcard-node-wrapper .Flashcard:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.flashcard-node-wrapper .Flashcard.dark {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.flashcard-node-wrapper .FlashcardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flashcard-node-wrapper .Flashcard.flipped .FlashcardInner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-node-wrapper .FlashcardFront,
+.flashcard-node-wrapper .FlashcardBack {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.flashcard-node-wrapper .FlashcardFront {
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .FlashcardFront {
+  background-color: #333333;
+  color: #f8f8f8;
+}
+
+.flashcard-node-wrapper .FlashcardBack {
+  background-color: #f8f8f8;
+  color: #333333;
+  transform: rotateY(180deg);
+}
+
+.flashcard-node-wrapper .Flashcard.dark .FlashcardBack {
+  background-color: #3a3a3a;
+  color: #f8f8f8;
+}
+
+.flashcard-node-wrapper .Term {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.flashcard-node-wrapper .Definition {
+  font-size: 14px;
+  max-height: 100px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  transition: max-height 0.3s ease;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .Definition {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.flashcard-node-wrapper .FlashcardImageContainer {
+  position: relative;
+  width: 100%;
+  height: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .FlashcardImageContainer {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.flashcard-node-wrapper .GeneratedImage {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 6px;
+}
+
+.flashcard-node-wrapper .ImageSpinner,
+.flashcard-node-wrapper .ImageError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  width: 100%;
+  color: #666;
+  font-size: 14px;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .ImageSpinner,
+.flashcard-node-wrapper .Flashcard.dark .ImageError {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.flashcard-node-wrapper .ImageError svg {
+  margin-right: 8px;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .ImageError svg {
+  color: rgba(255, 180, 180, 0.9);
+}
+
+.flashcard-node-wrapper .GenerateImageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #f0f0f0;
+  color: #444;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+.flashcard-node-wrapper .GenerateImageButton:hover {
+  background-color: #e0e0e0;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .GenerateImageButton {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.flashcard-node-wrapper .Flashcard.dark .GenerateImageButton:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.flashcard-node-wrapper .GenerateImageButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .GenerateImageButton:disabled {
+  opacity: 0.4;
+}
+
+.flashcard-node-wrapper .FlashcardBack.image-layout-active .Definition {
+  max-height: 60px;
+}
+
+.flashcard-node-wrapper .FlashcardBack.image-layout-active .FlashcardImageContainer {
+  height: auto;
+  max-height: 120px;
+}
+
+.flashcard-node-wrapper .FlashcardBack:not(.image-layout-active) .FlashcardImageContainer {
+  display: none;
+}
+
+/* Flashcard Node View Enhancements */
+.flashcard-node-wrapper .FlashcardBack {
+  display: flex;
+  flex-direction: column; /* Default: definition above image container */
+  justify-content: space-between;
+  align-items: center; /* Center content by default */
+  position: relative; /* For positioning generate button */
+}
+
+.flashcard-node-wrapper .FlashcardBack.image-layout-active {
+  flex-direction: row; /* Image on the right */
+  align-items: flex-start; /* Align items to the top when image is present */
+}
+
+.flashcard-node-wrapper .Definition {
+  flex-grow: 1; /* Allow definition to take available space */
+  max-height: 100px; /* Or adjust as needed */
+  overflow-y: auto;
+  padding-right: 5px; /* Space if image is next to it */
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+
+.flashcard-node-wrapper .FlashcardBack.image-layout-active .Definition {
+  flex-basis: 60%; /* Adjust as needed, e.g., 60% for text */
+  max-width: 60%;
+  margin-right: 10px;
+}
+
+.flashcard-node-wrapper .FlashcardImageContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%; /* Full width if definition is above */
+  min-height: 100px; /* Min height for spinner/error */
+  margin-top: 8px; /* Space between def and image if stacked */
+}
+
+.flashcard-node-wrapper .FlashcardBack.image-layout-active .FlashcardImageContainer {
+  flex-basis: 40%; /* Adjust as needed, e.g., 40% for image */
+  max-width: 40%;
+  width: auto; /* Override previous width */
+  min-height: 120px; /* Ensure space for a decent image preview */
+  margin-top: 0;
+}
+
+.flashcard-node-wrapper .ImageSpinnerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 0.9em;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .ImageSpinnerContainer {
+  color: #bbb;
+}
+
+.flashcard-node-wrapper .ImageSpinner {
+  margin-bottom: 8px;
+}
+
+.flashcard-node-wrapper .GeneratedImage {
+  max-width: 100%;
+  max-height: 120px; /* Control max image height */
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.flashcard-node-wrapper .ImageError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #d32f2f; /* Error color */
+  font-size: 0.85em;
+  padding: 10px;
+  max-width: 100%;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .ImageError {
+  color: #ff8a80;
+}
+
+.flashcard-node-wrapper .ImageError svg {
+  margin-bottom: 5px;
+}
+
+.flashcard-node-wrapper .ImageError p {
+  margin: 0;
+  max-height: 60px; /* Limit error text height */
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.flashcard-node-wrapper .GenerateImageButton {
+  position: absolute; /* Position it within the card back */
+  bottom: 8px;
+  right: 8px;
+  padding: 6px 10px;
+  font-size: 0.8em;
+  background-color: #60a5fa; /* Blueish */
+}
+
+.flashcard-node-wrapper .Flashcard.dark .GenerateImageButton {
+  background-color: #3b82f6;
+}
+
+.flashcard-node-wrapper .GenerateImageButton:hover {
+  background-color: #3b82f6;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .GenerateImageButton:hover {
+  background-color: #2563eb;
+}
+
+/* Ensure flashcard-set allows for wrapping and alignment */
+.flashcard-set {
+  /* Existing styles should be fine, but ensure display: flex and flex-wrap: wrap are present */
+  /* from previous steps. Add justify-content if needed for alignment */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px; 
+  padding: 15px;
+  /* background-color: var(--editor-secondary-bg, #f0f2f5); */
+  border-radius: 8px;
+  margin: 15px 0;
+  justify-content: flex-start; /* Or center, space-around as preferred */
+  align-items: stretch; /* Makes cards in the same row equal height if they have varying content */
+  min-height: 180px; /* Ensure it has some height even when empty or with few cards */
+}
+
+.Editor.dark .flashcard-set {
+  /* background-color: var(--editor-dark-secondary-bg, #2d3748); */
+}
+
+/* Adjust individual flashcard sizing to be responsive within the set */
+.flashcard-node-wrapper {
+  flex: 1 1 280px; /* Grow, shrink, with a base width. Adjust as needed */
+  max-width: 350px; /* Max width for a card */
+  min-width: 280px; /* Added minimum width to ensure cards don't get too small */
+  margin: 10px; /* Add margin for better spacing */
+  display: flex; /* To make the Flashcard component itself fill this wrapper */
+}
+
+.flashcard-node-wrapper .Flashcard {
+ width: 100%; /* Make flashcard fill the wrapper */
+ min-height: 180px; /* Ensure consistent height */
+}
+
+/* Improve text space in flashcards */
+.flashcard-node-wrapper .Term {
+  padding: 15px 10px;
+  font-size: 16px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.flashcard-node-wrapper .Definition {
+  padding: 15px 10px;
+  font-size: 14px;
+  max-height: 120px; /* Increased max height for more text space */
+  overflow-y: auto;
+  text-align: center;
+}
+
+/* When an image is active, the card might need more width or a fixed aspect ratio */
+.flashcard-node-wrapper .Flashcard.has-image-content {
+  /* You might want to adjust flex-basis or min-width if cards with images should be larger */
+  /* flex-basis: 320px; */ 
+}
+
+/* Refinements for the definition scrollbar */
+.flashcard-node-wrapper .Definition::-webkit-scrollbar {
+  width: 5px;
+}
+
+.flashcard-node-wrapper .Definition::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+  border-radius: 3px;
+}
+
+.flashcard-node-wrapper .Definition::-webkit-scrollbar-thumb {
+  background-color: #aaa;
+  border-radius: 3px;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .Definition::-webkit-scrollbar-thumb {
+  background-color: #666;
+}
+
+/* ImageError scrollbar */
+.flashcard-node-wrapper .ImageError p::-webkit-scrollbar {
+  width: 4px;
+}
+.flashcard-node-wrapper .ImageError p::-webkit-scrollbar-thumb {
+  background-color: #c08484;
+}
+.flashcard-node-wrapper .Flashcard.dark .ImageError p::-webkit-scrollbar-thumb {
+  background-color: #e57373;
+}
+
+.flashcard-node-wrapper .GenerateImageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #60a5fa; /* Blueish */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: all 0.2s ease;
+  width: 80%;
+  max-width: 200px;
+  align-self: center;
+}
+
+.flashcard-node-wrapper .GenerateImageButton:hover:not(:disabled) {
+  background-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.flashcard-node-wrapper .Flashcard.dark .GenerateImageButton {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .GenerateImageButton:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.flashcard-node-wrapper .GenerateImageButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Styling for the generating state */
+.flashcard-node-wrapper .GenerateImageButton.generating {
+  background-color: #818cf8; /* Lighter blue when generating */
+  cursor: progress;
+}
+
+.flashcard-node-wrapper .Flashcard.dark .GenerateImageButton.generating {
+  background-color: #4f46e5; /* Darker indigo in dark mode */
+}
+
+@keyframes spinAnimation {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.flashcard-node-wrapper .GenerateImageButton .spinning {
+  animation: spinAnimation 1.2s linear infinite;
 }

@@ -363,7 +363,7 @@ const LeftSidebar = () => {
         newName={newName} // Pass the state for controlled input
         onNewNameChange={setNewName} // Directly use setNewName
         onRename={(itemId, updatedName) => handleEdit(itemId, updatedName)} // Pass updatedName from TreeNode
-        // Removed onKeyDown as handleRenameKeyDown is below and TreeNode can manage its own Enter/Esc for rename
+        onKeyDown={handleRenameKeyDown} // Add the missing onKeyDown prop
       />
     ));
   };
@@ -373,7 +373,7 @@ const LeftSidebar = () => {
   const handleRenameKeyDown = (e, itemId) => { // This is likely used within TreeNode directly, not here
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleRename(itemId); // Call handleRename
+      handleEdit(itemId, newName); // Pass the current newName state to handleEdit
     } else if (e.key === 'Escape') {
       setEditMode(null);
       setNewName(''); // Clear newName on escape

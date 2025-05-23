@@ -46,7 +46,7 @@ const NodeSelector = ({ isCanvasActive }) => {
       type: 'pdfNode', 
       label: 'Document',
       icon: <FileText size={18} />,
-      description: 'Add document/PDF/image'
+      description: 'Add PDF/DOC'
     },
     { 
       type: 'youtubeNode', 
@@ -62,16 +62,16 @@ const NodeSelector = ({ isCanvasActive }) => {
     },
     { 
       type: 'aiOutputNode', 
-      label: 'AI Output',
+      label: 'Output',
       icon: <Bot size={18} />,
-      description: 'Display AI response'
+      description: 'Display response'
     },
-    { 
-      type: 'fileNode', 
-      label: 'File',
-      icon: <File size={18} />,
-      description: 'Link to a file'
-    }
+    // { 
+    //   type: 'fileNode', 
+    //   label: 'File',
+    //   icon: <File size={18} />,
+    //   description: 'Link to a file'
+    // }
   ];
 
   // Node categories

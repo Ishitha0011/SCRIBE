@@ -711,8 +711,7 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
               onClick={handleDeleteNode}
               title="Delete Node"
             >
-              <Trash2 size={16} />
-              <span>Delete</span>
+              <Trash2 size={20} style={{ color: 'red' }} />
             </button>
           </Panel>
         )}
