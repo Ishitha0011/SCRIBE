@@ -14,7 +14,7 @@ export const config = {
    * 2. Replace 'your_api_key_here' with your actual API key
    * 3. Keep this key secure and don't commit it to public repositories
    */
-  GEMINI_API_KEY: "AIzaSyAu5Rc7cLDxND_0hQVNYkGEuDIyGlAXcOU",
+  GEMINI_API_KEY: "Your_API_KEY",
   
   /**
    * API base URL
