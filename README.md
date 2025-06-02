@@ -2,57 +2,80 @@
 
 Scribe is a versatile, AI-driven web application designed to be your intelligent workspace. It seamlessly integrates several powerful functionalities: an advanced video analysis lab, a feature-rich rich-text editor with comprehensive AI assistance, a flexible canvas mode for visual note-taking and diagramming, a dedicated AI chat interface for broader queries, and robust local file management capabilities. Powered by Google's Gemini AI, Scribe aims to enhance your productivity and creativity across various tasks.
 
-## Core Features
+## ✨ Core Features of **Scribe**
 
-Scribe offers a comprehensive suite of tools to augment your workflow:
+Scribe offers a powerful suite of tools to supercharge your workflow and creativity. Here's what you get:
 
-**1. Video Analysis Lab:**
-    - Upload videos for in-depth analysis powered by Gemini AI.
-    - Generate various insights including:
-        - A/V captions
-        - Key moments and timestamps
-        - Paragraph summaries
-        - Table of scenes
-        - Creative content like Haikus
-        - Analysis charts (e.g., Excitement, Importance, Number of people)
-        - Speaker identification
-        - Chapter divisions
-        - Full script generation
-    - Interactive timeline with markers for easy navigation of analysis results.
-    - Multiple display modes for presenting video analysis.
+---
 
-**2. AI-Enhanced Editor & Workspace:**
-    - **Rich Text Editing:** A powerful and intuitive Tiptap-based editor supporting:
-        - Headings, paragraphs, lists (bullet, ordered, task).
-        - Bold, italic, underline, strikethrough, code, blockquotes.
-        - Links, image embedding, and tables.
-        - Syntax highlighting for code blocks.
-        - Text alignment, custom font families, sizes, and colors.
-        - Math equation support (via KaTeX).
-    - **Inline AI Assistance (powered by Gemini):**
-        - **Text Generation & Improvement:** Trigger AI to help write, summarize, rephrase, or improve selected text directly within the editor.
-        - **Image Analysis:** Insert images and use AI to generate descriptions or answer questions about them. The analysis can be attached to the image.
-    - **Canvas Mode:**
-        - Switch to a visual note-taking canvas for `.canvas` files.
-        - Create and connect nodes for mind mapping, flowcharts, or diagramming (powered by React Flow).
-    - **Local File Workspace:**
-        - Open and manage a local directory as your workspace.
-        - Browse, view, and edit files and folders.
-        - Create new files and folders.
-        - Rename or delete items within your workspace.
-        - Search for files by name or within their content.
-    - **Multi-Tab Interface:** Open and work with multiple files simultaneously.
-    - **Auto-Save & Manual Save:** Ensures your work is preserved.
+### 🎥 1. Video Analysis Lab
 
-**3. Scribe AI Chat:**
-    - A dedicated chat interface for general-purpose queries and assistance from Gemini AI.
-    - Manages chat sessions and conversation history.
-    - Chat history is persisted (using Supabase) for easy retrieval of past conversations.
-    - Attach files to your chat messages to provide context to the AI.
+Upload videos and let Gemini AI do the heavy lifting with deep insights:
 
-**4. Centralized Logging Integration:**
-    - A dedicated log server provides a web interface to view real-time logs from all parts of the application.
-    - Useful for diagnostics and troubleshooting.
+- 📜 **Captions** — Generate audio/video captions automatically  
+- ⏱ **Key Moments** — Highlight important timestamps and events  
+- 📝 **Summaries** — Paragraph-level summaries for quick understanding  
+- 🎬 **Scene Table** — Breakdown of scenes with descriptions  
+- 🎨 **Creative Content** — Generate haikus and more  
+- 📊 **Insight Charts** — Analyze excitement, importance & number of people  
+- 🗣 **Speaker ID** — Identify who’s speaking when  
+- 📚 **Chapters** — Auto-generate logical divisions  
+- 🧾 **Full Script** — Extract the complete transcript  
+- 🧭 **Interactive Timeline** — Clickable markers to navigate insights  
+- 🖥 **Multiple Display Modes** — Present analysis in various styles
+
+---
+
+### 📝 2. AI-Enhanced Editor & Workspace
+
+Create and manage documents with a powerful, smart editing environment:
+
+#### ✒️ Rich Text Editor (powered by Tiptap)
+
+- Headings, paragraphs, and list support (• Bullet, 1. Ordered, ☑ Task)
+- **Bold**, *Italic*, _Underline_, ~~Strikethrough~~  
+- `Code`, Blockquotes, and Syntax Highlighting  
+- 📎 Links, 🖼 Image Embedding, 📊 Tables  
+- 🔤 Text Alignment, Custom Fonts, Sizes & Colors  
+- ➗ Math Equation support (KaTeX)
+
+#### 🤖 Inline AI Assistance (Gemini-powered)
+
+- 🪄 Write, summarize, rephrase, or improve selected text  
+- 🖼 Analyze images & generate smart insights or answers  
+
+#### 🧠 Canvas Mode
+
+- Visual note-taking with `.canvas` files  
+- 🧩 Create nodes for mind maps, flowcharts & diagrams  
+- ⚛ Powered by React Flow
+
+#### 🗂 Local File Workspace
+
+- 📁 Open and manage a local directory  
+- 🔍 Search files by name or content  
+- ✏️ Create, rename, delete files & folders  
+- 📂 Multi-tab interface for managing multiple documents  
+- 💾 Auto-save & manual save options
+
+---
+
+### 💬 3. Scribe AI Chat
+
+A dedicated chat interface for interacting with Gemini AI:
+
+- 🧠 Ask general-purpose questions or get help anytime  
+- 💬 View and manage **chat history** (stored via Supabase)  
+- 📎 Attach files to provide more context to your chat  
+
+---
+
+### 📟 4. Centralized Logging Integration
+
+Stay on top of your system’s health with real-time logging:
+
+- 🧾 View logs from all parts of the app via a dedicated web interface  
+- 🛠 Diagnose issues quickly and efficiently
 
 ## YouTube Analysis Features
 
