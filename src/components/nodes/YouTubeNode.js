@@ -605,10 +605,10 @@ Format the output in a clear, structured way that can be used for answering ques
                 cursor: 'pointer',
                 borderBottom: '1px solid #eee'
               }}>
-                <img 
-                  src={getYouTubeThumbnailUrl(videoId)} 
-                  alt={title || "YouTube video thumbnail"} 
-                  className="thumbnail-img"
+              <img 
+                src={getYouTubeThumbnailUrl(videoId)} 
+                alt={title || "YouTube video thumbnail"} 
+                className="thumbnail-img"
                   style={{
                     width: '100%',
                     height: '100%',
@@ -616,8 +616,8 @@ Format the output in a clear, structured way that can be used for answering ques
                     transition: 'transform 0.3s',
                     backgroundColor: '#000'
                   }}
-                />
-                {!showEmbed && (
+              />
+              {!showEmbed && (
                   <div className="thumbnail-overlay" onClick={toggleEmbed} style={{
                     position: 'absolute',
                     top: 0,
@@ -642,10 +642,10 @@ Format the output in a clear, structured way that can be used for answering ques
                     }}>
                       <Play size={24} color="white" />
                     </div>
-                  </div>
-                )}
-              </div>
-              
+                </div>
+              )}
+            </div>
+            
               <div className="video-details" style={{
                 padding: '12px',
                 display: 'flex',
@@ -667,8 +667,8 @@ Format the output in a clear, structured way that can be used for answering ques
                   justifyContent: 'space-between',
                   marginTop: '4px'
                 }}>
-                  <button 
-                    className="video-action-btn"
+                <button 
+                  className="video-action-btn"
                     onClick={analyzeVideo}
                     disabled={!videoId || analysisState === 'analyzing'}
                     style={{
@@ -694,9 +694,9 @@ Format the output in a clear, structured way that can be used for answering ques
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
                       className="icon-btn"
-                      onClick={toggleEmbed}
-                      disabled={nodeState === 'processing' || analysisState === 'analyzing'}
-                      title={showEmbed ? "Hide player" : "Show player"}
+                  onClick={toggleEmbed}
+                  disabled={nodeState === 'processing' || analysisState === 'analyzing'}
+                  title={showEmbed ? "Hide player" : "Show player"}
                       style={{
                         background: 'transparent',
                         border: '1px solid #ddd',
@@ -710,14 +710,14 @@ Format the output in a clear, structured way that can be used for answering ques
                         color: '#666',
                         transition: 'all 0.2s'
                       }}
-                    >
+                >
                       <Eye size={14} />
-                    </button>
-                    <button 
+                </button>
+                <button 
                       className="icon-btn"
-                      onClick={removeVideo}
-                      disabled={nodeState === 'processing' || analysisState === 'analyzing'}
-                      title="Remove video"
+                  onClick={removeVideo}
+                  disabled={nodeState === 'processing' || analysisState === 'analyzing'}
+                  title="Remove video"
                       style={{
                         background: 'transparent',
                         border: '1px solid #ddd',
@@ -731,9 +731,9 @@ Format the output in a clear, structured way that can be used for answering ques
                         color: '#666',
                         transition: 'all 0.2s'
                       }}
-                    >
+                >
                       <X size={14} />
-                    </button>
+                </button>
                   </div>
                 </div>
               </div>
@@ -802,9 +802,9 @@ Format the output in a clear, structured way that can be used for answering ques
                 <p style={{ margin: '0', color: '#444', fontSize: '12px' }}>
                   Video analysis completed successfully. The results are available for downstream nodes.
                 </p>
-              </div>
-            )}
-            
+          </div>
+        )}
+        
             {analysisError && (
               <div className="analysis-error" style={{
                 background: '#fff5f5',

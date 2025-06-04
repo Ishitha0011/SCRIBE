@@ -26,6 +26,7 @@ import FileNode from './nodes/FileNode';
 import NoteNode from './nodes/NoteNode';
 import StartNode from './nodes/StartNode';
 import WebScraperNode from './nodes/WebScraperNode';
+import WaitNode from './nodes/WaitNode';
 
 // Function to create node component wrappers that pass the ID properly
 const createNodeWrapper = (NodeComponent) => {
@@ -46,6 +47,7 @@ const nodeTypes = {
   noteNode: createNodeWrapper(NoteNode),
   startNode: createNodeWrapper(StartNode),
   webScraperNode: createNodeWrapper(WebScraperNode),
+  waitNode: createNodeWrapper(WaitNode),
 };
 
 const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
@@ -222,8 +224,28 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
             console.log(`Executing node ${nodeId} (${node.type})`);
             const handlerFn = nodeExecutionHandlers.current.get(nodeId);
             
-            // Pass the output from the previous node to the current node
-            previousNodeOutput = await handlerFn(previousNodeOutput);
+            // Prepare input data with source node information
+            let inputForNode;
+            if (previousNodeOutput !== null) {
+              // If this isn't the first node, include source information
+              const previousNodeId = i > 0 ? executionPath[i-1] : null;
+              const previousNodeType = previousNodeId ? nodes.find(n => n.id === previousNodeId)?.type : null;
+              
+              // Create enhanced input with source information
+              inputForNode = {
+                ...previousNodeOutput,
+                sourceNodeId: previousNodeId,
+                sourceNodeType: previousNodeType
+              };
+              
+              console.log(`Sending data from node ${previousNodeId} to node ${nodeId}:`, inputForNode);
+            } else {
+              // For the first node, there's no input from a previous node
+              inputForNode = null;
+            }
+            
+            // Pass the output (with source info) from the previous node to the current node
+            previousNodeOutput = await handlerFn(inputForNode);
             
             // Mark node as complete
             setNodes(currentNodes => 
@@ -311,6 +333,13 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
           data: {
             ...node.data,
             registerNodeForFlow,
+            // Add function to get connected edges for a node
+            getConnectedEdges: (nodeId) => {
+              if (!nodeId) return [];
+              return edges.filter(edge => 
+                edge.source === nodeId || edge.target === nodeId
+              );
+            },
               onNodeRun: node.type === 'startNode' ? 
                 (startNodeId) => {
                   // Ensure we have a valid start node ID, fall back to the node's own ID
@@ -329,7 +358,7 @@ const NotesCanvas = ({ canvasData, onSave, canvasId }) => {
     }, 100);
     
     return () => clearTimeout(debounceTimeout);
-  }, [setNodes, registerNodeForFlow, executeFlow]);
+  }, [setNodes, registerNodeForFlow, executeFlow, edges]);
 
   // Log component mounting
   useEffect(() => {

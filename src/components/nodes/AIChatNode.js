@@ -102,10 +102,61 @@ const AIChatNode = ({ data, isConnectable, id }) => {
     // Extract the most relevant content from inputData
     let context = "";
     
+    // Check if this is combined data from Wait Node
+    if (inputData.youtube || inputData.webScraper || inputData.document || inputData.combined) {
+      console.log('Processing combined data from Wait Node');
+      
+      // Add YouTube data if available
+      if (inputData.youtube) {
+        context += `VIDEO ANALYSIS:\n`;
+        if (inputData.youtube.title) {
+          context += `Video Title: ${inputData.youtube.title}\n`;
+        }
+        if (inputData.youtube.url) {
+          context += `Video URL: ${inputData.youtube.url}\n`;
+        }
+        if (inputData.youtube.analysis) {
+          context += `\nAnalysis:\n${inputData.youtube.analysis}\n\n`;
+        }
+      }
+      
+      // Add web scraper data if available
+      if (inputData.webScraper) {
+        context += `WEBPAGE CONTENT:\n`;
+        if (inputData.webScraper.title) {
+          context += `Title: ${inputData.webScraper.title}\n`;
+        }
+        if (inputData.webScraper.description) {
+          context += `Description: ${inputData.webScraper.description}\n`;
+        }
+        if (inputData.webScraper.content) {
+          context += `\nMain Content:\n${inputData.webScraper.content}\n\n`;
+        }
+        if (inputData.webScraper.url) {
+          context += `Source URL: ${inputData.webScraper.url}\n\n`;
+        }
+      }
+      
+      // Add document/PDF data if available
+      if (inputData.document) {
+        context += `DOCUMENT CONTENT:\n`;
+        if (inputData.document.filename) {
+          context += `Filename: ${inputData.document.filename}\n`;
+        }
+        if (inputData.document.text) {
+          context += `\nContent:\n${inputData.document.text}\n\n`;
+        }
+      }
+      
+      // If there's a type specified, add instructions
+      if (inputData.combined && inputData.combined.type === 'research') {
+        context += `RESEARCH TASK: Please synthesize all the information sources above into a comprehensive analysis.\n\n`;
+      }
+    }
     // If inputData has video analysis data
-    if (inputData.analysis) {
+    else if (inputData.analysis || inputData.videoAnalysis) {
       console.log('Processing video analysis data');
-      context += `VIDEO ANALYSIS:\n${inputData.analysis}\n\n`;
+      context += `VIDEO ANALYSIS:\n${inputData.analysis || inputData.videoAnalysis}\n\n`;
       if (inputData.title) {
         context += `Video Title: ${inputData.title}\n`;
       }
@@ -114,9 +165,11 @@ const AIChatNode = ({ data, isConnectable, id }) => {
       }
     }
     // If inputData has web scraping data
-    else if (inputData.title || inputData.text || inputData.main_content) {
+    else if (inputData.title || inputData.text || inputData.main_content || inputData.scrapedContent) {
       console.log('Processing web scraping data');
       context += `WEBPAGE CONTENT:\n`;
+      
+      // Handle direct properties
       if (inputData.title) {
         context += `Title: ${inputData.title}\n`;
       }
@@ -128,22 +181,73 @@ const AIChatNode = ({ data, isConnectable, id }) => {
       } else if (inputData.text) {
         context += `Content:\n${inputData.text}\n\n`;
       }
-      if (inputData.url) {
-        context += `Source URL: ${inputData.url}\n\n`;
+      
+      // Handle nested scrapedContent object
+      if (inputData.scrapedContent) {
+        if (inputData.scrapedContent.title && !inputData.title) {
+          context += `Title: ${inputData.scrapedContent.title}\n`;
+        }
+        if (inputData.scrapedContent.description && !inputData.description) {
+          context += `Description: ${inputData.scrapedContent.description}\n`;
+        }
+        if (inputData.scrapedContent.main_content && !inputData.main_content && !inputData.text) {
+          context += `Main Content:\n${inputData.scrapedContent.main_content}\n\n`;
+        }
+      }
+      
+      if (inputData.url || (inputData.scrapedContent && inputData.scrapedContent.url)) {
+        context += `Source URL: ${inputData.url || inputData.scrapedContent.url}\n\n`;
       }
     }
     // If inputData has PDF text, format it appropriately
-    else if (inputData.text) {
-      console.log('Processing PDF data');
-      context += `PDF CONTENT:\n${inputData.text}\n\n`;
+    else if (inputData.text || (inputData.type === 'document' || inputData.contentType === 'pdf')) {
+      console.log('Processing PDF/document data');
+      context += `DOCUMENT CONTENT:\n`;
       if (inputData.filename) {
-        context += `This content is from file: ${inputData.filename}\n\n`;
+        context += `Filename: ${inputData.filename}\n`;
+      }
+      if (inputData.text) {
+        context += `Content:\n${inputData.text}\n\n`;
+      }
+      if (inputData.message) {
+        context += `Note: ${inputData.message}\n\n`;
       }
     } 
     // If inputData has AI-generated response, format it as context
     else if (inputData.response) {
       console.log('Processing previous AI output');
       context += `PREVIOUS AI OUTPUT:\n${inputData.response}\n\n`;
+    }
+    // Check for combined data in outputData format (another format the WaitNode might use)
+    else if (inputData.combinedData) {
+      console.log('Processing combinedData format');
+      
+      // Extract YouTube data
+      if (inputData.combinedData.youtubeData) {
+        const ytData = inputData.combinedData.youtubeData;
+        context += `VIDEO ANALYSIS:\n`;
+        if (ytData.title) context += `Video Title: ${ytData.title}\n`;
+        if (ytData.url) context += `Video URL: ${ytData.url}\n`;
+        if (ytData.analysis) context += `\nAnalysis:\n${ytData.analysis}\n\n`;
+      }
+      
+      // Extract web data
+      if (inputData.combinedData.webData) {
+        const webData = inputData.combinedData.webData;
+        context += `WEBPAGE CONTENT:\n`;
+        if (webData.title) context += `Title: ${webData.title}\n`;
+        if (webData.description) context += `Description: ${webData.description}\n`;
+        if (webData.content) context += `\nMain Content:\n${webData.content}\n\n`;
+        if (webData.url) context += `Source URL: ${webData.url}\n\n`;
+      }
+      
+      // Extract document data
+      if (inputData.combinedData.documentData) {
+        const docData = inputData.combinedData.documentData;
+        context += `DOCUMENT CONTENT:\n`;
+        if (docData.filename) context += `Filename: ${docData.filename}\n`;
+        if (docData.text) context += `\nContent:\n${docData.text}\n\n`;
+      }
     }
     // Fallback if other data types are received
     else if (typeof inputData === 'object') {

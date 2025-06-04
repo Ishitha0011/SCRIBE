@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive, Brain, HelpCircle, Send, Edit, Check, PlayCircle, Terminal, RefreshCw, Zap, Layers } from 'lucide-react';
+import { Plus, X, Save, FileText, Clock, Hash, Type, AlertCircle, FileCog, Bold, Italic, Underline, Code, List, ListOrdered, CheckSquare, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Heading1, Heading2, Heading3, Highlighter, Trash2, ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Pilcrow, Palette, CaseUpper, CaseLower, Strikethrough, Subscript, Superscript, Sigma, CornerUpLeft, ChevronDown, CaseSensitive, Brain, HelpCircle, Send, Edit, Check, PlayCircle, Terminal, RefreshCw, Zap, Layers, Cat } from 'lucide-react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -26,7 +26,8 @@ import Switch from './ui/Switch';
 import NotesCanvas from './NotesCanvas';
 import ImageAnalysisPanel from './ImageAnalysisPanel';
 import FlashcardGeneratorUI from './FlashcardGeneratorUI';
-import YouTubeHelperUI from './YouTubeHelperUI'; // Import the new YouTubeHelperUI component
+import YouTubeHelperUI from './YouTubeHelperUI';
+import TinyCatsExplainView from './TinyCatsExplainView';
 import { getYouTubeVideoId, extractYouTubeTitle, analyzeYoutubeVideo, extractCodeFromYoutube } from '../utils/youtubeUtils';
 import { config } from '../config';
 import '../css/Editor.css';
@@ -147,6 +148,9 @@ const Editor = () => {
     flashcards: [], // This can be removed if data is passed directly to editor
     error: null,
   });
+  
+  // State for TinyCatsExplainView
+  const [tinyCatsExplainViewVisible, setTinyCatsExplainViewVisible] = useState(false);
   
   const { theme } = useTheme();
   const {
@@ -1982,6 +1986,17 @@ Also provide a summary of the implementation steps explained in the video.`;
     editor?.chain().focus().run();
   }, [editor]);
 
+  // Function to open TinyCatsExplainView
+  const handleOpenTinyCatsExplainView = () => {
+    setTinyCatsExplainViewVisible(true);
+  };
+
+  // Function to close TinyCatsExplainView
+  const handleCloseTinyCatsExplainView = () => {
+    setTinyCatsExplainViewVisible(false);
+    editor?.chain().focus().run(); // Focus editor on close
+  };
+
   if (!editor) {
     return <div>Loading Editor...</div>;
   }
@@ -2467,6 +2482,9 @@ Also provide a summary of the implementation steps explained in the video.`;
           </button>
           <button onClick={handleOpenFlashcardGenerator} title="Generate Flashcards">
             <Layers size={18} /> Flashcards
+          </button>
+          <button onClick={handleOpenTinyCatsExplainView} title="Explain with Tiny Cats">
+            <Cat size={18} /> Tiny Cats Explain
           </button>
         </div>
       </div>
@@ -2995,6 +3013,14 @@ Also provide a summary of the implementation steps explained in the video.`;
                 editor={editor}
               />
             }
+            {/* Render TinyCatsExplainView conditionally */}
+            {tinyCatsExplainViewVisible && (
+              <TinyCatsExplainView
+                isVisible={tinyCatsExplainViewVisible}
+                onClose={handleCloseTinyCatsExplainView}
+                theme={theme}
+              />
+            )}
             </div>
           )
         ) : (

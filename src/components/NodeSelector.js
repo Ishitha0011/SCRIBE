@@ -1,5 +1,5 @@
 import React from 'react';
-import { Type, FileText, Youtube, MessageSquare, File, StickyNote, Folder, Bot, Play, Globe } from 'lucide-react';
+import { Type, FileText, Youtube, MessageSquare, File, StickyNote, Folder, Bot, Play, Globe, Clock } from 'lucide-react';
 import '../css/NodeSelector.css';
 import { useTheme } from '../ThemeContext';
 
@@ -66,6 +66,12 @@ const NodeSelector = ({ isCanvasActive }) => {
       icon: <Bot size={18} />,
       description: 'Display response'
     },
+    {
+      type: 'waitNode',
+      label: 'Wait',
+      icon: <Clock size={18} />,
+      description: 'Wait for all inputs before proceeding'
+    }
     // { 
     //   type: 'fileNode', 
     //   label: 'File',
@@ -78,7 +84,7 @@ const NodeSelector = ({ isCanvasActive }) => {
   const categories = [
     {
       title: 'Flow',
-      nodes: ['startNode']
+      nodes: ['startNode', 'waitNode']
     },
     {
       title: 'Basic',

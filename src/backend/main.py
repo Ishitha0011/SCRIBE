@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Response, Request, UploadFile, File
+from fastapi import FastAPI, HTTPException, Response, Request, UploadFile, File, Form, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -23,6 +23,9 @@ import httpx
 from bs4 import BeautifulSoup
 import aiohttp
 from urllib.parse import urlparse, parse_qs
+import base64
+import io
+import traceback
 
 # Imports for Gemini image processing
 from google import genai as gemini_ai # Renamed to avoid conflict with genai used for text
@@ -187,6 +190,13 @@ class PDFQuestionRequest(BaseModel):
 # Add new model for web scraping request
 class ScrapeRequest(BaseModel):
     url: str
+
+
+# Add new model for base64 image upload
+class Base64UploadRequest(BaseModel):
+    base64_data: str
+    filename: str
+    directory: str = "assets"
 
 
 # Helper function to convert dict to Message
@@ -827,6 +837,77 @@ async def upload_file(file: UploadFile = File(...)):
         }
     except Exception as e:
         logging.error(f"Error uploading file: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/files/upload-base64")
+async def upload_base64_image(request: Base64UploadRequest):
+    """Upload a base64-encoded image (primarily for TinyCats feature)"""
+    try:
+        # Ensure the directory exists
+        os.makedirs(request.directory, exist_ok=True)
+        
+        # Generate full path for the file
+        file_path = os.path.join(request.directory, request.filename)
+        
+        # Decode the base64 data
+        try:
+            image_data = base64.b64decode(request.base64_data)
+        except Exception as e:
+            logging.error(f"Error decoding base64 data: {e}")
+            raise HTTPException(status_code=400, detail="Invalid base64 data")
+        
+        # Save the decoded image
+        with open(file_path, "wb") as f:
+            f.write(image_data)
+        
+        # Return the relative path for accessing the image
+        relative_path = f"/{request.directory}/{request.filename}"
+        
+        return {
+            "status": "success",
+            "path": relative_path,
+            "filename": request.filename
+        }
+    except Exception as e:
+        logging.error(f"Error uploading base64 image: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/files/cleanup-tinycats")
+async def cleanup_tinycats_images():
+    """Clean up old TinyCats images from the assets directory"""
+    try:
+        assets_dir = "assets"
+        
+        # Check if directory exists
+        if not os.path.exists(assets_dir):
+            return {"status": "success", "message": "No assets directory found"}
+        
+        # Count how many files were deleted
+        deleted_count = 0
+        
+        # Get all tinycats image files
+        for filename in os.listdir(assets_dir):
+            if filename.startswith("tinycats_") and (filename.endswith(".png") or filename.endswith(".jpg")):
+                file_path = os.path.join(assets_dir, filename)
+                try:
+                    # Get file age in days
+                    file_age = (datetime.now() - datetime.fromtimestamp(os.path.getmtime(file_path))).days
+                    
+                    # Delete files older than 7 days
+                    if file_age > 7:
+                        os.remove(file_path)
+                        deleted_count += 1
+                except Exception as inner_e:
+                    logging.warning(f"Error processing file {filename}: {inner_e}")
+        
+        return {
+            "status": "success", 
+            "message": f"Cleaned up {deleted_count} TinyCats images"
+        }
+    except Exception as e:
+        logging.error(f"Error cleaning up TinyCats images: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

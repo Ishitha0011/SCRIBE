@@ -173,7 +173,16 @@ const PDFNode = ({ data, isConnectable, id }) => {
         // Process the current file when the flow runs
         if (file && file.type === 'application/pdf') {
           const result = await processPDFFile(file);
-          return result; // This gets passed to the next node
+          // Ensure consistent output format that WaitNode can recognize
+          return {
+            ...result,
+            nodeType: 'pdfNode',
+            contentType: 'pdf',
+            filename: file.name,
+            filesize: file.size,
+            type: 'document',
+            status: 'complete'
+          };
         } else if (file) {
           // If we have a non-PDF file, return basic info
           return {
@@ -181,13 +190,18 @@ const PDFNode = ({ data, isConnectable, id }) => {
             filename: file.name,
             filesize: file.size,
             contentType: file.type,
+            type: 'document',
+            nodeType: 'pdfNode',
+            status: 'complete',
             message: "Non-PDF file. No text extraction performed."
           };
         } else {
           // If no file is uploaded
           return {
             error: "No file available to process", 
-            message: "Please upload a file first."
+            message: "Please upload a file first.",
+            nodeType: 'pdfNode',
+            status: 'error'
           };
         }
       });

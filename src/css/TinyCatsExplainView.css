@@ -1,0 +1,733 @@
+/* TinyCatsExplainView.css */
+
+.TinyCatsModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1300; /* Ensure it's above other elements like flashcard generator */
+  backdrop-filter: blur(3px);
+  padding: 20px;
+}
+
+.TinyCatsModalOverlay.dark {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.TinyCatsContainer {
+  background-color: var(--editor-bg, #fff);
+  padding: 0; /* Remove padding here, apply to children */
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 1000px; /* Increased max-width for history panel */
+  height: 90vh; /* Increased height */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.TinyCatsContainer.dark {
+  background-color: var(--editor-secondary-bg-darker, #2c2c2e);
+  color: var(--text-color-dark, #e0e0e0);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.TinyCatsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px; /* Add padding here */
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.TinyCatsContainer.dark .TinyCatsHeader {
+  border-bottom: 1px solid var(--border-color-dark, #444);
+}
+
+.TinyCatsHeader h2 {
+  font-size: 1.5em; /* Adjusted */
+  font-weight: 600;
+  color: var(--text-color-strong, #333);
+  display: flex;
+  align-items: center;
+}
+
+.TinyCatsContainer.dark .TinyCatsHeader h2 {
+  color: var(--text-color-dark-strong, #f0f0f0);
+}
+
+.TinyCatsHeader .CloseButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color-light, #888);
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.TinyCatsHeader .CloseButton:hover {
+  background-color: var(--hover-bg, #f0f0f0);
+  color: var(--text-color, #555);
+}
+
+.TinyCatsContainer.dark .TinyCatsHeader .CloseButton {
+  color: var(--text-color-dark-light, #aaa);
+}
+
+.TinyCatsContainer.dark .TinyCatsHeader .CloseButton:hover {
+  background-color: var(--hover-bg-dark, #444);
+  color: var(--text-color-dark, #ddd);
+}
+
+/* New body container for history panel and main content */
+.TinyCatsBody {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden; /* Prevent double scrollbars, children will scroll */
+}
+
+.TinyCatsHistoryPanel {
+  width: 280px; /* Width of the history panel */
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color, #e0e0e0);
+  padding: 20px;
+  overflow-y: auto;
+  background-color: var(--editor-bg-very-light, #fcfcfc);
+}
+
+.TinyCatsHistoryPanel.dark {
+  border-right: 1px solid var(--border-color-dark, #444);
+  background-color: var(--editor-secondary-bg, #333337);
+}
+
+.HistoryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.HistoryHeader h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--text-color-strong, #444);
+  display: flex;
+  align-items: center;
+}
+
+.TinyCatsHistoryPanel.dark .HistoryHeader h3 {
+  color: var(--text-color-dark-strong, #ddd);
+}
+
+.ClearHistoryButton {
+  background: transparent;
+  border: 1px solid var(--border-color-light, #ccc);
+  color: var(--text-color-medium, #666);
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ClearHistoryButton:hover {
+  background-color: var(--hover-bg-light, #f5f5f5);
+  border-color: var(--text-color-medium, #777);
+  color: var(--text-color, #333);
+}
+
+.TinyCatsHistoryPanel.dark .ClearHistoryButton {
+  border-color: var(--border-color-dark-medium, #666);
+  color: var(--text-color-dark-medium, #bbb);
+}
+
+.TinyCatsHistoryPanel.dark .ClearHistoryButton:hover {
+  background-color: var(--hover-bg-dark, #454545);
+  border-color: var(--text-color-dark-light, #999);
+  color: var(--text-color-dark, #eee);
+}
+
+.TinyCatsHistoryPanel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.TinyCatsHistoryPanel li {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.TinyCatsHistoryPanel li:hover {
+  background-color: var(--hover-bg-lighter, #f0f8ff);
+  border-color: var(--primary-color-x-light, #d4e8ff);
+}
+
+.TinyCatsHistoryPanel.dark li:hover {
+  background-color: var(--hover-bg-dark-lighter, #3f4c5a);
+  border-color: var(--primary-color-dark-theme-border, #3081d9);
+}
+
+.TinyCatsHistoryPanel li.active {
+  background-color: var(--primary-color-xx-light, #e6f2ff);
+  border-left: 3px solid var(--primary-color, #007bff);
+  font-weight: 500;
+}
+
+.TinyCatsHistoryPanel.dark li.active {
+  background-color: var(--button-hover-bg-dark, #4a5568);
+  border-left: 3px solid var(--primary-color-dark-theme, #79c0ff);
+}
+
+.HistoryPrompt {
+  display: block;
+  font-size: 0.9em;
+  color: var(--text-color, #333);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.TinyCatsHistoryPanel.dark .HistoryPrompt {
+  color: var(--text-color-dark, #e0e0e0);
+}
+
+.TinyCatsHistoryPanel li.active .HistoryPrompt {
+ color: var(--primary-color-dark, #0056b3);
+}
+
+.TinyCatsHistoryPanel.dark li.active .HistoryPrompt {
+ color: var(--primary-color-dark-theme-hover-text, #c9dfff);
+}
+
+.HistoryTimestamp {
+  display: block;
+  font-size: 0.75em;
+  color: var(--text-color-light, #777);
+}
+
+.TinyCatsHistoryPanel.dark .HistoryTimestamp {
+  color: var(--text-color-dark-light, #aaa);
+}
+
+.NoHistoryMessage {
+  font-size: 0.85em;
+  color: var(--text-color-medium, #666);
+  text-align: center;
+  padding-top: 20px;
+}
+
+.TinyCatsHistoryPanel.dark .NoHistoryMessage {
+  color: var(--text-color-dark-medium, #aaa);
+}
+
+.TinyCatsMainContent {
+  flex-grow: 1;
+  padding: 20px 25px;
+  overflow-y: auto;
+}
+
+.TinyCatsMainContent.scrollable {
+  /* Styles if needed when content forces scroll, usually overflow-y: auto is enough */
+}
+
+/* Scrollbar styling for history panel and main content */
+.TinyCatsHistoryPanel::-webkit-scrollbar,
+.TinyCatsMainContent::-webkit-scrollbar {
+  width: 8px;
+}
+.TinyCatsHistoryPanel::-webkit-scrollbar-track,
+.TinyCatsMainContent::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-bg, #f1f1f1);
+  border-radius: 10px;
+}
+.TinyCatsHistoryPanel::-webkit-scrollbar-thumb,
+.TinyCatsMainContent::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg, #ccc);
+  border-radius: 10px;
+}
+.TinyCatsHistoryPanel::-webkit-scrollbar-thumb:hover,
+.TinyCatsMainContent::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-bg, #bbb);
+}
+
+.TinyCatsHistoryPanel.dark::-webkit-scrollbar-track,
+.TinyCatsContainer.dark .TinyCatsMainContent::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-bg-dark, #383838);
+}
+.TinyCatsHistoryPanel.dark::-webkit-scrollbar-thumb,
+.TinyCatsContainer.dark .TinyCatsMainContent::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg-dark, #555);
+}
+.TinyCatsHistoryPanel.dark::-webkit-scrollbar-thumb:hover,
+.TinyCatsContainer.dark .TinyCatsMainContent::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-bg-dark, #666);
+}
+
+.InstructionText {
+  font-size: 0.95em;
+  color: var(--text-color, #555);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.TinyCatsMainContent.dark .InstructionText, /* Specific for dark main content */
+.TinyCatsContainer.dark .InstructionText { /* Fallback if context is only container */
+  color: var(--text-color-dark, #ccc);
+}
+
+.ExamplePrompts {
+  margin-bottom: 25px;
+  padding: 15px;
+  background-color: var(--editor-bg-light, #f9f9f9);
+  border-radius: 8px;
+  border: 1px solid var(--border-color-extra-light, #eee);
+}
+
+.TinyCatsMainContent.dark .ExamplePrompts,
+.TinyCatsContainer.dark .ExamplePrompts {
+  background-color: var(--editor-secondary-bg, #3a3a3c);
+  border-color: var(--border-color-dark, #4a4a4a);
+}
+
+.ExamplePrompts p {
+  font-weight: 500;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+  color: var(--text-color-medium, #444);
+}
+
+.TinyCatsMainContent.dark .ExamplePrompts p,
+.TinyCatsContainer.dark .ExamplePrompts p {
+  color: var(--text-color-dark-medium, #ddd);
+}
+
+.ExamplePrompts ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ExamplePrompts li {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color-light, #ddd);
+  border-radius: 20px; /* Pill shape */
+  background-color: var(--editor-bg, #fff);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-size: 0.85em;
+  color: var(--primary-color, #007bff);
+  border-color: var(--primary-color-light, #b3d7ff);
+}
+
+.ExamplePrompts li:hover, .ExamplePrompts li:focus {
+  background-color: var(--primary-color-x-light, #e6f2ff);
+  border-color: var(--primary-color, #007bff);
+  color: var(--primary-color-dark, #0056b3);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  outline: none;
+}
+
+.TinyCatsMainContent.dark .ExamplePrompts li,
+.TinyCatsContainer.dark .ExamplePrompts li {
+  background-color: var(--button-bg-dark, #4f4f52);
+  color: var(--primary-color-dark-theme, #79c0ff);
+  border-color: var(--primary-color-dark-theme-border, #3081d9);
+}
+
+.TinyCatsMainContent.dark .ExamplePrompts li:hover,
+.TinyCatsMainContent.dark .ExamplePrompts li:focus,
+.TinyCatsContainer.dark .ExamplePrompts li:hover,
+.TinyCatsContainer.dark .ExamplePrompts li:focus {
+  background-color: var(--button-hover-bg-dark, #5a5a5e);
+  border-color: var(--primary-color-dark-theme-hover, #8dc6ff);
+  color: var(--primary-color-dark-theme-hover-text, #c9dfff);
+}
+
+.InputForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.InputForm textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.95em;
+  min-height: 70px;
+  resize: vertical;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  background-color: var(--input-bg, #fff);
+  color: var(--input-text-color, #333);
+}
+
+.TinyCatsMainContent.dark .InputForm textarea,
+.TinyCatsContainer.dark .InputForm textarea {
+  background-color: var(--input-bg-dark, #333337);
+  color: var(--input-text-color-dark, #e0e0e0);
+  border-color: var(--border-color-dark, #555);
+}
+
+.InputForm textarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #007bff);
+  box-shadow: 0 0 0 2px var(--primary-color-shadow, rgba(0, 123, 255, 0.2));
+}
+
+.TinyCatsMainContent.dark .InputForm textarea:focus,
+.TinyCatsContainer.dark .InputForm textarea:focus {
+  border-color: var(--primary-color-dark-theme, #79c0ff);
+  box-shadow: 0 0 0 2px var(--primary-color-dark-theme-shadow, rgba(121, 192, 255, 0.25));
+}
+
+.GenerateButtonPill {
+  padding: 10px 20px;
+  font-size: 0.95em;
+  font-weight: 500;
+  color: #fff;
+  background-color: var(--primary-button-bg, #007bff);
+  border: none;
+  border-radius: 20px; /* Pill shape */
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: flex-end; /* Align to the right */
+}
+
+.GenerateButtonPill:hover:not(:disabled) {
+  background-color: var(--primary-button-hover-bg, #0056b3);
+  transform: translateY(-1px);
+}
+
+.GenerateButtonPill:disabled {
+  background-color: var(--button-disabled-bg, #cccccc);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.TinyCatsMainContent.dark .GenerateButtonPill,
+.TinyCatsContainer.dark .GenerateButtonPill {
+  background-color: var(--primary-button-bg-dark, #388bfd);
+}
+
+.TinyCatsMainContent.dark .GenerateButtonPill:hover:not(:disabled),
+.TinyCatsContainer.dark .GenerateButtonPill:hover:not(:disabled) {
+  background-color: var(--primary-button-hover-bg-dark, #509fff);
+}
+
+.TinyCatsMainContent.dark .GenerateButtonPill:disabled,
+.TinyCatsContainer.dark .GenerateButtonPill:disabled {
+  background-color: var(--button-disabled-bg-dark, #555);
+  color: #aaa;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ErrorMessage {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: var(--error-bg-light, #ffebee);
+  color: var(--error-text-light, #c62828);
+  border: 1px solid var(--error-border-light, #ef9a9a);
+  border-radius: 8px;
+  margin: 15px 0;
+  font-size: 0.9em;
+}
+
+.TinyCatsMainContent.dark .ErrorMessage,
+.TinyCatsContainer.dark .ErrorMessage {
+  background-color: var(--error-bg-dark, #521616);
+  color: var(--error-text-dark, #ffacac);
+  border-color: var(--error-border-dark, #a83232);
+}
+
+.UserTurnOutput {
+  padding: 15px 20px;
+  background-color: var(--editor-bg-lighter, #e9f5ff);
+  border-radius: 6px;
+  border-left: 4px solid var(--primary-color-light, #1c7ed6);
+  margin-bottom: 20px;
+  font-size: 0.9em;
+  line-height: 1.5;
+  color: var(--text-color, #333);
+}
+
+.UserTurnOutput p:first-child { margin-top: 0; }
+.UserTurnOutput p:last-child { margin-bottom: 0; }
+
+.TinyCatsMainContent.dark .UserTurnOutput,
+.TinyCatsContainer.dark .UserTurnOutput {
+  background-color: var(--user-turn-bg-dark, #0b3d66);
+  border-left-color: var(--primary-color-dark-theme, #66b2ff);
+  color: var(--text-color-dark-medium, #d0d0d0);
+}
+
+.SlideshowWrapper {
+  margin-top: 20px;
+}
+
+.SlideshowWrapper h3 {
+  font-size: 1.2em;
+  margin-bottom: 15px;
+  color: var(--text-color-strong, #333);
+}
+
+.TinyCatsMainContent.dark .SlideshowWrapper h3,
+.TinyCatsContainer.dark .SlideshowWrapper h3 {
+  color: var(--text-color-dark-strong, #e8e8e8);
+}
+
+.Slideshow {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  gap: 20px;
+  padding: 15px 10px 25px 10px;
+  border: 1px solid var(--border-color-light, #e0e0e0);
+  border-radius: 8px;
+  background-color: var(--editor-bg-light, #f9f9f9);
+  min-height: 380px;
+}
+
+.TinyCatsMainContent.dark .Slideshow,
+.TinyCatsContainer.dark .Slideshow {
+  background-color: var(--editor-secondary-bg-darker, #333337);
+  border-color: var(--border-color-dark, #4a4a4a);
+}
+
+.Slideshow::-webkit-scrollbar {
+  height: 10px;
+}
+.Slideshow::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-bg, #f1f1f1);
+  border-radius: 10px;
+}
+.Slideshow::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg, #ccc);
+  border-radius: 10px;
+}
+.Slideshow::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-bg, #bbb);
+}
+
+.TinyCatsMainContent.dark .Slideshow::-webkit-scrollbar-track,
+.TinyCatsContainer.dark .Slideshow::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-bg-dark, #2a2a2a);
+}
+.TinyCatsMainContent.dark .Slideshow::-webkit-scrollbar-thumb,
+.TinyCatsContainer.dark .Slideshow::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg-dark, #555);
+}
+.TinyCatsMainContent.dark .Slideshow::-webkit-scrollbar-thumb:hover,
+.TinyCatsContainer.dark .Slideshow::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-bg-dark, #666);
+}
+
+.slide {
+  border: 1px solid var(--border-color, #ddd);
+  padding: 20px;
+  font-family: "Indie Flower", cursive;
+  scroll-snap-align: center;
+  background-color: var(--editor-bg, #fff);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 320px;
+  max-width: 380px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+  transition: transform 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+
+.slide:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.TinyCatsMainContent.dark .slide,
+.TinyCatsContainer.dark .slide {
+  background-color: var(--editor-secondary-bg, #3f3f42);
+  border-color: var(--border-color-dark-medium, #555);
+  color: var(--text-color-dark, #e0e0e0);
+}
+
+.slide .caption {
+  font-size: 1.3em;
+  text-align: center;
+  text-wrap: balance;
+  margin-top: 15px;
+  color: var(--text-color-medium, #555);
+  line-height: 1.5;
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.slide .caption p {
+  margin-bottom: 0.5em;
+}
+
+.slide .caption p:last-child {
+  margin-bottom: 0;
+}
+
+.TinyCatsMainContent.dark .slide .caption,
+.TinyCatsContainer.dark .slide .caption {
+  color: var(--text-color-dark-medium, #c0c0c0);
+}
+
+.slide .caption::-webkit-scrollbar {
+  width: 5px;
+}
+.slide .caption::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slide .caption::-webkit-scrollbar-thumb {
+  background: #d1d1d1;
+  border-radius: 5px;
+}
+.TinyCatsMainContent.dark .slide .caption::-webkit-scrollbar-thumb,
+.TinyCatsContainer.dark .slide .caption::-webkit-scrollbar-thumb {
+  background: #4e4e4e;
+}
+
+.slide img {
+  height: 250px;
+  width: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  background-color: #fff;
+  border: 1px solid var(--border-color-extra-light, #eee);
+}
+
+.TinyCatsMainContent.dark .slide img,
+.TinyCatsContainer.dark .slide img {
+    border-color: var(--border-color-dark-medium, #454545);
+}
+
+.LoadingMoreSlides {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-size: 1em;
+  color: var(--text-color-medium, #666);
+}
+
+.TinyCatsMainContent.dark .LoadingMoreSlides,
+.TinyCatsContainer.dark .LoadingMoreSlides {
+  color: var(--text-color-dark-medium, #bbb);
+}
+
+.LoadingMoreSlides .spin {
+  margin-right: 10px;
+}
+
+@media (max-width: 768px) {
+  .TinyCatsContainer {
+    width: 95%;
+    max-width: 95%; /* Allow full width on smaller screens */
+    height: 95vh;
+    padding: 0; /* Reset padding, apply to children */
+  }
+  .TinyCatsHeader {
+    padding: 15px 20px;
+  }
+  .TinyCatsHeader h2 {
+    font-size: 1.3em;
+  }
+  .TinyCatsBody {
+    flex-direction: column; /* Stack history and main content */
+  }
+  .TinyCatsHistoryPanel {
+    width: 100%;
+    max-height: 200px; /* Limit history panel height on mobile */
+    border-right: none;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    padding: 15px;
+  }
+  .TinyCatsHistoryPanel.dark {
+    border-bottom: 1px solid var(--border-color-dark, #444);
+  }
+  .TinyCatsMainContent {
+    padding: 15px 20px;
+  }
+  .ExamplePrompts ul {
+    justify-content: center;
+  }
+  .InputForm textarea {
+    min-height: 60px;
+    font-size: 0.9em;
+  }
+  .GenerateButtonPill {
+    padding: 8px 16px;
+    font-size: 0.9em;
+    align-self: stretch;
+  }
+  .slide {
+    min-width: 280px;
+    padding: 15px;
+  }
+  .slide img {
+    height: 200px;
+  }
+  .slide .caption {
+    font-size: 1.1em;
+  }
+}
+
+@media (max-width: 480px) {
+  .TinyCatsHeader h2 {
+    font-size: 1.2em;
+  }
+   .ExamplePrompts li {
+    font-size: 0.8em;
+    padding: 6px 10px;
+  }
+  .slide {
+    min-width: calc(100vw - 50px); /* Adjust for padding */
+  }
+  .HistoryHeader h3 {
+    font-size: 1em;
+  }
+  .ClearHistoryButton {
+    font-size: 0.75em;
+  }
+} 
