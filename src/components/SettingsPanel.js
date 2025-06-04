@@ -9,7 +9,11 @@ const SettingsPanel = ({
   editorFontFamily, 
   setEditorFontFamily, 
   editorFontSize, 
-  setEditorFontSize 
+  setEditorFontSize,
+  geminiApiKey,
+  setGeminiApiKey,
+  llamaApiKey,
+  setLlamaApiKey
 }) => {
   if (!isOpen) {
     return null;
@@ -62,6 +66,36 @@ const SettingsPanel = ({
                 max="30"
               />
             </div>
+          </div>
+
+          {/* API Keys Section */}
+          <div className="SettingSection">
+            <h3>API Keys</h3>
+            <div className="SettingItem">
+              <label htmlFor="gemini-api-key">Gemini API Key:</label>
+              <input 
+                type="password"
+                id="gemini-api-key"
+                value={geminiApiKey}
+                onChange={(e) => setGeminiApiKey(e.target.value)}
+                placeholder="Enter your Gemini API key"
+                className="ApiKeyInput"
+              />
+            </div>
+            <div className="SettingItem">
+              <label htmlFor="llama-api-key">Llama API Key:</label>
+              <input 
+                type="password"
+                id="llama-api-key"
+                value={llamaApiKey}
+                onChange={(e) => setLlamaApiKey(e.target.value)}
+                placeholder="Enter your Llama API key"
+                className="ApiKeyInput"
+              />
+            </div>
+            <p className="ApiKeyHelp">
+              API keys are stored locally and are used to access AI services.
+            </p>
           </div>
 
           {/* Placeholder for Global Settings */}

@@ -168,9 +168,9 @@ const AskAI = ({ messages, setMessages }) => {
     }, [typingSpeed]); // Added dependency
 
     // Handle Submit (Modernized file handling, kept core logic)
-     const handleSubmit = useCallback(async () => {
-        const textInput = userInput.trim();
-        if ((!textInput && selectedFiles.length === 0) || isSubmitting) return;
+    const handleSubmit = useCallback(async () => {
+        const trimmedUserInput = userInput.trim(); // Store trimmed input
+        if ((!trimmedUserInput && selectedFiles.length === 0) || isSubmitting) return;
 
         setIsSubmitting(true);
         let sessionId = currentSessionId;
@@ -183,23 +183,27 @@ const AskAI = ({ messages, setMessages }) => {
                 setIsTitleGenerated(false); // Reset flag for new session
             }
 
-            let messageText = textInput;
-            let fileInfo = "";
-            if (selectedFiles.length > 0) {
-                fileInfo = `[Attached: ${selectedFiles.map(f => f.name).join(', ')}]`;
-                messageText = `${fileInfo}${textInput ? '\n' + textInput : ''}`;
+            // Prepare user message for display (with file names only)
+            let userMessageTextForDisplay = trimmedUserInput;
+            const attachedFileNames = selectedFiles.map(f => f.name);
+            let fileInfoForDisplay = "";
+
+            if (attachedFileNames.length > 0) {
+                fileInfoForDisplay = `[Attached: ${attachedFileNames.join(', ')}]`;
+                userMessageTextForDisplay = `${fileInfoForDisplay}${trimmedUserInput ? '\n' + trimmedUserInput : ''}`;
             }
 
             const userMessage = {
-                text: messageText, sender: 'user', session_id: sessionId, timestamp: new Date().toISOString(),
-                // Optionally store file metadata if your backend/display needs it separately
-                // metadata: selectedFiles.length > 0 ? { files: selectedFiles.map(f => ({ name: f.name, type: f.type, size: f.size })) } : null
+                text: userMessageTextForDisplay,
+                sender: 'user',
+                session_id: sessionId,
+                timestamp: new Date().toISOString(),
             };
 
             const updatedMessages = [...messages, userMessage];
             setMessages(updatedMessages); // Optimistic UI update
             setUserInput('');       // Clear input
-            setSelectedFiles([]);   // Clear selected files
+            // setSelectedFiles([]); // Clear selected files AFTER content is read
 
             // Save user message & update session timestamp
             await Promise.all([
@@ -207,36 +211,106 @@ const AskAI = ({ messages, setMessages }) => {
                 supabase.from('chat_sessions').update({ last_updated: userMessage.timestamp }).eq('session_id', sessionId)
             ]);
 
-            // Prepare history for backend (includes the user message with file info)
+            // --- START: Prepare file contents for AI ---
+            let fileContentsStringForAI = "";
+            if (selectedFiles.length > 0) {
+                const MAX_FILE_SIZE_FOR_CONTENT_INCLUSION = 80 * 1024; // 80KB limit
+
+                const fileReadPromises = selectedFiles.map(file => {
+                    return new Promise(async (resolve) => { // Added async here
+                        if (!file || typeof file.size === 'undefined' || typeof file.name === 'undefined') {
+                            console.warn("Encountered an invalid file object:", file);
+                            resolve({ name: 'unknown_file.txt', content: "[Skipped an invalid file entry]" });
+                            return;
+                        }
+
+                        // Handle PDF files using the dedicated extraction endpoint
+                        if (file.type === 'application/pdf') {
+                            try {
+                                const formData = new FormData();
+                                formData.append('file', file);
+                                const response = await fetch('http://localhost:8000/api/pdf/extract-text', {
+                                    method: 'POST',
+                                    body: formData,
+                                });
+                                if (!response.ok) {
+                                    const errorData = await response.json().catch(() => ({ detail: 'Failed to extract text from PDF. Unknown server error.' }));
+                                    throw new Error(errorData.detail || `PDF extraction failed with status ${response.status}`);
+                                }
+                                const result = await response.json();
+                                resolve({ name: file.name, content: result.text || "[No text extracted from PDF]" });
+                            } catch (error) {
+                                console.error(`Error processing PDF ${file.name} via endpoint:`, error);
+                                resolve({ name: file.name, content: `[Error extracting text from PDF: ${file.name} - ${error.message}]` });
+                            }
+                            return;
+                        }
+
+                        // For non-PDF files, use existing size check and direct text read
+                        if (file.size > MAX_FILE_SIZE_FOR_CONTENT_INCLUSION) {
+                            console.warn(`File ${file.name} is too large (${file.size} bytes) to include its content directly. Max size: ${MAX_FILE_SIZE_FOR_CONTENT_INCLUSION} bytes.`);
+                            resolve({
+                                name: file.name,
+                                content: `[Content of file '${file.name}' (${(file.size / 1024).toFixed(2)}KB) is too large to be sent directly. Maximum allowed size for content is ${(MAX_FILE_SIZE_FOR_CONTENT_INCLUSION / 1024).toFixed(2)}KB. Only the filename is included for this file.]`
+                            });
+                            return;
+                        }
+
+                        if (typeof file.text === 'function') {
+                            file.text()
+                                .then(content => resolve({ name: file.name, content }))
+                                .catch(error => {
+                                    console.error(`Error reading content of file ${file.name}:`, error);
+                                    resolve({ name: file.name, content: `[Error reading content for file: ${file.name}]` });
+                                });
+                        } else {
+                            console.warn(`File ${file.name} (Size: ${file.size} bytes) does not have a text() method or is not a standard File object. It might be a directory or a non-text file type that cannot be read as text.`);
+                            resolve({ name: file.name, content: `[Cannot read content of file '${file.name}' as text. It may not be a text-based file.]` });
+                        }
+                    });
+                });
+
+                try {
+                    const allFileDetails = await Promise.all(fileReadPromises);
+                    let tempContentString = "\n\n--- Attached Files ---";
+                    allFileDetails.forEach(detail => {
+                        tempContentString += `\n\nFile: ${detail.name}\nContent:\n${detail.content}`;
+                    });
+                    tempContentString += "\n--- End of Attached Files ---";
+                    fileContentsStringForAI = tempContentString;
+                } catch (error) {
+                    console.error("Error processing file contents for AI:", error);
+                    fileContentsStringForAI = "\n\n[Error processing one or more attached files for AI]";
+                }
+            }
+            setSelectedFiles([]); // Clear selected files now that content is read (or attempted)
+            // --- END: Prepare file contents for AI ---
+
             const formattedHistory = updatedMessages.map(msg => ({
                 text: msg.text, sender: msg.sender, timestamp: msg.timestamp
             }));
 
-            // Determine the actual question/prompt for the AI
-            const questionForAI = textInput || (selectedFiles.length > 0 ? "Describe the attached file(s)." : "");
+            let baseQuestionForAI = trimmedUserInput || (selectedFiles.length > 0 ? "Please describe and/or analyze the attached file(s)." : "");
+            const questionForAI = `${baseQuestionForAI}${fileContentsStringForAI}`;
 
-            // Get AI response
             const response = await fetch('http://localhost:8000/ask-ai', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    question: questionForAI, // Send original text or file prompt
+                    question: questionForAI,
                     session_id: sessionId,
-                    conversation_history: formattedHistory // History includes the file info prefix
+                    conversation_history: formattedHistory
                 }),
             });
 
             if (!response.ok) {
                 let errorDetail = response.statusText;
                 try {
-                    // Try to parse JSON error detail from backend
                     const errorData = await response.json();
                     if (errorData && errorData.detail) {
                         errorDetail = errorData.detail;
                     }
                 } catch (jsonError) {
-                    // If parsing JSON fails, log it and stick with statusText or a generic message
                     console.warn("Could not parse error response JSON:", jsonError);
-                    // Attempt to read response as text for more clues if JSON parsing failed
                     const textError = await response.text();
                     if (textError) {
                         errorDetail = textError;
@@ -246,7 +320,6 @@ const AskAI = ({ messages, setMessages }) => {
             }
 
             const data = await response.json();
-            // Ensure data.response exists, otherwise it's an unexpected successful response format
             if (typeof data.response !== 'string') {
                 console.error("Unexpected AI response format:", data);
                 throw new Error("Received an unexpected format from the AI.");
@@ -254,23 +327,21 @@ const AskAI = ({ messages, setMessages }) => {
             const aiMessage = { text: data.response, sender: 'ai', session_id: sessionId, timestamp: new Date().toISOString() };
 
             const finalMessages = [...updatedMessages, aiMessage];
-            setMessages(finalMessages); // Update UI with AI message
-            await supabase.from('messages').insert([aiMessage]); // Save AI message
+            setMessages(finalMessages);
+            await supabase.from('messages').insert([aiMessage]);
 
-            simulateTyping(data.response, finalMessages.length - 1); // Start typing effect
-            await generateTitle(finalMessages, sessionId); // Attempt to generate title
+            simulateTyping(data.response, finalMessages.length - 1);
+            await generateTitle(finalMessages, sessionId);
 
         } catch (error) {
             console.error('Error in chat interaction:', error);
-            // Use error.message for a more specific error in the UI
             const displayErrorMessage = error.message || "Sorry, an error occurred. Please try again.";
             setMessages((prev) => [...prev, { text: displayErrorMessage, sender: 'ai', session_id: sessionId || 'error', timestamp: new Date().toISOString() }]);
-            // Consider more robust error handling - maybe revert optimistic updates?
         } finally {
             setIsSubmitting(false);
             textAreaRef.current?.focus(); // Refocus input
         }
-    }, [userInput, selectedFiles, isSubmitting, currentSessionId, messages, setMessages, createNewSession, simulateTyping, generateTitle]);
+    }, [userInput, selectedFiles, isSubmitting, currentSessionId, messages, setMessages, createNewSession, simulateTyping, generateTitle, supabase, textAreaRef]); // Ensure all dependencies are listed, added supabase and textAreaRef if they are from props or outer scope. If they are direct refs/imports, they might not be needed in deps. Adjust as per your actual setup.
 
 
     // Handle New Chat (from original, adapted for useCallback)
@@ -500,24 +571,53 @@ const AskAI = ({ messages, setMessages }) => {
 
     // Handle workspace file selection
     const handleWorkspaceFileSelect = async (file) => {
+        console.log('[AskAI] handleWorkspaceFileSelect: Attempting to read workspace file:', {
+            id: file.id,
+            name: file.name,
+            type: file.type,
+            // Log current workspacePath from context to help diagnose path issues
+            currentWorkspacePath: workspacePath 
+        });
+        setIsFileUploading(true); // Indicate activity
         try {
-            const response = await fetch(`http://localhost:8000/files/read?path=${encodeURIComponent(file.id)}`);
+            const requestPath = encodeURIComponent(file.id);
+            console.log(`[AskAI] handleWorkspaceFileSelect: Fetching from http://localhost:8000/files/read?path=${requestPath}`);
+            const response = await fetch(`http://localhost:8000/files/read?path=${requestPath}`);
+            
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => "Could not retrieve error details");
+                console.warn(`Error reading workspace file ${file.name} (path: ${file.id}): ${response.status} ${response.statusText}. Server: ${errorText}`);
+                // Optionally: alert user about the failure
+                setIsFileUploading(false);
+                return; 
+            }
+            
             const data = await response.json();
             
             if (data.error) {
-                console.warn(`Warning reading file: ${data.error}`);
-                return;
+                console.warn(`Backend warning reading file ${file.name}: ${data.error}`);
+                // Optionally: alert user
+                setIsFileUploading(false);
+                return; 
             }
             
-            // Create a File object from the content
-            const fileBlob = new Blob([data.content], { type: 'text/plain' });
-            const fileObject = new File([fileBlob], file.name, { type: 'text/plain' });
+            let mimeType = 'text/plain';
+            const extension = file.name.split('.').pop()?.toLowerCase();
+            if (extension === 'json') mimeType = 'application/json';
+            else if (extension === 'xml') mimeType = 'application/xml';
+            else if (['txt', 'md', 'py', 'js', 'html', 'css', 'java', 'c', 'cpp', 'cs', 'go', 'rb', 'php'].includes(extension)) mimeType = 'text/plain';
+
+            const fileBlob = new Blob([data.content ?? ''], { type: mimeType });
+            const fileObject = new File([fileBlob], file.name, { type: mimeType });
             
-            setSelectedFiles(prev => [...prev, fileObject].slice(0, 5));
+            setSelectedFiles(prev => [...prev, fileObject].slice(0, 5)); 
             setShowFileSelector(false);
             setFileSearchTerm('');
-        } catch (error) {
-            console.error('Error reading workspace file:', error);
+        } catch (error) { 
+            console.error(`Error processing workspace file ${file.name} (path: ${file.id}):`, error);
+            // Optionally: alert user
+        } finally {
+            setIsFileUploading(false);
         }
     };
 

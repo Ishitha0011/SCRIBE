@@ -459,29 +459,99 @@ def read_directory_structure(directory, base_path=None):
 async def read_file(path: str):
     """Read file content"""
     try:
-        if not workspace_info.get("last_directory"):
-            raise HTTPException(status_code=400, detail="No workspace set")
+        current_workspace_dir_from_config = workspace_info.get("last_directory")
+        logger.info(f"[READ_FILE] Received request for path parameter: '{path}'")
+        logger.info(f"[READ_FILE] Current workspace_info['last_directory'] from config: '{current_workspace_dir_from_config}'")
 
-        workspace_dir = normalize_path(workspace_info["last_directory"])
-        path = normalize_path(path)
-        full_path = os.path.join(workspace_dir, path)
+        if not current_workspace_dir_from_config:
+            logger.error("[READ_FILE] No workspace set in workspace_info. The 'last_directory' is missing or null.")
+            raise HTTPException(status_code=400, detail="No workspace set. Please select a workspace directory first.")
 
-        if not os.path.exists(full_path):
-            raise HTTPException(status_code=404, detail="File not found")
+        # Normalize both the workspace directory from config and the incoming path parameter
+        workspace_dir = normalize_path(current_workspace_dir_from_config)
+        # The 'path' parameter should already be a relative path like 'file.txt' or 'folder/file.txt'
+        # It comes from file.id on the frontend, which is os.path.relpath from the backend's list_files
+        normalized_relative_path_param = normalize_path(path)
+        
+        logger.info(f"[READ_FILE] Normalized workspace_dir from config: '{workspace_dir}'")
+        logger.info(f"[READ_FILE] Normalized relative_path_param from request: '{normalized_relative_path_param}'")
 
-        if not os.path.isfile(full_path):
-            raise HTTPException(status_code=400, detail="Path is not a file")
+        # Construct the full absolute path
+        full_path = os.path.join(workspace_dir, normalized_relative_path_param)
+        logger.info(f"[READ_FILE] Constructed full_path to check: '{full_path}'")
+        
+        # Check for existence and if it's a file
+        path_exists = os.path.exists(full_path)
+        is_file = False
+        if path_exists:
+            is_file = os.path.isfile(full_path)
+        
+        logger.info(f"[READ_FILE] Does full_path ('{full_path}') exist? {path_exists}")
+        if path_exists:
+            logger.info(f"[READ_FILE] Is full_path ('{full_path}') a file? {is_file}")
+        else:
+            # If path doesn't exist, list directory contents of workspace_dir for debugging
+            logger.warning(f"[READ_FILE] The path '{full_path}' does not exist. Debugging information follows.")
+            try:
+                if os.path.exists(workspace_dir) and os.path.isdir(workspace_dir):
+                    logger.info(f"[READ_FILE] Listing contents of workspace_dir ('{workspace_dir}') for debugging:")
+                    for item_count, item_name in enumerate(os.listdir(workspace_dir)):
+                        logger.info(f"[READ_FILE]   - Item {item_count + 1}: '{item_name}'")
+                        if item_count > 50: # Limit logging if directory is too large
+                            logger.info(f"[READ_FILE]   ... (and more items)")
+                            break
+                else:
+                    logger.warning(f"[READ_FILE] workspace_dir ('{workspace_dir}') itself does not exist or is not a directory.")
+                
+                # Also check one level deeper if normalized_relative_path_param contains a directory structure
+                # e.g. if normalized_relative_path_param is "folder/file.txt"
+                path_parts = Path(normalized_relative_path_param).parts
+                if len(path_parts) > 1: # Path contains subdirectories
+                    potential_subdir_name = path_parts[0]
+                    potential_subdir_full_path = os.path.join(workspace_dir, potential_subdir_name)
+                    logger.info(f"[READ_FILE] Checking if first part of relative path ('{potential_subdir_name}') is a directory: '{potential_subdir_full_path}'")
+                    if os.path.exists(potential_subdir_full_path) and os.path.isdir(potential_subdir_full_path):
+                        logger.info(f"[READ_FILE] Listing contents of potential subdirectory ('{potential_subdir_full_path}'):")
+                        for item_count, item_name in enumerate(os.listdir(potential_subdir_full_path)):
+                            logger.info(f"[READ_FILE]     - Item {item_count + 1}: '{item_name}'")
+                            if item_count > 50:
+                                logger.info(f"[READ_FILE]     ... (and more items)")
+                                break
+                    else:
+                        logger.info(f"[READ_FILE] Potential subdirectory ('{potential_subdir_full_path}') does not exist or is not a directory.")
+            except Exception as list_err:
+                logger.error(f"[READ_FILE] Error listing directory contents for debugging: {list_err}", exc_info=True)
+
+
+        if not path_exists:
+            logger.error(f"[READ_FILE] File/Directory not found at full_path: '{full_path}'. Raising 404.")
+            raise HTTPException(status_code=404, detail=f"File or directory not found. Attempted path: {normalized_relative_path_param}")
+
+        if not is_file:
+            logger.error(f"[READ_FILE] Path is not a file at full_path: '{full_path}'. It might be a directory or other type. Raising 400.")
+            raise HTTPException(status_code=400, detail=f"The specified path '{normalized_relative_path_param}' is not a regular file.")
 
         try:
             with open(full_path, 'r', encoding='utf-8') as f:
                 content = f.read()
+            logger.info(f"[READ_FILE] Successfully read content from: '{full_path}'")
             return {"content": content}
         except UnicodeDecodeError:
-            # Return a message for binary files
-            return {"content": "", "error": "Binary file cannot be displayed"}
+            logger.warning(f"[READ_FILE] UnicodeDecodeError for file: '{full_path}'. It might be a binary file.")
+            return {"content": "", "error": "Binary file content cannot be displayed."}
+        except Exception as read_err:
+            logger.error(f"[READ_FILE] Error reading file content from '{full_path}': {read_err}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Could not read file: {str(read_err)}")
+            
+    except HTTPException as http_exc: # Re-raise HTTPExceptions directly
+        # No need to log again here if it's one of the specific ones raised above, but general HTTPExceptions are caught.
+        if not (http_exc.status_code == 404 and "File or directory not found" in http_exc.detail) and \
+           not (http_exc.status_code == 400 and ("No workspace set" in http_exc.detail or "not a regular file" in http_exc.detail)):
+            logger.error(f"[READ_FILE] HTTPException occurred: {http_exc.status_code} - {http_exc.detail}", exc_info=True)
+        raise http_exc
     except Exception as e:
-        logging.error(f"Error reading file: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"[READ_FILE] Unexpected error in read_file endpoint: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"An unexpected server error occurred: {str(e)}")
 
 
 @app.post("/api/files/write")
